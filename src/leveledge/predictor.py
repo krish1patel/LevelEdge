@@ -422,3 +422,5 @@ class Predictor:
         print('Prediction')
         print(f'P(<{self.price}), P(>{self.price})')
         print(f'{predictions[-1][0]:.2%}, {predictions[-1][1]:.4%}')
+
+        return predictions[-1][1]
