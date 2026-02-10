@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "leveledge"
+version = "0.1.0"
+description = "Stock/crypto predictor based on price levels"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+{ name = "Krish Patel" }
+]
+dependencies = [
+  "pandas",
+  "scikit-learn",
+  "yfinance",
+  "numpy",
+  "xgboost"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
