@@ -1,3 +1,4 @@
+import math
 from sklearn.utils.extmath import weighted_mode
 import yfinance as yf
 import pandas as pd
@@ -330,9 +331,9 @@ class Predictor:
         models = []
         
         # Add diagnostic info
-        print(f"\nOverall class distribution:")
-        print(self.data['Target'].value_counts())
-        print(f"Overall positive rate: {self.data['Target'].mean():.2%}\n")
+        # print(f"\nOverall class distribution:")
+        # print(self.data['Target'].value_counts())
+        # print(f"Overall positive rate: {self.data['Target'].mean():.2%}\n")
 
         for i, (train_idx, test_idx) in enumerate(splits):
             train = self.data.iloc[train_idx]
@@ -344,17 +345,17 @@ class Predictor:
             y_test = test['Target']
             
             # Diagnostic prints
-            print(f"Split {i+1}:")
-            print(f"  Train: {len(y_train)} samples, {y_train.sum()} positive ({y_train.mean():.2%})")
-            print(f"  Test:  {len(y_test)} samples, {y_test.sum()} positive ({y_test.mean():.2%})")
+            # print(f"Split {i+1}:")
+            # print(f"  Train: {len(y_train)} samples, {y_train.sum()} positive ({y_train.mean():.2%})")
+            # print(f"  Test:  {len(y_test)} samples, {y_test.sum()} positive ({y_test.mean():.2%})")
             
             # Skip invalid splits
             if len(y_test.unique()) < 2:
-                print(f"  ⚠️  SKIPPED - only class {y_test.unique()[0]} in test set\n")
+                # print(f"  ⚠️  SKIPPED - only class {y_test.unique()[0]} in test set\n")
                 continue
             
             if len(y_train.unique()) < 2:
-                print(f"  ⚠️  SKIPPED - only class {y_train.unique()[0]} in train set\n")
+                # print(f"  ⚠️  SKIPPED - only class {y_train.unique()[0]} in train set\n")
                 continue
 
             # Calculate class weight
@@ -362,7 +363,7 @@ class Predictor:
             n_positive = (y_train == 1).sum()
             scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
             
-            print(f"  scale_pos_weight: {scale_pos_weight:.2f}")
+            # print(f"  scale_pos_weight: {scale_pos_weight:.2f}")
 
             model = XGBClassifier(
                 n_estimators=300,
@@ -383,19 +384,19 @@ class Predictor:
             ps = precision_score(y_test, preds_binary)
             auc_scores.append(auc)
             ps_scores.append(ps)
-            print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
+            # print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
             models.append((model, ps*auc))
 
         self.xgb_models = models
 
-        print(f"\n{'='*50}")
-        print(f"Valid AUC, PS scores: {auc_scores}, {ps_scores}")
-        if auc_scores:
-            print(f"Mean AUC: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
-            print(f"Mean PS: {np.mean(ps_scores):.4f} ± {np.std(ps_scores):.4f}")
-        print(f"{'='*50}")
+        # print(f"\n{'='*50}")
+        # print(f"Valid AUC, PS scores: {auc_scores}, {ps_scores}")
+        # if auc_scores:
+            # print(f"Mean AUC: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
+            # print(f"Mean PS: {np.mean(ps_scores):.4f} ± {np.std(ps_scores):.4f}")
+        # print(f"{'='*50}")
 
-    def predict_xgb(self) -> bool:
+    def predict_xgb(self) -> float:
         """
         Returns prediction using xgb for target datetime and price as a boolean
         (will ticker be above price level at target datetime?)
@@ -409,18 +410,37 @@ class Predictor:
         boolean - represents prediction
         """
 
-        best_model = self.xgb_models[0][0]
-        best_psauc = self.xgb_models[0][1]
+        # best_model = self.xgb_models[0][0]
+        # best_psauc = self.xgb_models[0][1]
+
+        # for (model, psauc) in self.xgb_models:
+            # if psauc > best_psauc:
+                # best_model = model
+                # best_psauc = psauc
+        
+        # predictions = best_model.predict_proba(self.data_withna[self.available_features])
+
+        counter: int = 0
+        mean_prediction: float = 0
 
         for (model, psauc) in self.xgb_models:
-            if psauc > best_psauc:
-                best_model = model
-                best_psauc = psauc
-        
-        predictions = best_model.predict_proba(self.data_withna[self.available_features])
+            if psauc and not math.isnan(psauc) and psauc != 0:
+                counter += 1
+                mean_prediction += model.predict_proba(self.data_withna[self.available_features])[-1][1]
 
-        print('Prediction')
-        print(f'P(<{self.price}), P(>{self.price})')
-        print(f'{predictions[-1][0]:.2%}, {predictions[-1][1]:.4%}')
+        mean_prediction /= counter
 
-        return predictions[-1][1]
+
+
+        # print('Prediction')
+        # print(f'P(<{self.price}), P(>{self.price})')
+        # print(f'{predictions[-1][0]:.2%}, {predictions[-1][1]:.4%}')
+
+        return mean_prediction
+
+
+
+
+
+
+
