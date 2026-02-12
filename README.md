@@ -8,9 +8,9 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 2. Fetch data from yahoo finance
 3. Build a DataFrame of technical indicators
 4. Calculate the number of candles ahead to predict for and create a target variable
-5. Train on several train test splits, recording model performance
-6. Choose the best model based on metrics and predict for the latest candle
-7. Return probability of latest prediction
+5. Train on several train test splits, recording metrics for performance estimation
+6. Retrain using all available data
+7. Return prediction on latest data as a probability
 
 # Install
 
@@ -19,7 +19,7 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 3. (optional) Create a virtual environment and activate it. `python -m venv venv` `source venv/bin/activate`
 4. `pip install -e .`
 
-# Usage
+# Docs
 
 - Import package with `from leveledge import Predictor`
 - Initialize an object with `Predictor(ticker, datetime, interval, price)`
@@ -35,5 +35,4 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 # Limitations/Room for improvement
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
-- Models perform reasonably well, but better metrics could be used to narrow down during selection
 - xgboost model could probably use some tuning
