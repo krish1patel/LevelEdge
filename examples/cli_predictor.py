@@ -4,7 +4,7 @@ from datetime import datetime
 
 ticker = input('Enter the ticker you wish to predictor for(e.g. SPY, ETH-USD): ').strip()
 tgt_datetime_str = input('Enter the datetime you wish to predict for in EST (YYYY-MM-DD HH:MM:SS): ')
-intvl = input('Enter the interval you would like to analyze (e.g. 5m, 15m, 1h, 4h, 1d): ')
+intvl = input('Enter the interval you would like to analyze (e.g. 5m, 15m, 1h, 90m, 1d): ')
 price_level = float(input('Enter the price level you wish to predict for: $'))
 
 format_string = "%Y-%m-%d %H:%M:%S"
