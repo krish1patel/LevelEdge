@@ -17,6 +17,14 @@ prediction = predictor.predict_xgb()
 
 print('\n\n')
 print('='*30)
+print('Model Metrics')
+print('='*30)
+print()
+predictor.print_xgb_model_metrics()
+
+
+print('\n\n')
+print('='*30)
 print('Prediction Results')
 print('='*30)
 print()

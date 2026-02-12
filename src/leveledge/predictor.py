@@ -255,71 +255,71 @@ class Predictor:
         return splits
 
 
-    def train_rfc(self) -> None:
-        splits = self._walk_forward_split()
-        auc_scores = []
-        ps_scores = []
-        models = []
+    # def train_rfc(self) -> None:
+    #     splits = self._walk_forward_split()
+    #     auc_scores = []
+    #     ps_scores = []
+    #     models = []
 
-        print(f"\nOverall class distribution:")
-        print(self.data['Target'].value_counts())
-        print(f"Overall positive rate: {self.data['Target'].mean():.2%}\n")
+    #     print(f"\nOverall class distribution:")
+    #     print(self.data['Target'].value_counts())
+    #     print(f"Overall positive rate: {self.data['Target'].mean():.2%}\n")
 
-        for i, (train_idx, test_idx) in enumerate(splits):
-            train = self.data.iloc[train_idx]
-            test = self.data.iloc[test_idx]
+    #     for i, (train_idx, test_idx) in enumerate(splits):
+    #         train = self.data.iloc[train_idx]
+    #         test = self.data.iloc[test_idx]
 
-            X_train = train[self.available_features]
-            y_train = train['Target']
-            X_test = test[self.available_features]
-            y_test = test['Target']
+    #         X_train = train[self.available_features]
+    #         y_train = train['Target']
+    #         X_test = test[self.available_features]
+    #         y_test = test['Target']
 
-            print(f'Split: {i+1}')
-            print(f"  Train: {len(y_train)} samples, {y_train.sum()} positive ({y_train.mean():.2%})")
-            print(f"  Test:  {len(y_test)} samples, {y_test.sum()} positive ({y_test.mean():.2%})")
+    #         print(f'Split: {i+1}')
+    #         print(f"  Train: {len(y_train)} samples, {y_train.sum()} positive ({y_train.mean():.2%})")
+    #         print(f"  Test:  {len(y_test)} samples, {y_test.sum()} positive ({y_test.mean():.2%})")
 
-            # Notify invalid splits
-            if len(y_test.unique()) < 2:
-                print(f"  ⚠️  IMBALANCE - only class {y_test.unique()[0]} in test set\n")
+    #         # Notify invalid splits
+    #         if len(y_test.unique()) < 2:
+    #             print(f"  ⚠️  IMBALANCE - only class {y_test.unique()[0]} in test set\n")
                 
-            if len(y_train.unique()) < 2:
-                print(f"  ⚠️  IMBALANCE - only class {y_train.unique()[0]} in train set\n")
+    #         if len(y_train.unique()) < 2:
+    #             print(f"  ⚠️  IMBALANCE - only class {y_train.unique()[0]} in train set\n")
                 
-            # Calculate class weight
-            n_negative = (y_train == 0).sum()
-            n_positive = (y_train == 1).sum()
-            scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
+    #         # Calculate class weight
+    #         n_negative = (y_train == 0).sum()
+    #         n_positive = (y_train == 1).sum()
+    #         scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
 
-            print(f"  scale_pos_weight: {scale_pos_weight:.2f}")
+    #         print(f"  scale_pos_weight: {scale_pos_weight:.2f}")
 
-            model = RFC(
-                n_estimators=100,
-                max_depth=10,
-                min_samples_split=5,
-                min_samples_leaf=2,
-                class_weight='balanced',  # This helps with imbalanced data
-                random_state=42,
-                n_jobs=-1
-            )
+    #         model = RFC(
+    #             n_estimators=100,
+    #             max_depth=10,
+    #             min_samples_split=5,
+    #             min_samples_leaf=2,
+    #             class_weight='balanced',  # This helps with imbalanced data
+    #             random_state=42,
+    #             n_jobs=-1
+    #         )
 
-            model.fit(X_train, y_train)
-            preds = model.predict_proba(X_test)[:, 1]
-            preds_binary = (preds >= .6).astype(int)
-            auc = roc_auc_score(y_test, preds)
-            ps = precision_score(y_test, preds_binary)
-            auc_scores.append(auc)
-            ps_scores.append(ps)
-            print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
-            models.append((model, ps*auc))
+    #         model.fit(X_train, y_train)
+    #         preds = model.predict_proba(X_test)[:, 1]
+    #         preds_binary = (preds >= .6).astype(int)
+    #         auc = roc_auc_score(y_test, preds)
+    #         ps = precision_score(y_test, preds_binary)
+    #         auc_scores.append(auc)
+    #         ps_scores.append(ps)
+    #         print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
+    #         models.append((model, ps*auc))
 
-        self.rfc_models = models
+    #     self.rfc_models = models
         
-        print(f"\n{'='*50}")
-        print(f"Valid AUC, PS scores: {auc_scores}, {ps_scores}")
-        if auc_scores:
-            print(f"Mean AUC: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
-            print(f"Mean PS: {np.mean(ps_scores):.4f} ± {np.std(ps_scores):.4f}")
-        print(f"{'='*50}")
+    #     print(f"\n{'='*50}")
+    #     print(f"Valid AUC, PS scores: {auc_scores}, {ps_scores}")
+    #     if auc_scores:
+    #         print(f"Mean AUC: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
+    #         print(f"Mean PS: {np.mean(ps_scores):.4f} ± {np.std(ps_scores):.4f}")
+    #     print(f"{'='*50}")
 
 
 
@@ -328,7 +328,6 @@ class Predictor:
         splits = self._walk_forward_split()
         auc_scores = []
         ps_scores = []
-        models = []
         
         # Add diagnostic info
         # print(f"\nOverall class distribution:")
@@ -385,9 +384,35 @@ class Predictor:
             auc_scores.append(auc)
             ps_scores.append(ps)
             # print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
-            models.append((model, ps*auc))
 
-        self.xgb_models = models
+        # Model metrics are the mean of the scores for all models
+        avg_auc = sum(auc_scores) / len(auc_scores) if len(auc_scores) > 0 else 0
+        avg_ps = sum(ps_scores) / len(ps_scores) if len(ps_scores) > 0 else 0
+        self.xgb_expected_model_metrics = (avg_auc, avg_ps)
+
+        # Train model on all data
+        X_train = self.data[self.available_features]
+        y_train = self.data['Target']
+
+        n_negative = (y_train == 0).sum()
+        n_positive = (y_train == 1).sum()
+        scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
+
+        self.xgb_model = XGBClassifier(
+            n_estimators=300,
+            max_depth=4,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            objective="binary:logistic",
+            eval_metric="auc",
+            tree_method="hist",
+            scale_pos_weight=scale_pos_weight  # Add this!
+        )
+
+        model.fit(X_train, y_train)
+        self.xgb_model = model
+
 
         # print(f"\n{'='*50}")
         # print(f"Valid AUC, PS scores: {auc_scores}, {ps_scores}")
@@ -395,6 +420,9 @@ class Predictor:
             # print(f"Mean AUC: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
             # print(f"Mean PS: {np.mean(ps_scores):.4f} ± {np.std(ps_scores):.4f}")
         # print(f"{'='*50}")
+
+    def print_xgb_model_metrics(self) -> None:
+        print(f"Expected Model Metrics: AUC: {self.xgb_expected_model_metrics[0]:.4f}, PS: {self.xgb_expected_model_metrics[1]:.4f}")
 
     def predict_xgb(self) -> float:
         """
@@ -410,6 +438,10 @@ class Predictor:
         boolean - represents prediction
         """
 
+
+        prediction = self.xgb_model.predict_proba(self.data_withna[self.available_features])[-1][1]
+        return prediction
+
         # best_model = self.xgb_models[0][0]
         # best_psauc = self.xgb_models[0][1]
 
@@ -420,23 +452,23 @@ class Predictor:
         
         # predictions = best_model.predict_proba(self.data_withna[self.available_features])
 
-        counter: int = 0
-        mean_prediction: float = 0
+        # counter: int = 0
+        # mean_prediction: float = 0
 
-        for (model, psauc) in self.xgb_models:
-            if psauc and not math.isnan(psauc) and psauc != 0:
-                counter += 1
-                mean_prediction += model.predict_proba(self.data_withna[self.available_features])[-1][1]
+        # for (model, psauc) in self.xgb_models:
+        #     if psauc and not math.isnan(psauc) and psauc != 0:
+        #         counter += 1
+        #         mean_prediction += model.predict_proba(self.data_withna[self.available_features])[-1][1]
 
-        mean_prediction /= counter
+        # mean_prediction /= counter
 
 
 
-        # print('Prediction')
-        # print(f'P(<{self.price}), P(>{self.price})')
-        # print(f'{predictions[-1][0]:.2%}, {predictions[-1][1]:.4%}')
+        # # print('Prediction')
+        # # print(f'P(<{self.price}), P(>{self.price})')
+        # # print(f'{predictions[-1][0]:.2%}, {predictions[-1][1]:.4%}')
 
-        return mean_prediction
+        # return mean_prediction
 
 
 
