@@ -22,6 +22,7 @@ print('='*30)
 print()
 predictor.print_xgb_model_metrics()
 
+predictor.print_candles_ahead()
 
 print('\n\n')
 print('='*30)

@@ -94,7 +94,7 @@ class Predictor:
         timedelta: pd.Timedelta = target_timestamp - last_candle_timestamp
         timedelta_in_min: int = timedelta.value / 60 * (10**-9)
 
-        if self.isCrypto:
+        if not self.isCrypto:
             # Subtract 1 to ensure we are predicting for the candle before the target time.
             # Subtract 17.5 * 60 to remove market closed hours (no candles)
             candles_ahead: int = int((timedelta_in_min - 1 - 17.5*60) / self.interval_min)
@@ -423,6 +423,10 @@ class Predictor:
 
     def print_xgb_model_metrics(self) -> None:
         print(f"Expected Model Metrics: AUC: {self.xgb_expected_model_metrics[0]:.4f}, PS: {self.xgb_expected_model_metrics[1]:.4f}")
+
+    def print_candles_ahead(self) -> None:
+        print(f'Predicting for {self.candles_ahead} candles ahead')
+        print(f'Most recent candle datetime: {self.data_withna["Datetime"].iloc[-1]}')
 
     def predict_xgb(self) -> float:
         """
