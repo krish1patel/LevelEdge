@@ -10,7 +10,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_score
 from zoneinfo import ZoneInfo
 
-ALLOWED_INTERVALS: list[str] = ["1m", "2m", "5m", "10m", "15m", "30m", "1h", "90m"]
+ALLOWED_INTERVALS: list[str] = ["1m", "2m", "5m", "10m", "15m", "30m", "1h", "90m", "1d"]
 
 
 class Predictor:
