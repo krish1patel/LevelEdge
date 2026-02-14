@@ -87,22 +87,69 @@ class Predictor:
         self.data = data
 
     def _calculate_candles_ahead(self) -> int:
-        """Calculates how many candles ahead the target datetime is from current candle"""
-        
+        """Calculates how many candles ahead the target datetime is from current candle.
+
+        For daily intervals ('1d') this uses business-day counting (US Federal holidays)
+        so weekends and federal holidays are skipped. For intraday intervals it
+        converts the time delta to minutes and estimates the number of candles,
+        subtracting the usual market-closed hours for non-crypto tickers.
+        """
+
         last_candle_timestamp: pd.Timestamp = self.data.index[-1]
         target_timestamp: pd.Timestamp = pd.Timestamp(self.target_datetime)
-        timedelta: pd.Timedelta = target_timestamp - last_candle_timestamp
-        timedelta_in_min: int = timedelta.value / 60 * (10**-9)
 
-        if not self.isCrypto:
-            # Subtract 1 to ensure we are predicting for the candle before the target time.
-            # Subtract 17.5 * 60 to remove market closed hours (no candles)
-            candles_ahead: int = int((timedelta_in_min - 1 - 17.5*60) / self.interval_min)
+        # Normalize to same tz-aware timestamps where possible
+        # Ensure timestamps are timezone-aware in US/Eastern
+        last_ts = pd.Timestamp(last_candle_timestamp)
+        if last_ts.tzinfo is None:
+            last_ts = last_ts.tz_localize('US/Eastern')
         else:
-            # Subtract 1 to ensure we are predicting for the candle before the target time.
-            candles_ahead: int = int((timedelta_in_min - 1) / self.interval_min)
+            last_ts = last_ts.tz_convert('US/Eastern')
 
-        return candles_ahead
+        target_ts = pd.Timestamp(target_timestamp)
+        if target_ts.tzinfo is None:
+            target_ts = target_ts.tz_localize('US/Eastern')
+        else:
+            target_ts = target_ts.tz_convert('US/Eastern')
+
+        # If daily interval, count business days between last candle date and target date
+        if self.interval.endswith('d'):
+            # Use pandas CustomBusinessDay with US Federal holidays
+            from pandas.tseries.holiday import USFederalHolidayCalendar
+            from pandas.tseries.offsets import CustomBusinessDay
+
+            cbd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+
+            # Start from the day after the last candle's date up to and including target date
+            start_date = last_ts.date()
+            end_date = target_ts.date()
+
+            if end_date <= start_date:
+                return 0
+
+            # Build date range using business day frequency and count
+            bday_range = pd.date_range(start=start_date + pd.Timedelta(days=1), end=end_date, freq=cbd)
+            # number of business days ahead
+            business_days_ahead = len(bday_range)
+
+            # Subtract 1 to predict the candle before the target time (preserve original behavior)
+            candles_ahead = max(0, business_days_ahead - 1)
+            return int(candles_ahead)
+
+        # Otherwise (intraday), compute minutes difference safely
+        delta_seconds = (target_ts - last_ts).total_seconds()
+        delta_minutes = delta_seconds / 60.0
+
+        # Subtract 1 to ensure predicting for candle before target
+        if not self.isCrypto:
+            # Approximate non-trading hours removal: subtract 17.5 hours (market closed time)
+            # This remains an approximation for intraday intervals; can be improved later.
+            closed_minutes = 17.5 * 60
+            candles_ahead = int((delta_minutes - 1 - closed_minutes) / self.interval_min)
+        else:
+            candles_ahead = int((delta_minutes - 1) / self.interval_min)
+
+        return max(0, int(candles_ahead))
 
     def _calculate_technical_indicators(self) -> pd.DataFrame:
         """Calculate various technical indicators"""
