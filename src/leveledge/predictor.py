@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier as RFC
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
 from zoneinfo import ZoneInfo
 
@@ -328,6 +328,7 @@ class Predictor:
         splits = self._walk_forward_split()
         auc_scores = []
         ps_scores = []
+        pr_scores = []
         
         # Add diagnostic info
         # print(f"\nOverall class distribution:")
@@ -380,15 +381,18 @@ class Predictor:
             preds = model.predict_proba(X_test)[:, 1]
             preds_binary = (preds >= .6).astype(int)
             auc = roc_auc_score(y_test, preds)
+            pr = average_precision_score(y_test, preds)
             ps = precision_score(y_test, preds_binary)
             auc_scores.append(auc)
             ps_scores.append(ps)
+            pr_scores.append(pr)
             # print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
 
         # Model metrics are the mean of the scores for all models
         avg_auc = sum(auc_scores) / len(auc_scores) if len(auc_scores) > 0 else 0
         avg_ps = sum(ps_scores) / len(ps_scores) if len(ps_scores) > 0 else 0
-        self.xgb_expected_model_metrics = (avg_auc, avg_ps)
+        avg_pr = sum(pr_scores) / len(pr_scores) if len(pr_scores) > 0 else 0
+        self.xgb_expected_model_metrics = (avg_auc, avg_ps, avg_pr)
 
         # Train model on all data
         X_train = self.data[self.available_features]
@@ -422,7 +426,10 @@ class Predictor:
         # print(f"{'='*50}")
 
     def print_xgb_model_metrics(self) -> None:
-        print(f"Expected Model Metrics: AUC: {self.xgb_expected_model_metrics[0]:.4f}, PS: {self.xgb_expected_model_metrics[1]:.4f}")
+        print(f"Expected Model Metrics: AUC: {self.xgb_expected_model_metrics[0]:.4f}, PS: {self.xgb_expected_model_metrics[1]:.4f}, PR: {self.xgb_expected_model_metrics[2]:.4f}")
+
+    def get_xgb_model_metrics(self) -> tuple[float, float, float]:
+        return self.xgb_expected_model_metrics
 
     def print_candles_ahead(self) -> None:
         print(f'Predicting for {self.candles_ahead} candles ahead')
