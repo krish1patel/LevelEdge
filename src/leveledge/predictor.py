@@ -99,14 +99,18 @@ class Predictor:
         target_timestamp: pd.Timestamp = pd.Timestamp(self.target_datetime)
 
         # Normalize to same tz-aware timestamps where possible
-        try:
-            last_ts = pd.Timestamp(last_candle_timestamp).tz_convert('US/Eastern')
-        except Exception:
-            last_ts = pd.Timestamp(last_candle_timestamp)
-        try:
-            target_ts = pd.Timestamp(target_timestamp).tz_convert('US/Eastern')
-        except Exception:
-            target_ts = pd.Timestamp(target_timestamp)
+        # Ensure timestamps are timezone-aware in US/Eastern
+        last_ts = pd.Timestamp(last_candle_timestamp)
+        if last_ts.tzinfo is None:
+            last_ts = last_ts.tz_localize('US/Eastern')
+        else:
+            last_ts = last_ts.tz_convert('US/Eastern')
+
+        target_ts = pd.Timestamp(target_timestamp)
+        if target_ts.tzinfo is None:
+            target_ts = target_ts.tz_localize('US/Eastern')
+        else:
+            target_ts = target_ts.tz_convert('US/Eastern')
 
         # If daily interval, count business days between last candle date and target date
         if self.interval.endswith('d'):
