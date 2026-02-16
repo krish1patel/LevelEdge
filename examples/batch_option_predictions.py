@@ -18,7 +18,7 @@ import sys
 
 # make sure package imports the local leveledge
 sys.path.insert(0, '.')
-from leveledge import Predictor
+from leveledge import Predictor, ensure_future_market_datetime
 
 
 def next_friday_date(tz_name='US/Eastern'):
@@ -53,7 +53,8 @@ def main():
     tickers = ["AAPL","MSFT","AMZN","NVDA","TSLA","GOOG","META","NFLX","JPM","SPY"]
 
     target_date = next_friday_date('US/Eastern')
-    tgt_dt = datetime.combine(target_date, time(16,0,0)).replace(tzinfo=ZoneInfo('US/Eastern'))
+    raw_dt = datetime.combine(target_date, time(16,0,0))
+    tgt_dt = ensure_future_market_datetime(raw_dt, tz_name='US/Eastern')
 
     results = []
 

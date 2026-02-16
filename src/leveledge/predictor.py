@@ -10,6 +10,8 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
 from zoneinfo import ZoneInfo
 
+from .utils import ensure_future_market_datetime
+
 ALLOWED_INTERVALS: list[str] = ["1m", "2m", "5m", "10m", "15m", "30m", "1h", "90m", "1d"]
 
 
@@ -39,14 +41,12 @@ class Predictor:
         self.price: float = price
         self.ticker_str: str = ticker_str.upper().strip()
         self.ticker: yf.ticker.Ticker = yf.ticker.Ticker(ticker_str)
-        self.target_datetime: datetime = target_datetime
+        self.target_datetime: datetime = ensure_future_market_datetime(target_datetime)
         self.interval: str = interval
         self.isCrypto: bool = '-' in self.ticker_str
 
         if self.interval not in ALLOWED_INTERVALS:
             raise ValueError("Invalid interval input.")
-        if self.target_datetime < datetime.now(tz=ZoneInfo('EST')):
-            raise ValueError("Target Datetime Must be in the future.")
 
         if 'm' in self.interval:
             self.interval_min: int = int(self.interval[:-1])
