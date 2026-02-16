@@ -1,5 +1,4 @@
-from leveledge import Predictor
-from zoneinfo import ZoneInfo
+from leveledge import Predictor, ensure_future_market_datetime
 from datetime import datetime
 
 ticker = input('Enter the ticker you wish to predictor for(e.g. SPY, ETH-USD): ').strip()
@@ -8,7 +7,8 @@ intvl = input('Enter the interval you would like to analyze (e.g. 5m, 15m, 1h, 9
 price_level = float(input('Enter the price level you wish to predict for: $'))
 
 format_string = "%Y-%m-%d %H:%M:%S"
-tgt_datetime = datetime.strptime(tgt_datetime_str, format_string).replace(tzinfo=ZoneInfo('EST'))
+raw_datetime = datetime.strptime(tgt_datetime_str, format_string)
+tgt_datetime = ensure_future_market_datetime(raw_datetime, tz_name="US/Eastern")
 predictor = Predictor(ticker, tgt_datetime, intvl, price_level)
 
 predictor.train_xgb()
