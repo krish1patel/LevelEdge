@@ -32,6 +32,12 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
 
+## Example scripts
+
+- `python examples/cli_predictor.py` – Prompts for ticker, target time, interval, and level, then trains and predicts without leaving the terminal.
+- `python examples/streamlit_predictor.py` – Launches a Streamlit dashboard so you can tweak the same inputs in a GUI.
+- `python examples/batch_option_predictions.py` – Runs predictions for a batch of tickers/levels defined in the script and prints a summary table (handy for comparing setups).
+
 # Limitations/Room for improvement
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
