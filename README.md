@@ -36,3 +36,9 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
 - xgboost model could probably use some tuning
+
+## Examples
+
+- `python examples/cli_predictor.py` – Prompts for ticker, target time, interval, and level, then trains and predicts without leaving the terminal. The datetime prompt accepts ISO 8601 strings, common human-readable formats, and optional timezone offsets; all inputs are normalized to US/Eastern before running the model.
+- `python examples/streamlit_predictor.py` – Launches a Streamlit dashboard so you can tweak the same inputs in a GUI.
+- `python examples/batch_option_predictions.py` – Runs predictions for a batch of tickers/levels defined in the script and prints a summary table (handy for comparing setups).
