@@ -126,7 +126,7 @@ class Predictor:
         current_datetime = self.data.index[-1]
         delta: timedelta = self.target_datetime - current_datetime - timedelta(minutes=1)
 
-        return int(delta.total_seconds / 60 / self.interval_min)
+        return int(delta.total_seconds() / 60 / self.interval_min)
         
     @deprecated('Logical Errors')
     def _calculate_candles_ahead(self) -> int:
