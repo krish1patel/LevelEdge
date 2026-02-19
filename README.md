@@ -32,7 +32,24 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
 
+# Example scripts
+
+- `python examples/cli_predictor.py` – Prompts for ticker, target time, interval, and level, then trains and predicts without leaving the terminal.
+- `python examples/streamlit_predictor.py` – Launches a Streamlit dashboard so you can tweak the same inputs in a GUI.
+- `python examples/batch_option_predictions.py` – Runs predictions for a batch of tickers/levels defined in the script and prints a summary table (handy for comparing setups).
+
 # Limitations/Room for improvement
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
 - xgboost model could probably use some tuning
+
+# CLI predictor example (timezone aware)
+
+The `examples/cli_predictor.py` helper keeps the experience simple while protecting you from timezone bugs.
+
+- Run it from the repo root with `python examples/cli_predictor.py`.
+- Enter the ticker, target datetime (`YYYY-MM-DD HH:MM:SS`), interval (e.g. `5m`, `1h`, `1d`), and support level.
+- The script automatically attaches `ZoneInfo('US/Eastern')` to whatever datetime you type, so you can paste naive local times and still work with the timezone-aware `Predictor` class.
+- Because predictions use future candles, only enter datetimes strictly ahead of the current Eastern-time candle; past datetimes will raise a validation error inside `Predictor`.
+
+After the run you will see the training metrics that `train_xgb()` produced plus the probability returned by `predict_xgb()`. Use this prompt-driven CLI when you want a quick manual check without wiring up the streamlit dashboard.
