@@ -10,9 +10,7 @@ from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
-from zoneinfo import ZoneInfo
-
-ALLOWED_INTERVALS: list[str] = ["1m", "2m", "5m", "10m", "15m", "30m", "1h", "90m", "1d"]
+from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
 
 
 class Predictor:
@@ -47,7 +45,7 @@ class Predictor:
 
         if self.interval not in ALLOWED_INTERVALS:
             raise ValueError("Invalid interval input.")
-        if self.target_datetime < datetime.now(tz=ZoneInfo('EST')):
+        if self.target_datetime < datetime.now(tz=US_EASTERN):
             raise ValueError("Target Datetime Must be in the future.")
 
         if 'm' in self.interval:
@@ -145,15 +143,15 @@ class Predictor:
         # Ensure timestamps are timezone-aware in US/Eastern
         last_ts = pd.Timestamp(last_candle_timestamp)
         if last_ts.tzinfo is None:
-            last_ts = last_ts.tz_localize('US/Eastern')
+            last_ts = last_ts.tz_localize(US_EASTERN)
         else:
-            last_ts = last_ts.tz_convert('US/Eastern')
+            last_ts = last_ts.tz_convert(US_EASTERN)
 
         target_ts = pd.Timestamp(target_timestamp)
         if target_ts.tzinfo is None:
-            target_ts = target_ts.tz_localize('US/Eastern')
+            target_ts = target_ts.tz_localize(US_EASTERN)
         else:
-            target_ts = target_ts.tz_convert('US/Eastern')
+            target_ts = target_ts.tz_convert(US_EASTERN)
 
         # If daily interval, count business days between last candle date and target date
         if self.interval.endswith('d'):
