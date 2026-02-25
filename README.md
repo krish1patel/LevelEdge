@@ -54,6 +54,15 @@ The scripts under `scripts/` give you a quick way to validate the CandleSight en
 - `python scripts/candlesight_intraday_backtest_fast.py` limits the dataset further, runs through `AAPL`, `MSFT`, and `GOOGL`, and prints a compact summary per interval for the fastest intraday glance.
 - `python scripts/candlesight_strategy_backtest.py` treats CandleSight like a signal-based strategy (win thresholds, returns, ROC, probability accuracy) across `AAPL`, `MSFT`, `NVDA`, `AMZN`, and `GOOGL`, giving you a full strategy-style performance snapshot.
 
+## Options-strategy helpers
+
+Several `scripts/` helpers reuse the `CandleSightPredictor` outputs to simulate directional option trades and spot promising probability thresholds before wiring them into an actual options flow.
+
+- `python scripts/options_strategy_backtest.py` trains the predictor on `AAPL`, `MSFT`, `NVDA`, `AMZN`, and `META`, averages the tabular/temporal probability streams, and then logs win rate, ROC/accuracy, calls/puts triggered, and directional/options P&L whenever the combined probability breaks the 0.6/0.4 thresholds.
+- `python scripts/options_strategy_explore.py` sweeps confidence thresholds (`0.55`, `0.6`, `0.65`) against premiums (`0.2`, `0.25`, `0.3`) per ticker and prints each configuration plus the best total-return combo so you can compare how tight thresholds or richer premiums affect directional performance.
+- `python scripts/options_strategy_explore_fast.py` is the quick iteration sibling (caps windows, samples `AAPL`, `MSFT`, `NVDA`, and keeps fewer historical rows) so you can rapidly test threshold/premium triples and see the top-performing pair without waiting for the full dataset.
+- `python scripts/options_strategy_single.py` runs a single threshold/premium (defaults: 0.6 probability, $0.25 premium) per ticker (`AAPL`, `MSFT`, `NVDA`, `META`), printing trade counts, win rates, average return, ROC, and directional payoffs for that specific setup.
+
 ## CLI helper details
 
 - The CLI prints the full list of intervals that `Predictor` accepts (`1m`, `2m`, `5m`, `10m`, `15m`, `30m`, `1h`, `90m`, `1d`) and keeps prompting until you pick one of them.
