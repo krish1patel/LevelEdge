@@ -32,6 +32,29 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
 
+# Example usage
+
+```python
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from leveledge import Predictor
+
+prediction_time = datetime(2026, 3, 2, 15, 30, tzinfo=ZoneInfo("US/Eastern"))
+predictor = Predictor(
+    ticker_str="AAPL",
+    target_datetime=prediction_time,
+    interval="15m",
+    price=175.0,
+)
+
+predictor.train_xgb()
+probability = predictor.predict_xgb()
+print(f"Probability price is above 175.0 at {prediction_time}: {probability:.2%}")
+```
+
+> Tip: `target_datetime` must be timezone aware and in the future, or the constructor will raise a `ValueError`. Match the timezone to the market (e.g., `US/Eastern` for NYSE).
+
 # Limitations/Room for improvement
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
