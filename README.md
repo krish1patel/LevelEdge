@@ -32,6 +32,12 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
 
+## Example scripts
+
+- `python examples/cli_predictor.py` – a terminal helper that prompts for ticker, target datetime, interval, and price level, enforces the allowed interval set from `leveledge.constants`, applies the required US/Eastern timezone, trains the XGBoost model, and prints the prediction plus the evaluation metrics and candles-ahead information.
+- `streamlit run examples/streamlit_predictor.py` – launches a Streamlit dashboard where you can adjust the inputs with richer widgets and see the probability, model metrics, and candles-ahead output inside a modal dialog once the prediction finishes.
+- `python examples/batch_option_predictions.py` – iterates a handful of sample tickers, fetches the next Friday option chains, picks call/put strikes below a $0.30 ask, runs the predictor for each strike, and writes the summarized results to `examples/option_predictions.csv` (also printed to the console as a markdown table).
+
 # Limitations/Room for improvement
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
