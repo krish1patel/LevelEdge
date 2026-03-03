@@ -1,1 +1,16 @@
 venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+pip-wheel-metadata/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+env/
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
