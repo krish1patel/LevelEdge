@@ -1,8 +1,10 @@
 import streamlit as st
 from leveledge import Predictor
+from leveledge.predictor import ALLOWED_INTERVALS
 from zoneinfo import ZoneInfo
 from datetime import datetime
 
+TIMEZONE = ZoneInfo('US/Eastern')
 
 @st.dialog("Prediction Result", width="medium")
 def show_prediction_dialog(ticker, prediction, price_level, tgt_datetime, metrics, candles_ahead = None):
@@ -20,9 +22,17 @@ st.title('LevelEdge — Predictor')
 
 with st.form('predict_form'):
     ticker = st.text_input('Ticker (e.g. SPY, ETH-USD)', value='SPY')
-    tgt_datetime = st.datetime_input('Target datetime (EST)').replace(tzinfo=ZoneInfo('EST'))
+    raw_tgt_datetime = st.datetime_input('Target datetime (US/Eastern)')
+    if raw_tgt_datetime.tzinfo is None:
+        tgt_datetime = raw_tgt_datetime.replace(tzinfo=TIMEZONE)
+    else:
+        tgt_datetime = raw_tgt_datetime.astimezone(TIMEZONE)
     #tgt_datetime_str = st.text_input('Target datetime (EST, YYYY-MM-DD HH:MM:SS)', value=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    intvl = st.selectbox('Interval', options=['5m','15m','30m','1h','90m', '1d'], index=1)
+    default_interval = '15m'
+    if default_interval not in ALLOWED_INTERVALS:
+        default_interval = ALLOWED_INTERVALS[0]
+    interval_index = ALLOWED_INTERVALS.index(default_interval)
+    intvl = st.selectbox('Interval', options=ALLOWED_INTERVALS, index=interval_index)
     price_level = st.number_input('Price level ($)', value=0.0, format='%.2f')
     submit = st.form_submit_button('Run prediction')
 
