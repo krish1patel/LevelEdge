@@ -32,6 +32,22 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
 
+## Allowed intervals
+
+Both the CLI (`examples/cli_predictor.py`) and the Streamlit app (`examples/streamlit_predictor.py`) source their interval choices from `leveledge.constants.ALLOWED_INTERVALS`, and the core `Predictor` class in `leveledge.predictor` enforces the same set before downloading data from Yahoo Finance. The Streamlit dashboard additionally defaults to `"15m"` (falling back to the first entry if that constant ever changes), and the CLI raises a clear error if you type an unsupported value.
+
+The current set of allowed intervals is:
+
+- `1m`
+- `2m`
+- `5m`
+- `10m`
+- `15m`
+- `30m`
+- `1h`
+- `90m`
+- `1d`
+
 # Limitations/Room for improvement
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
