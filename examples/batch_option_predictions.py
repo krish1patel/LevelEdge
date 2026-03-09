@@ -10,8 +10,7 @@ Notes:
 - Uses yfinance to fetch option chains.
 - Writes examples/option_predictions.csv
 """
-from datetime import datetime, time, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, time, timedelta, timezone
 import yfinance as yf
 import pandas as pd
 import sys
@@ -19,10 +18,11 @@ import sys
 # make sure package imports the local leveledge
 sys.path.insert(0, '.')
 from leveledge import Predictor
+from leveledge.constants import US_EASTERN
 
 
-def next_friday_date(tz_name='US/Eastern'):
-    now = datetime.now(tz=ZoneInfo('UTC')).astimezone(ZoneInfo(tz_name))
+def next_friday_date(tz=US_EASTERN):
+    now = datetime.now(tz=timezone.utc).astimezone(tz)
     days_ahead = (4 - now.weekday()) % 7
     if days_ahead == 0:
         days_ahead = 7
@@ -52,8 +52,8 @@ def find_strikes_for_price(chain_calls, chain_puts, price_limit=0.30):
 def main():
     tickers = ["AAPL","MSFT","AMZN","NVDA","TSLA","GOOG","META","NFLX","JPM","SPY"]
 
-    target_date = next_friday_date('US/Eastern')
-    tgt_dt = datetime.combine(target_date, time(16,0,0)).replace(tzinfo=ZoneInfo('US/Eastern'))
+    target_date = next_friday_date()
+    tgt_dt = datetime.combine(target_date, time(16, 0, 0)).replace(tzinfo=US_EASTERN)
 
     results = []
 
@@ -62,7 +62,7 @@ def main():
             ticker = yf.Ticker(tk)
             exps = ticker.options
             if not exps:
-                results.append({'ticker':tk,'error':'no options data'})
+                results.append({'ticker': tk, 'error': 'no options data'})
                 continue
             # prefer expiry equal to target date, else nearest
             exp_str = None
@@ -77,23 +77,23 @@ def main():
             call_strike, call_ask, put_strike, put_ask = find_strikes_for_price(chain.calls, chain.puts, price_limit=0.30)
 
             if call_strike is None:
-                results.append({'ticker':tk,'type':'call','strike':None,'ask':None,'prediction':None,'note':'no call <= $0.30'})
+                results.append({'ticker': tk, 'type': 'call', 'strike': None, 'ask': None, 'prediction': None, 'note': 'no call <= $0.30'})
             else:
                 predictor = Predictor(tk, tgt_dt, '1h', float(call_strike))
                 predictor.train_xgb()
                 pred = predictor.predict_xgb()
-                results.append({'ticker':tk,'type':'call','strike':call_strike,'ask':call_ask,'prediction':pred})
+                results.append({'ticker': tk, 'type': 'call', 'strike': call_strike, 'ask': call_ask, 'prediction': pred})
 
             if put_strike is None:
-                results.append({'ticker':tk,'type':'put','strike':None,'ask':None,'prediction':None,'note':'no put <= $0.30'})
+                results.append({'ticker': tk, 'type': 'put', 'strike': None, 'ask': None, 'prediction': None, 'note': 'no put <= $0.30'})
             else:
                 predictor = Predictor(tk, tgt_dt, '1h', float(put_strike))
                 predictor.train_xgb()
                 pred = predictor.predict_xgb()
-                results.append({'ticker':tk,'type':'put','strike':put_strike,'ask':put_ask,'prediction':pred})
+                results.append({'ticker': tk, 'type': 'put', 'strike': put_strike, 'ask': put_ask, 'prediction': pred})
 
         except Exception as e:
-            results.append({'ticker':tk,'error':str(e)})
+            results.append({'ticker': tk, 'error': str(e)})
 
     df = pd.DataFrame(results)
     out_path = 'examples/option_predictions.csv'
