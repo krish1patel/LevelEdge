@@ -413,7 +413,8 @@ class Predictor:
 
 
     def train_xgb(self) -> None:
-        splits = self._walk_forward_split(400, 80, 100, 0)
+        length = len(self.data)
+        splits = self._walk_forward_split(int(length/4), 100, int(length/4), 0)
         auc_scores = []
         ps_scores = []
         pr_scores = []
