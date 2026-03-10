@@ -8,16 +8,33 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from leveledge import Predictor
 from leveledge.predictor import ALLOWED_INTERVALS
 
-try:
-    TIMEZONE = ZoneInfo("US/Eastern")
-except ZoneInfoNotFoundError:
-    TIMEZONE = timezone(timedelta(hours=-5))
+DEFAULT_TIMEZONE = "US/Eastern"
+TZ_FALLBACK_OFFSETS: dict[str, int] = {
+    "US/Eastern": -5,
+    "US/Central": -6,
+    "US/Mountain": -7,
+    "US/Pacific": -8,
+    "UTC": 0,
+}
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 ALLOWED_INTERVALS_STR = ", ".join(ALLOWED_INTERVALS)
 
 
-def parse_cli_args() -> argparse.Namespace:
-    parser: ArgumentParser = argparse.ArgumentParser(
+def resolve_timezone(name: str) -> timezone:
+    try:
+        return ZoneInfo(name)
+    except ZoneInfoNotFoundError as exc:
+        if name in TZ_FALLBACK_OFFSETS:
+            return timezone(timedelta(hours=TZ_FALLBACK_OFFSETS[name]))
+        raise ArgumentTypeError(
+            "Timezone '{0}' is not available. Install tzdata or choose one of: {1}".format(
+                name, ", ".join(sorted(TZ_FALLBACK_OFFSETS))
+            )
+        ) from exc
+
+
+def build_parser() -> ArgumentParser:
+    parser = argparse.ArgumentParser(
         description="Prompt for inputs or accept CLI args before training the LevelEdge predictor."
     )
     parser.add_argument("--ticker", "-t", type=str, help="Ticker symbol to score (e.g. SPY)")
@@ -34,17 +51,27 @@ def parse_cli_args() -> argparse.Namespace:
         help="yfinance-compatible interval (one of the allowed intervals)",
     )
     parser.add_argument("--price", "-p", type=float, help="Price level to score against (numbers only)")
-    return parser.parse_args()
+    parser.add_argument(
+        "--timezone",
+        "-z",
+        type=str,
+        default=DEFAULT_TIMEZONE,
+        help=f"Timezone name to interpret the target datetime (default: {DEFAULT_TIMEZONE})",
+    )
+    return parser
 
 
-def parse_datetime_arg(value: str) -> datetime:
+def parse_cli_args() -> tuple[argparse.Namespace, ArgumentParser]:
+    parser = build_parser()
+    return parser.parse_args(), parser
+
+
+def parse_datetime_arg(value: str, tzinfo: timezone) -> datetime:
     try:
         naive = datetime.strptime(value, DATETIME_FORMAT)
     except ValueError as exc:
-        raise ArgumentTypeError(
-            f"Datetime must be in the format {DATETIME_FORMAT}: {exc}"
-        ) from exc
-    return naive.replace(tzinfo=TIMEZONE)
+        raise ArgumentTypeError(f"Datetime must be in the format {DATETIME_FORMAT}: {exc}") from exc
+    return naive.replace(tzinfo=tzinfo)
 
 
 def prompt_interval() -> str:
@@ -56,8 +83,8 @@ def prompt_interval() -> str:
         print(f"Invalid interval. Please choose one of: {ALLOWED_INTERVALS_STR}")
 
 
-def prompt_datetime() -> tuple[datetime, str]:
-    prompt = f"Enter the datetime you wish to predict for in EST ({DATETIME_FORMAT}): "
+def prompt_datetime(tzinfo: timezone, tz_name: str) -> tuple[datetime, str]:
+    prompt = f"Enter the datetime you wish to predict for in {tz_name} ({DATETIME_FORMAT}): "
     while True:
         value = input(prompt).strip()
         try:
@@ -65,7 +92,7 @@ def prompt_datetime() -> tuple[datetime, str]:
         except ValueError:
             print("Datetime must be in the format YYYY-MM-DD HH:MM:SS. Try again.")
             continue
-        return naive.replace(tzinfo=TIMEZONE), value
+        return naive.replace(tzinfo=tzinfo), value
 
 
 def prompt_price_level() -> float:
@@ -84,10 +111,10 @@ def get_ticker(args: argparse.Namespace) -> str:
     return input("Enter the ticker you wish to predict for (e.g. SPY, ETH-USD): ").strip()
 
 
-def get_datetime(args: argparse.Namespace) -> tuple[datetime, str]:
+def get_datetime(args: argparse.Namespace, tzinfo: timezone, tz_name: str) -> tuple[datetime, str]:
     if args.datetime:
-        return parse_datetime_arg(args.datetime), args.datetime
-    return prompt_datetime()
+        return parse_datetime_arg(args.datetime, tzinfo), args.datetime
+    return prompt_datetime(tzinfo, tz_name)
 
 
 def get_interval(args: argparse.Namespace) -> str:
@@ -103,10 +130,15 @@ def get_price_level(args: argparse.Namespace) -> float:
 
 
 def main() -> None:
-    args = parse_cli_args()
+    args, parser = parse_cli_args()
+
+    try:
+        target_tz = resolve_timezone(args.timezone)
+    except ArgumentTypeError as exc:
+        parser.error(str(exc))
 
     ticker = get_ticker(args)
-    tgt_datetime, tgt_datetime_str = get_datetime(args)
+    tgt_datetime, tgt_datetime_str = get_datetime(args, target_tz, args.timezone)
     intvl = get_interval(args)
     price_level = get_price_level(args)
 
