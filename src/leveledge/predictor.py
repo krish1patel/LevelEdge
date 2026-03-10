@@ -1,5 +1,6 @@
 import math
-from warnings import deprecated
+import warnings
+from functools import wraps
 from sklearn.utils.extmath import weighted_mode
 import yfinance as yf
 import pandas as pd
@@ -11,6 +12,22 @@ from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
+
+
+def deprecated(reason: str):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.warn(
+                f"{func.__name__} is deprecated: {reason}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class Predictor:

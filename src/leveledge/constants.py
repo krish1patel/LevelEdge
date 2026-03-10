@@ -1,8 +1,12 @@
 """Shared constants used throughout the LevelEdge helpers."""
 
-from zoneinfo import ZoneInfo
+from datetime import timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-US_EASTERN = ZoneInfo("US/Eastern")
+try:
+    US_EASTERN = ZoneInfo("US/Eastern")
+except ZoneInfoNotFoundError:
+    US_EASTERN = timezone(timedelta(hours=-5))
 
 ALLOWED_INTERVALS: list[str] = [
     "1m",
