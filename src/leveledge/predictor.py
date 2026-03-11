@@ -1,16 +1,23 @@
 import math
+import json
+import os
 from warnings import deprecated
 from sklearn.utils.extmath import weighted_mode
 import yfinance as yf
 import pandas as pd
 import pandas_market_calendars as mcal
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
+
+
+PREDICTION_LOG_PATH = os.environ.get(
+    "LEVELEDGE_PREDICTION_LOG_PATH", "prediction_logs.jsonl"
+)
 
 
 class Predictor:
@@ -62,6 +69,58 @@ class Predictor:
         self.features: pd.DataFrame = self.prepare_features()
 
         self._create_target_variable()
+
+    def _log_prediction(self, prediction: float) -> None:
+        """
+        Append a single prediction event to the prediction log file.
+
+        The log is newline-delimited JSON (JSONL) so it can be easily
+        loaded into pandas or any other analysis tooling.
+        """
+
+        try:
+            now_utc = datetime.now(timezone.utc)
+
+            record = {
+                "logged_at_utc": now_utc.isoformat(),
+                "ticker": self.ticker_str,
+                "is_crypto": self.isCrypto,
+                "interval": self.interval,
+                "interval_minutes": getattr(self, "interval_min", None),
+                "target_datetime": self.target_datetime.isoformat()
+                if isinstance(self.target_datetime, datetime)
+                else str(self.target_datetime),
+                "price_level": self.price,
+                "current_price": getattr(self, "current_price", None),
+                "target_price_ratio": getattr(self, "target_price_ratio", None),
+                "candles_ahead": getattr(self, "candles_ahead", None),
+                "prediction": float(prediction) if prediction is not None else None,
+                "model": {
+                    "type": "xgboost_classifier",
+                    "expected_metrics": {
+                        "auc": self.xgb_expected_model_metrics[0]
+                        if hasattr(self, "xgb_expected_model_metrics")
+                        and self.xgb_expected_model_metrics
+                        else None,
+                        "ps": self.xgb_expected_model_metrics[1]
+                        if hasattr(self, "xgb_expected_model_metrics")
+                        and self.xgb_expected_model_metrics
+                        else None,
+                        "pr": self.xgb_expected_model_metrics[2]
+                        if hasattr(self, "xgb_expected_model_metrics")
+                        and self.xgb_expected_model_metrics
+                        else None,
+                    },
+                },
+            }
+
+            os.makedirs(os.path.dirname(PREDICTION_LOG_PATH) or ".", exist_ok=True)
+
+            with open(PREDICTION_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
+        except Exception:
+            # Logging must never break prediction flow.
+            pass
 
     def _create_target_variable(self) -> None:
         """
@@ -539,7 +598,13 @@ class Predictor:
         """
 
 
-        prediction = self.xgb_model.predict_proba(self.data_withna[self.available_features])[-1][1]
+        prediction = self.xgb_model.predict_proba(
+            self.data_withna[self.available_features]
+        )[-1][1]
+
+        # Persist this prediction event for later analysis.
+        self._log_prediction(prediction)
+
         return prediction
 
         # best_model = self.xgb_models[0][0]
