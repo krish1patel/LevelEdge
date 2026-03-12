@@ -16,7 +16,7 @@ Jinja2==3.1.6
 joblib==1.5.3
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
-git+https://github.com/krish1patel/LevelEdge.git@26b4f27e225ca3cf85fd6660898d0d3800732299#egg=leveledge
+git+https://github.com/krish1patel/LevelEdge.git@main#egg=leveledge
 MarkupSafe==3.0.3
 multitasking==0.0.12
 narwhals==2.16.0
