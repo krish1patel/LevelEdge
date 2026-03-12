@@ -16,13 +16,14 @@ Jinja2==3.1.6
 joblib==1.5.3
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
--e git+https://github.com/krish1patel/LevelEdge.git@26b4f27e225ca3cf85fd6660898d0d3800732299#egg=leveledge
+git+https://github.com/krish1patel/LevelEdge.git@26b4f27e225ca3cf85fd6660898d0d3800732299#egg=leveledge
 MarkupSafe==3.0.3
 multitasking==0.0.12
 narwhals==2.16.0
 numpy==2.4.2
 packaging==26.0
 pandas==2.3.3
+pandas_market_calendars==5.3.0
 peewee==3.19.0
 pillow==12.1.1
 platformdirs==4.5.1
