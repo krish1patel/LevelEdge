@@ -4,3 +4,7 @@ prediction_logs_postprocessed.csv
 
 charts/
 charts_yesterday/
+
+.DS_Store
+
+src/leveledge/__pycache__/
