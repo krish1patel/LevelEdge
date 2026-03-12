@@ -1,3 +1,13 @@
+---
+title: LevelEdge
+emoji: 📈
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
+
 # What is LevelEdge
 
 A simple stock prediction system that takes in a ticker, price level, interval, and a datetime to predict for, returning the probability of the price being above the inputted level.
@@ -31,8 +41,3 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
   - Trains several models using xgboost
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
-
-# Limitations/Room for improvement
-
-- Doesn't work well and often fails with prices well above or below the current price of a stock
-- xgboost model could probably use some tuning
