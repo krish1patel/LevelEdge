@@ -98,7 +98,7 @@ use_interval_preset = st.checkbox(
 with st.form("batch_predict_form"):
     ticker = st.text_input("Ticker (e.g. SPY, ETH-USD)", value="SPY")
     st.set_page_config(page_title=f'Predicting {ticker.upper()}')
-    raw_tgt_datetime = st.datetime_input("Target datetime (US/Eastern)", value=datetime.now(US_EASTERN))
+    raw_tgt_datetime = st.datetime_input("Target datetime (US/Eastern)")
     if raw_tgt_datetime.tzinfo is None:
         tgt_datetime = raw_tgt_datetime.replace(tzinfo=US_EASTERN)
     else:
