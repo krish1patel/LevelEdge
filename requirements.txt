@@ -52,3 +52,5 @@ urllib3==2.6.3
 websockets==16.0
 xgboost==3.2.0
 yfinance==1.1.0
+supabase
+python-dotenv

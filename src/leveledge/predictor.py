@@ -13,7 +13,8 @@ from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
-
+import supabase
+from dotenv import load_dotenv
 
 PREDICTION_LOG_PATH = os.environ.get(
     "LEVELEDGE_PREDICTION_LOG_PATH", "prediction_logs.jsonl"
@@ -71,14 +72,17 @@ class Predictor:
         self._create_target_variable()
 
     def _log_prediction(self, prediction: float) -> None:
-        """
-        Append a single prediction event to the prediction log file.
-
-        The log is newline-delimited JSON (JSONL) so it can be easily
-        loaded into pandas or any other analysis tooling.
-        """
-
         try:
+            from dotenv import load_dotenv
+            from supabase import create_client
+            
+            load_dotenv()
+            
+            supabase = create_client(
+                os.environ["SUPABASE_URL"],
+                os.environ["SUPABASE_KEY"]
+            )
+
             now_utc = datetime.now(timezone.utc)
 
             record = {
@@ -88,36 +92,24 @@ class Predictor:
                 "interval": self.interval,
                 "interval_minutes": getattr(self, "interval_min", None),
                 "target_datetime": self.target_datetime.isoformat()
-                if isinstance(self.target_datetime, datetime)
-                else str(self.target_datetime),
+                    if isinstance(self.target_datetime, datetime)
+                    else str(self.target_datetime),
                 "price_level": self.price,
                 "current_price": getattr(self, "current_price", None),
                 "target_price_ratio": getattr(self, "target_price_ratio", None),
                 "candles_ahead": getattr(self, "candles_ahead", None),
                 "prediction": float(prediction) if prediction is not None else None,
-                "model": {
-                    "type": "xgboost_classifier",
-                    "expected_metrics": {
-                        "auc": self.xgb_expected_model_metrics[0]
-                        if hasattr(self, "xgb_expected_model_metrics")
-                        and self.xgb_expected_model_metrics
-                        else None,
-                        "ps": self.xgb_expected_model_metrics[1]
-                        if hasattr(self, "xgb_expected_model_metrics")
-                        and self.xgb_expected_model_metrics
-                        else None,
-                        "pr": self.xgb_expected_model_metrics[2]
-                        if hasattr(self, "xgb_expected_model_metrics")
-                        and self.xgb_expected_model_metrics
-                        else None,
-                    },
-                },
+                "model_type": "xgboost_classifier",
+                "model_auc": self.xgb_expected_model_metrics[0]
+                    if hasattr(self, "xgb_expected_model_metrics") and self.xgb_expected_model_metrics else None,
+                "model_ps": self.xgb_expected_model_metrics[1]
+                    if hasattr(self, "xgb_expected_model_metrics") and self.xgb_expected_model_metrics else None,
+                "model_pr": self.xgb_expected_model_metrics[2]
+                    if hasattr(self, "xgb_expected_model_metrics") and self.xgb_expected_model_metrics else None,
             }
 
-            os.makedirs(os.path.dirname(PREDICTION_LOG_PATH) or ".", exist_ok=True)
+            supabase.table("logs").insert(record).execute()
 
-            with open(PREDICTION_LOG_PATH, "a", encoding="utf-8") as f:
-                f.write(json.dumps(record) + "\n")
         except Exception:
             # Logging must never break prediction flow.
             pass

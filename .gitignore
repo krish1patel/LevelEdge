@@ -1,3 +1,5 @@
+.env
+
 venv/
 prediction_logs.jsonl
 prediction_logs_postprocessed.csv
