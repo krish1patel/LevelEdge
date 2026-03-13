@@ -50,6 +50,7 @@ class Predictor:
         self.target_datetime: datetime = target_datetime
         self.interval: str = interval
         self.isCrypto: bool = '-' in self.ticker_str
+        self.hasPrePost: bool = self.ticker.get_info()['hasPrePostMarketData'] # False for cryptos
 
         if self.interval not in ALLOWED_INTERVALS:
             raise ValueError("Invalid interval input.")
@@ -63,7 +64,7 @@ class Predictor:
         elif 'd' in self.interval:
             self.interval_min: int = 60 * 24 * int(self.interval[:-1])
 
-        self.data: pd.DataFrame = self.ticker.history(period='max', interval=self.interval)
+        self.data: pd.DataFrame = self.ticker.history(period='max', interval=self.interval, prepost=self.hasPrePost)
         self.current_price: float = self.data['Close'].iloc[-1]
         self.target_price_ratio: float = self.price / self.current_price
         self.candles_ahead: int = self._calculate_candles_ahead_crypto() if self.isCrypto else self._calculate_candles_ahead_stocks()
@@ -146,6 +147,8 @@ class Predictor:
         current_datetime = self.data.index[-1]
         delta: timedelta = self.target_datetime - current_datetime
 
+        non_market_hours_per_day = 8 if self.hasPrePost else 17.5
+
         market_days: int = 0
         non_market_days: int = 0
 
@@ -161,7 +164,7 @@ class Predictor:
         if self.interval_min == 1440: # interval is 1d
             return market_days
         
-        hours_to_subtract: float = market_days*17.5 + non_market_days*24
+        hours_to_subtract: float = market_days*non_market_hours_per_day + non_market_days*24
 
         market_hours: float = (delta - timedelta(hours=hours_to_subtract, minutes=1)).total_seconds() / 60 / 60
 
