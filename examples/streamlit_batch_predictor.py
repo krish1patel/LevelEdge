@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-
+from datetime import datetime
 from leveledge import Predictor
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
 
@@ -98,7 +98,7 @@ use_interval_preset = st.checkbox(
 with st.form("batch_predict_form"):
     ticker = st.text_input("Ticker (e.g. SPY, ETH-USD)", value="SPY")
     st.set_page_config(page_title=f'Predicting {ticker.upper()}')
-    raw_tgt_datetime = st.datetime_input("Target datetime (US/Eastern)")
+    raw_tgt_datetime = st.datetime_input("Target datetime (US/Eastern)", value=datetime.now(US_EASTERN))
     if raw_tgt_datetime.tzinfo is None:
         tgt_datetime = raw_tgt_datetime.replace(tzinfo=US_EASTERN)
     else:
