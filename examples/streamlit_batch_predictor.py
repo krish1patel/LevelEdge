@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import time
 from datetime import datetime
 from leveledge import Predictor
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
@@ -41,34 +40,6 @@ def show_batch_prediction_dialog(
     if not all_results:
         st.warning("No results to display.")
         return
-
-    auto_key = "leveledge_auto_rerun_enabled"
-    if auto_key not in st.session_state:
-        st.session_state[auto_key] = True
-
-    force_key = "leveledge_force_rerun"
-    if force_key not in st.session_state:
-        st.session_state[force_key] = False
-
-    last_run_key = "leveledge_last_run_ts"
-    if last_run_key not in st.session_state:
-        st.session_state[last_run_key] = time.time()
-
-    st.checkbox("Auto rerun every 30s", key=auto_key)
-
-    col_l, col_r = st.columns([1, 1])
-    with col_l:
-        if st.button("Rerun now", use_container_width=True):
-            st.session_state[force_key] = True
-            st.rerun()
-    with col_r:
-        if st.button("Close", use_container_width=True):
-            st.session_state["leveledge_show_dialog"] = False
-            st.rerun()
-
-    elapsed = time.time() - float(st.session_state[last_run_key])
-    remaining = max(0, int(30 - elapsed))
-    st.caption(f"Next auto rerun in **{remaining}s**" if st.session_state[auto_key] else "")
 
     if current_price is not None:
         st.markdown(
@@ -203,9 +174,20 @@ with st.form("batch_predict_form"):
     submit = st.form_submit_button("Run batch prediction")
 
 if submit:
+    validation_failed = False
+
+    # Prevent running with an invalid / past target datetime so we never
+    # open a dialog that can only error.
+    if tgt_datetime < datetime.now(tz=US_EASTERN):
+        st.error("Target datetime must be in the future (US/Eastern).")
+        validation_failed = True
+
     if not intervals:
         st.error("Please select at least one interval.")
-    else:
+        validation_failed = True
+
+    price_levels: list[float] = []
+    if not validation_failed:
         try:
             price_levels = [
                 float(p.strip())
@@ -217,64 +199,28 @@ if submit:
                 "Could not parse price levels. "
                 "Please enter comma-separated numbers, e.g. 400, 405.5"
             )
-            price_levels = []
+            validation_failed = True
 
-        if not price_levels:
-            st.error("Please enter at least one valid price level.")
-        else:
-            # Persist run parameters so auto-rerun can reuse them
-            st.session_state["leveledge_last_inputs"] = {
-                "ticker": ticker,
-                "tgt_datetime": tgt_datetime,
-                "intervals": intervals,
-                "price_levels": price_levels,
-                "use_interval_preset": use_interval_preset,
-            }
-            st.session_state["leveledge_show_dialog"] = True
-            try:
-                # Trigger an immediate run in the unified dialog-render block below.
-                st.session_state["leveledge_force_rerun"] = True
-                st.rerun()
+    if not validation_failed and not price_levels:
+        st.error("Please enter at least one valid price level.")
+        validation_failed = True
 
-            except Exception as e:
-                st.error(f"Error running batch predictions: {e}")
-
-
-# Auto-rerun loop: if dialog is open and enabled, rerun every 30s.
-if st.session_state.get("leveledge_show_dialog") and st.session_state.get("leveledge_last_inputs"):
-    auto_enabled = st.session_state.get("leveledge_auto_rerun_enabled", True)
-    force_rerun = st.session_state.get("leveledge_force_rerun", False)
-    last_run = float(st.session_state.get("leveledge_last_run_ts", 0))
-    should_rerun = force_rerun or (auto_enabled and (time.time() - last_run >= 30))
-
-    if should_rerun:
-        st.session_state["leveledge_force_rerun"] = False
-        inputs = st.session_state["leveledge_last_inputs"]
+    if not validation_failed:
         try:
-            with st.spinner("Auto refreshing predictions..."):
+            with st.spinner("Running batch predictions..."):
                 all_results, current_price = run_batch_prediction(
-                    ticker=inputs["ticker"],
-                    tgt_datetime=inputs["tgt_datetime"],
-                    intervals=inputs["intervals"],
-                    price_levels=inputs["price_levels"],
+                    ticker=ticker,
+                    tgt_datetime=tgt_datetime,
+                    intervals=intervals,
+                    price_levels=price_levels,
                 )
-            st.session_state["leveledge_last_results"] = all_results
-            st.session_state["leveledge_last_current_price"] = current_price
-            st.session_state["leveledge_last_run_ts"] = time.time()
+            show_batch_prediction_dialog(
+                ticker,
+                tgt_datetime,
+                all_results,
+                use_interval_preset=use_interval_preset,
+                current_price=current_price,
+            )
         except Exception as e:
-            st.error(f"Error auto-refreshing predictions: {e}")
-
-    # Keep dialog open across reruns by re-invoking it from state
-    show_batch_prediction_dialog(
-        st.session_state["leveledge_last_inputs"]["ticker"],
-        st.session_state["leveledge_last_inputs"]["tgt_datetime"],
-        st.session_state.get("leveledge_last_results", []),
-        use_interval_preset=st.session_state["leveledge_last_inputs"].get("use_interval_preset", False),
-        current_price=st.session_state.get("leveledge_last_current_price"),
-    )
-
-    # Drive a 1s ticking countdown while auto refresh is enabled
-    if auto_enabled:
-        time.sleep(1)
-        st.rerun()
+            st.error(f"Error running batch predictions: {e}")
 
