@@ -23,7 +23,7 @@ PREDICTION_LOG_PATH = os.environ.get(
 
 class Predictor:
 
-    def __init__(self, ticker_str: str, target_datetime: datetime, interval: str, price: float) -> None:
+    def __init__(self, ticker_str: str, target_datetime: datetime, interval: str, price: float, end_datetime: datetime = None) -> None:
         """
         Constructor creates object with a ticker, target datetime for prediction time
         and an interval to use to fetch data
@@ -52,10 +52,14 @@ class Predictor:
         self.isCrypto: bool = '-' in self.ticker_str
         self.hasPrePost: bool = self.ticker.get_info()['hasPrePostMarketData'] # False for cryptos
 
+        self.end_datetime = end_datetime if end_datetime is not None else datetime.now(tz=US_EASTERN)
+        self.is_backtest = end_datetime is not None
+        
         if self.interval not in ALLOWED_INTERVALS:
             raise ValueError("Invalid interval input.")
-        if self.target_datetime < datetime.now(tz=US_EASTERN):
-            raise ValueError("Target Datetime Must be in the future.")
+        
+        if self.target_datetime < self.end_datetime:
+            raise ValueError("Target Datetime Must be after end datetime.")
 
         if 'm' in self.interval:
             self.interval_min: int = int(self.interval[:-1])
@@ -64,7 +68,12 @@ class Predictor:
         elif 'd' in self.interval:
             self.interval_min: int = 60 * 24 * int(self.interval[:-1])
 
-        self.data: pd.DataFrame = self.ticker.history(period='max', interval=self.interval, prepost=self.hasPrePost)
+        if self.is_backtest:
+            startDate = datetime.now(tz=US_EASTERN) - timedelta(days=59) # most data we can get from yfinance
+            self.data: pd.DataFrame = self.ticker.history(start=startDate, end=self.end_datetime, interval=self.interval, prepost=self.hasPrePost)
+        else:
+            self.data: pd.DataFrame = self.ticker.history(period='max', interval=self.interval, prepost=self.hasPrePost)
+
         self.current_price: float = self.data['Close'].iloc[-1]
         self.target_price_ratio: float = self.price / self.current_price
         self.candles_ahead: int = self._calculate_candles_ahead_crypto() if self.isCrypto else self._calculate_candles_ahead_stocks()
@@ -72,7 +81,7 @@ class Predictor:
 
         self._create_target_variable()
 
-    def _log_prediction(self, prediction: float) -> None:
+    def _log_prediction(self, prediction: float, is_backtest: bool = False) -> None:
         try:
             from dotenv import load_dotenv
             from supabase import create_client
@@ -84,7 +93,12 @@ class Predictor:
                 os.environ["SUPABASE_KEY"]
             )
 
-            now_utc = datetime.now(timezone.utc)
+            if is_backtest:
+                table_name = "backtest_logs"
+                now_utc = self.end_datetime.astimezone(timezone.utc)
+            else:
+                table_name = "logs"
+                now_utc = datetime.now(timezone.utc)
 
             record = {
                 "logged_at_utc": now_utc.isoformat(),
@@ -109,7 +123,7 @@ class Predictor:
                     if hasattr(self, "xgb_expected_model_metrics") and self.xgb_expected_model_metrics else None,
             }
 
-            supabase.table("logs").insert(record).execute()
+            supabase.table(table_name).insert(record).execute()
 
         except Exception:
             # Logging must never break prediction flow.
@@ -598,7 +612,7 @@ class Predictor:
         )[-1][1]
 
         # Persist this prediction event for later analysis.
-        self._log_prediction(prediction)
+        self._log_prediction(prediction, self.is_backtest)
 
         return prediction
 

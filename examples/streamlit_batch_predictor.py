@@ -5,14 +5,22 @@ from leveledge import Predictor
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
 
 
-def run_batch_prediction(ticker, tgt_datetime, intervals, price_levels):
+def run_batch_prediction(
+    ticker: str,
+    tgt_datetime: datetime,
+    intervals: list[str],
+    price_levels: list[float],
+    end_datetime: datetime | None = None,
+):
     all_results = []
     current_price = None
 
     for price_level in price_levels:
         results_for_price = []
         for intvl in intervals:
-            predictor = Predictor(ticker, tgt_datetime, intvl, float(price_level))
+            predictor = Predictor(
+                ticker, tgt_datetime, intvl, float(price_level), end_datetime=end_datetime
+            )
             predictor.train_xgb()
             prediction = predictor.predict_xgb()
 
@@ -35,11 +43,22 @@ def run_batch_prediction(ticker, tgt_datetime, intervals, price_levels):
 
 @st.dialog("Batch Prediction Results", width="large")
 def show_batch_prediction_dialog(
-    ticker, tgt_datetime, all_results, use_interval_preset=False, current_price=None
+    ticker,
+    tgt_datetime,
+    all_results,
+    use_interval_preset=False,
+    current_price=None,
+    is_backtest=False,
+    end_datetime=None,
 ):
     if not all_results:
         st.warning("No results to display.")
         return
+
+    if is_backtest and end_datetime is not None:
+        st.info(
+            f"**Backtest** — Data as of {end_datetime.strftime('%m/%d/%Y %I:%M %p')} (US/Eastern)"
+        )
 
     if current_price is not None:
         st.markdown(
@@ -145,6 +164,12 @@ use_interval_preset = st.checkbox(
     help="When checked, predictions will run for 15m, 30m, and 90m intervals using a weighted moving average.",
 )
 
+backtest_mode = st.checkbox(
+    "Enable backtest mode",
+    value=False,
+    help="Use historical data up to an end datetime instead of live data. Target datetime must be after the end datetime.",
+)
+
 with st.form("batch_predict_form"):
     ticker = st.text_input("Ticker (e.g. SPY, ETH-USD)", value="SPY")
     st.set_page_config(page_title=f'Predicting {ticker.upper()}')
@@ -153,6 +178,17 @@ with st.form("batch_predict_form"):
         tgt_datetime = raw_tgt_datetime.replace(tzinfo=US_EASTERN)
     else:
         tgt_datetime = raw_tgt_datetime.astimezone(US_EASTERN)
+
+    end_datetime = None
+    if backtest_mode:
+        raw_end_datetime = st.datetime_input(
+            "End datetime for stock data (US/Eastern)",
+            help="Historical data is fetched up to this time. Target datetime must be after this.",
+        )
+        if raw_end_datetime.tzinfo is None:
+            end_datetime = raw_end_datetime.replace(tzinfo=US_EASTERN)
+        else:
+            end_datetime = raw_end_datetime.astimezone(US_EASTERN)
 
     intervals = st.multiselect(
         "Intervals",
@@ -176,11 +212,21 @@ with st.form("batch_predict_form"):
 if submit:
     validation_failed = False
 
-    # Prevent running with an invalid / past target datetime so we never
-    # open a dialog that can only error.
-    if tgt_datetime < datetime.now(tz=US_EASTERN):
-        st.error("Target datetime must be in the future (US/Eastern).")
-        validation_failed = True
+    if backtest_mode:
+        if end_datetime is None:
+            st.error("Backtest mode requires an end datetime for stock data.")
+            validation_failed = True
+        elif tgt_datetime <= end_datetime:
+            st.error(
+                "In backtest mode, target datetime must be after the end datetime for stock data."
+            )
+            validation_failed = True
+    else:
+        # Prevent running with an invalid / past target datetime so we never
+        # open a dialog that can only error.
+        if tgt_datetime < datetime.now(tz=US_EASTERN):
+            st.error("Target datetime must be in the future (US/Eastern).")
+            validation_failed = True
 
     if not intervals:
         st.error("Please select at least one interval.")
@@ -213,6 +259,7 @@ if submit:
                     tgt_datetime=tgt_datetime,
                     intervals=intervals,
                     price_levels=price_levels,
+                    end_datetime=end_datetime if backtest_mode else None,
                 )
             show_batch_prediction_dialog(
                 ticker,
@@ -220,6 +267,8 @@ if submit:
                 all_results,
                 use_interval_preset=use_interval_preset,
                 current_price=current_price,
+                is_backtest=backtest_mode,
+                end_datetime=end_datetime if backtest_mode else None,
             )
         except Exception as e:
             st.error(f"Error running batch predictions: {e}")
