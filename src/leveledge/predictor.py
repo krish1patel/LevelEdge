@@ -203,6 +203,8 @@ class Predictor:
         data['SMA_10'] = data['Close'].rolling(window=10).mean()
         data['SMA_20'] = data['Close'].rolling(window=20).mean()
         data['SMA_50'] = data['Close'].rolling(window=50).mean()
+        data['SMA_200'] = data['Close'].rolling(window=200).mean()
+        data['SMA_400'] = data['Close'].rolling(window=400).mean()
         
         # Exponential Moving Averages
         data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
@@ -247,6 +249,21 @@ class Predictor:
         data['Price_change'] = data['Close'].pct_change()
         data['Price_change_5'] = data['Close'].pct_change(periods=5)
         data['High_Low_ratio'] = data['High'] / data['Low']
+        
+        # Previous day high and low (works for any interval: group by date, then shift)
+        date_norm = data.index.normalize()
+        day_agg = data.groupby(date_norm).agg({'High': 'max', 'Low': 'min'})
+        prev_day_agg = day_agg.shift(1)
+        data['Prev_day_high'] = date_norm.map(prev_day_agg['High'])
+        data['Prev_day_low'] = date_norm.map(prev_day_agg['Low'])
+        
+        # Previous hour high and low (skip for 1d interval; for intraday group by clock hour)
+        if self.interval_min < 60 * 24:  # intraday only
+            hour_floor = data.index.floor('h')
+            hour_agg = data.groupby(hour_floor).agg({'High': 'max', 'Low': 'min'})
+            prev_hour_agg = hour_agg.shift(1)
+            data['Prev_hour_high'] = hour_floor.map(prev_hour_agg['High'])
+            data['Prev_hour_low'] = hour_floor.map(prev_hour_agg['Low'])
         
         self.data = data
         return self.data
@@ -306,23 +323,25 @@ class Predictor:
         self._calculate_technical_indicators()
         self._calculate_candlestick_patterns()
         
-        # Define feature columns
+        # Define feature columns (Prev_hour_* only present for intraday intervals)
         feature_columns = [
             'Open', 'High', 'Low', 'Close', 'Volume',
-            'SMA_5', 'SMA_10', 'SMA_20', 'SMA_50',
+            'SMA_5', 'SMA_10', 'SMA_20', 'SMA_50', 'SMA_200', 'SMA_500'
             'EMA_5', 'EMA_10', 'EMA_20',
             'RSI', 'MACD', 'MACD_signal', 'MACD_hist',
             'BB_middle', 'BB_upper', 'BB_lower', 'BB_width', 'BB_position',
             'ATR',
             'Volume_SMA', 'Volume_ratio',
             'Price_change', 'Price_change_5', 'High_Low_ratio',
+            'Prev_day_high', 'Prev_day_low',
+            'Prev_hour_high', 'Prev_hour_low',
             'Body', 'Upper_Shadow', 'Lower_Shadow', 'Total_Range',
             'Body_Ratio', 'Upper_Shadow_Ratio', 'Lower_Shadow_Ratio',
             'Candle_Type', 'Doji', 'Hammer', 'Shooting_Star',
             'Bullish_Engulfing', 'Bearish_Engulfing'
         ]
         
-        # Select available features and drop NaN rows
+        # Select available features (Prev_hour_* omitted for 1d) and drop NaN rows
         available_features = [col for col in feature_columns if col in self.data.columns]
         self.available_features = available_features
         features = self.data[available_features].copy()
