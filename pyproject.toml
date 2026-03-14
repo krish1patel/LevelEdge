@@ -16,7 +16,10 @@ dependencies = [
   "scikit-learn",
   "yfinance",
   "numpy",
-  "xgboost"
+  "xgboost",
+  "pandas-market-calendars",
+  "python-dotenv",
+  "supabase",
 ]
 
 [tool.setuptools.packages.find]
