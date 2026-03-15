@@ -71,3 +71,4 @@ def update_outcomes(table: str):
 if __name__ == "__main__":
     update_outcomes('logs')
     update_outcomes('backtest_logs')
+    update_outcomes('new_backtest_logs')
