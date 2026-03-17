@@ -43,9 +43,9 @@ jobs:
           SUPABASE_KEY:      ${{ secrets.SUPABASE_KEY }}
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            python scripts/forward_test.py --dry-run
+            python scripts/forwardtest.py --dry-run
           else
-            python scripts/forward_test.py
+            python scripts/forwardtest.py
           fi
 
       - name: Upload logs on failure
