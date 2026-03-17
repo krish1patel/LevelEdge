@@ -1,0 +1,57 @@
+# .github/workflows/run_forwardtest.yml
+name: Forward Test
+
+on:
+  schedule:
+    - cron: '0 14 * * 1-5'   # 10:00 AM EDT (UTC-4)
+    - cron: '0 16 * * 1-5'   # 12:00 PM EDT (UTC-4)
+    - cron: '0 18 * * 1-5'   #  2:00 PM EDT (UTC-4)
+  workflow_dispatch:          # allow manual trigger from GitHub UI
+    inputs:
+      dry_run:
+        description: 'Dry run (predictions only, no trades)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  forward-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30       # kill job if it hangs
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run forward test
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          SUPABASE_URL:      ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:      ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python scripts/forward_test.py --dry-run
+          else
+            python scripts/forward_test.py
+          fi
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: forward-test-logs-${{ github.run_id }}
+          path: '*.log'
+          retention-days: 7

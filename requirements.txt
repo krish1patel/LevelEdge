@@ -53,7 +53,7 @@ jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 kiwisolver==1.5.0
 korean-lunar-calendar==0.3.1
-git+https://github.com/krish1patel/LevelEdge.git@9db144e38f86e50e416a5d0822445246cd2cccbe#egg=leveledge
+git+https://github.com/krish1patel/LevelEdge.git@main#egg=leveledge
 markdown-it-py==4.0.0
 markdown2==2.5.4
 MarkupSafe==3.0.3
