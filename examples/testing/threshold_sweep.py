@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 load_dotenv()
 supabase = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
 
-table_name = 'logs'
+table_name = 'forwardtest_logs'
 
 table_length = supabase.table(table_name).select('*', count='exact', head=True).execute().count
 
@@ -35,8 +35,8 @@ for interval, group in df[df["interval"] != "90m"].groupby("interval"):
         mask = group["prediction"] >= threshold
         subset = group[mask]
         
-        if len(subset) < 20:  # ignore thresholds with too few signals
-            continue
+        # if len(subset) < 20:  # ignore thresholds with too few signals
+        #     continue
         
         precision = subset["actual_hit"].mean()
         
