@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 load_dotenv()
 supabase = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
 
-table_name = 'forwardtest_logs'
+table_name = 'logs'
 
 table_length = supabase.table(table_name).select('*', count='exact', head=True).execute().count
 
