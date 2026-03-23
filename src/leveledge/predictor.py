@@ -8,10 +8,10 @@ import pandas as pd
 import pandas_market_calendars as mcal
 import numpy as np
 from datetime import datetime, timedelta, timezone
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, XGBRegressor
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.metrics import roc_auc_score, average_precision_score
-from sklearn.metrics import precision_score
+from sklearn.metrics import precision_score, mean_absolute_error, mean_squared_error, r2_score
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
 import supabase
 from dotenv import load_dotenv
@@ -143,6 +143,9 @@ class Predictor:
 
         # will future price
         data['Target'] = ((data['Future_close'] / data['Close']) > self.target_price_ratio).astype(int)
+
+        # Continuous regression target: ratio of future close to current close
+        data['Future_close_ratio'] = data['Future_close'] / data['Close']
 
         data['Datetime'] = data.index
 
@@ -316,13 +319,91 @@ class Predictor:
         self.data = data
         return self.data
     
+    def _calculate_residual_features(self) -> pd.DataFrame:
+        """
+        Calculate features that correlate with move magnitude rather than direction:
+        VWAP, realized volatility, ATR-normalized returns, z-scores, lagged returns,
+        gap, OBV, volume-weighted momentum, and price acceleration.
+        """
+        data = self.data.copy()
+
+        log_ret = np.log(data['Close'] / data['Close'].shift(1))
+
+        # Realized volatility (rolling std of log returns) — volatility clusters
+        data['RVol_5']  = log_ret.rolling(5).std()
+        data['RVol_10'] = log_ret.rolling(10).std()
+        data['RVol_20'] = log_ret.rolling(20).std()
+
+        # ATR-normalized return — return scaled by recent volatility
+        data['ATR_norm_return'] = log_ret / data['ATR'].replace(0, np.nan)
+
+        # Range expansion — how wide is this candle vs average (ATR)?
+        candle_range = data['High'] - data['Low']
+        data['Range_vs_ATR'] = candle_range / data['ATR'].replace(0, np.nan)
+
+        # Z-score of close relative to rolling mean and std
+        roll_mean = data['Close'].rolling(20).mean()
+        roll_std  = data['Close'].rolling(20).std().replace(0, np.nan)
+        data['Close_Zscore_20'] = (data['Close'] - roll_mean) / roll_std
+
+        # VWAP (resets each calendar day for intraday; rolling for daily)
+        typical_price = (data['High'] + data['Low'] + data['Close']) / 3
+        tp_vol = typical_price * data['Volume']
+        if self.interval_min < 1440:
+            date_norm = data.index.normalize()
+            data['VWAP'] = (tp_vol.groupby(date_norm).cumsum() /
+                            data['Volume'].groupby(date_norm).cumsum())
+        else:
+            data['VWAP'] = tp_vol.rolling(20).sum() / data['Volume'].rolling(20).sum()
+
+        # Distance from VWAP (normalized) — mean-reversion / trend signal
+        data['VWAP_dist'] = (data['Close'] - data['VWAP']) / data['VWAP'].replace(0, np.nan)
+
+        # Gap: open vs previous close (overnight or between-candle gap)
+        data['Gap'] = (data['Open'] - data['Close'].shift(1)) / data['Close'].shift(1)
+
+        # Lagged log returns — autocorrelation structure
+        for lag in [1, 2, 3, 5]:
+            data[f'Ret_lag_{lag}'] = log_ret.shift(lag)
+
+        # Price acceleration — change in momentum (2nd derivative of price)
+        data['Price_accel'] = log_ret - log_ret.shift(1)
+
+        # Volume-weighted momentum — big moves on high volume are more significant
+        data['Vol_weighted_momentum'] = log_ret * data['Volume_ratio']
+
+        # OBV (On-Balance Volume) — cumulative volume pressure
+        obv = (np.sign(log_ret) * data['Volume']).fillna(0).cumsum()
+        data['OBV'] = obv
+        data['OBV_SMA'] = obv.rolling(20).mean()
+        data['OBV_ratio'] = obv / data['OBV_SMA'].replace(0, np.nan)
+
+        # Consecutive candle streak (positive = N bullish in a row, negative = bearish)
+        direction = np.sign(log_ret).fillna(0)
+        streak = []
+        s = 0
+        for d in direction:
+            if d == 0:
+                streak.append(s)
+            elif (s >= 0 and d > 0) or (s <= 0 and d < 0):
+                s += int(d)
+                streak.append(s)
+            else:
+                s = int(d)
+                streak.append(s)
+        data['Candle_streak'] = streak
+
+        self.data = data
+        return self.data
+
     def prepare_features(self) -> pd.DataFrame:
         """Creates and adds features to data, then prepares feature set for the model"""
-        
+
         # Calculate all indicators
         self._calculate_technical_indicators()
         self._calculate_candlestick_patterns()
-        
+        self._calculate_residual_features()
+
         # Define feature columns (Prev_hour_* only present for intraday intervals)
         feature_columns = [
             'Open', 'High', 'Low', 'Close', 'Volume',
@@ -338,15 +419,26 @@ class Predictor:
             'Body', 'Upper_Shadow', 'Lower_Shadow', 'Total_Range',
             'Body_Ratio', 'Upper_Shadow_Ratio', 'Lower_Shadow_Ratio',
             'Candle_Type', 'Doji', 'Hammer', 'Shooting_Star',
-            'Bullish_Engulfing', 'Bearish_Engulfing'
+            'Bullish_Engulfing', 'Bearish_Engulfing',
+            # Residual / magnitude features
+            'RVol_5', 'RVol_10', 'RVol_20',
+            'ATR_norm_return', 'Range_vs_ATR',
+            'Close_Zscore_20',
+            'VWAP', 'VWAP_dist',
+            'Gap',
+            'Ret_lag_1', 'Ret_lag_2', 'Ret_lag_3', 'Ret_lag_5',
+            'Price_accel',
+            'Vol_weighted_momentum',
+            'OBV', 'OBV_SMA', 'OBV_ratio',
+            'Candle_streak',
         ]
-        
+
         # Select available features (Prev_hour_* omitted for 1d) and drop NaN rows
         available_features = [col for col in feature_columns if col in self.data.columns]
         self.available_features = available_features
         features = self.data[available_features].copy()
         features = features.dropna()
-        
+
         self.features = features
         return self.features
 
@@ -598,6 +690,92 @@ class Predictor:
         # return mean_prediction
 
 
+    def train_regression(self) -> None:
+        """
+        Train an XGBRegressor to predict the future close / current close ratio
+        using the same walk-forward split strategy as train_xgb.
+
+        Stores:
+            self.regression_model               — final model trained on all data
+            self.regression_expected_model_metrics — (mae, rmse, r2) averaged over splits
+        """
+        length = len(self.data)
+        splits = self._walk_forward_split(int(length / 4), 100, int(length / 4), 0)
+        mae_scores = []
+        rmse_scores = []
+        r2_scores = []
+
+        for train_idx, test_idx in splits:
+            train = self.data.iloc[train_idx]
+            test = self.data.iloc[test_idx]
+
+            X_train = train[self.available_features]
+            y_train = train['Future_close_ratio']
+            X_test = test[self.available_features]
+            y_test = test['Future_close_ratio']
+
+            if y_train.isna().all() or y_test.isna().all():
+                continue
+
+            model = XGBRegressor(
+                n_estimators=300,
+                max_depth=4,
+                learning_rate=0.05,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                objective="reg:squarederror",
+                tree_method="hist",
+            )
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+
+            mae_scores.append(mean_absolute_error(y_test, preds))
+            rmse_scores.append(mean_squared_error(y_test, preds) ** 0.5)
+            r2_scores.append(r2_score(y_test, preds))
+
+        avg_mae = sum(mae_scores) / len(mae_scores) if mae_scores else 0.0
+        avg_rmse = sum(rmse_scores) / len(rmse_scores) if rmse_scores else 0.0
+        avg_r2 = sum(r2_scores) / len(r2_scores) if r2_scores else 0.0
+        self.regression_expected_model_metrics = (avg_mae, avg_rmse, avg_r2)
+
+        # Final model trained on all available data
+        X_all = self.data[self.available_features]
+        y_all = self.data['Future_close_ratio']
+
+        self.regression_model = XGBRegressor(
+            n_estimators=300,
+            max_depth=4,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            objective="reg:squarederror",
+            tree_method="hist",
+        )
+        self.regression_model.fit(X_all, y_all)
+
+    def predict_regression(self) -> float:
+        """
+        Returns the predicted future_close / current_close ratio for the most
+        recent candle using the trained regression model.
+
+        Returns
+        =======
+        float — predicted price ratio (e.g. 1.05 means +5% expected move)
+        """
+        prediction = float(
+            self.regression_model.predict(
+                self.data_withna[self.available_features].iloc[[-1]]
+            )[0]
+        )
+        return prediction
+
+    def get_regression_model_metrics(self) -> tuple[float, float, float]:
+        """Returns (MAE, RMSE, R²) averaged over walk-forward splits."""
+        return self.regression_expected_model_metrics
+
+    def print_regression_model_metrics(self) -> None:
+        mae, rmse, r2 = self.regression_expected_model_metrics
+        print(f"Regression Model Metrics: MAE: {mae:.6f}, RMSE: {rmse:.6f}, R²: {r2:.4f}")
 
 
 
