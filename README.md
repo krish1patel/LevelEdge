@@ -36,3 +36,18 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
 
 - Doesn't work well and often fails with prices well above or below the current price of a stock
 - xgboost model could probably use some tuning
+
+## CLI helper
+
+The `examples/cli_predictor.py` script lets you run LevelEdge from the terminal. It walks through ticker, datetime, interval, and level prompts when you leave those arguments off, but you can also automate everything with the provided flags:
+
+```bash
+python examples/cli_predictor.py \
+  --ticker AAPL \
+  --datetime "2026-03-25 15:30:00" \
+  --interval 15m \
+  --price 183.50 \
+  --timezone US/Eastern
+```
+
+Use `--timezone` to override the default `US/Eastern` zone or omit any flag to fall back to the interactive prompts (the CLI always uppercases the ticker and validates the interval before training).
