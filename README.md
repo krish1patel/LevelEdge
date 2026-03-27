@@ -41,3 +41,16 @@ A simple stock prediction system that takes in a ticker, price level, interval, 
   - Trains several models using xgboost
 - predict_xgb()
   - Generates predictions and returns probability of price being above the inputted level at the inputted datetime
+
+## Quick CLI helper
+
+`examples/archive/cli_predictor.py` is a prompt-first entry point that trains a small LevelEdge ensemble for the ticker/interval/price/datetime combination you provide.
+
+- All inputs can still be typed interactively, but you can skip the prompts by passing `--ticker`, `--datetime`, `--interval`, and `--price` if you already know the values.
+- Partial flag sets are supported: `--ticker` plus `--interval` will prompt for the datetime and price level, so the script works in both automated and exploratory flows.
+- The datetime flag expects `YYYY-MM-DD HH:MM:SS` in US/Eastern (matching the legacy prompt) and `--interval` must match one of the ALLOWED_INTERVALS defined by the package.
+
+Example:
+```
+python examples/archive/cli_predictor.py --ticker AAPL --datetime "2026-03-27 15:30:00" --interval 15m --price 185.0
+```
