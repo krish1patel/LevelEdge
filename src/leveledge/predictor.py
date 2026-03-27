@@ -23,7 +23,7 @@ PREDICTION_LOG_PATH = os.environ.get(
 
 class Predictor:
 
-    def __init__(self, ticker_str: str, target_datetime: datetime, interval: str, price: float, end_datetime: datetime = None) -> None:
+    def __init__(self, ticker_str: str, target_datetime: datetime, interval: str, price: float, end_datetime: datetime = None, data: pd.DataFrame = None) -> None:
         """
         Constructor creates object with a ticker, target datetime for prediction time
         and an interval to use to fetch data
@@ -33,6 +33,10 @@ class Predictor:
         ticker_str: str - lower or upper that holds the ticker symbol for the stock or crypto of interest
         target_datetime: datetime - datetime that represents when to predict for
         interval: str - string format of the interval to use for stock/crypto data
+        end_datetime: datetime - if provided, treats this as a backtest (logs to backtest_logs)
+        data: pd.DataFrame - optional pre-fetched OHLCV DataFrame (DatetimeIndex, US/Eastern).
+                             When provided, the yfinance history fetch is skipped entirely.
+                             Slice to end_datetime before passing in.
 
         Errors
         ======
@@ -54,10 +58,10 @@ class Predictor:
 
         self.end_datetime = end_datetime if end_datetime is not None else datetime.now(tz=US_EASTERN)
         self.is_backtest = end_datetime is not None
-        
+
         if self.interval not in ALLOWED_INTERVALS:
             raise ValueError("Invalid interval input.")
-        
+
         if self.target_datetime < self.end_datetime:
             raise ValueError("Target Datetime Must be after end datetime.")
 
@@ -68,8 +72,11 @@ class Predictor:
         elif 'd' in self.interval:
             self.interval_min: int = 60 * 24 * int(self.interval[:-1])
 
-        if self.is_backtest:
-            startDate = datetime.now(tz=US_EASTERN) - timedelta(days=59) # most data we can get from yfinance
+        if data is not None:
+            # Use caller-supplied DataFrame; skip yfinance fetch entirely.
+            self.data: pd.DataFrame = data.copy()
+        elif self.is_backtest:
+            startDate = datetime.now(tz=US_EASTERN) - timedelta(days=59)  # most data we can get from yfinance
             self.data: pd.DataFrame = self.ticker.history(start=startDate, end=self.end_datetime, interval=self.interval, prepost=self.hasPrePost)
         else:
             self.data: pd.DataFrame = self.ticker.history(period='max', interval=self.interval, prepost=self.hasPrePost)
@@ -169,23 +176,35 @@ class Predictor:
         market_days: int = 0
         non_market_days: int = 0
 
-        for num_days in range(1, delta.days+1, 1):
-            date: pd.Timestamp = pd.Timestamp(current_datetime + timedelta(days=num_days)).normalize()
-            schedule = nyse.schedule(start_date=date, end_date=date)
+        # Iterate over every calendar date strictly after current_datetime up to
+        # and including target_datetime. Using date arithmetic (rather than
+        # range(1, delta.days+1)) correctly handles the case where delta < 24 h
+        # but the window spans overnight non-market hours (delta.days == 0 even
+        # though trading days are involved, e.g. predict at 3 PM for next day 10 AM).
+        current_date = current_datetime.date()
+        target_date = self.target_datetime.date()
+        check_date = current_date + timedelta(days=1)
+        while check_date <= target_date:
+            ts = pd.Timestamp(check_date)
+            schedule = nyse.schedule(start_date=ts, end_date=ts)
             if schedule.empty:
-                # Not a trading day
                 non_market_days += 1
             else:
                 market_days += 1
+            check_date += timedelta(days=1)
 
-        if self.interval_min == 1440: # interval is 1d
+        if self.interval_min == 1440:  # interval is 1d
             return market_days
-        
-        hours_to_subtract: float = market_days*non_market_hours_per_day + non_market_days*24
 
+        hours_to_subtract: float = market_days * non_market_hours_per_day + non_market_days * 24
         market_hours: float = (delta - timedelta(hours=hours_to_subtract, minutes=1)).total_seconds() / 60 / 60
+        candles: int = int(market_hours / (self.interval_min / 60))
 
-        candles: int = int(market_hours / (self.interval_min/60))
+        if candles <= 0:
+            raise ValueError(
+                f"candles_ahead={candles}: end_datetime is too close to target_datetime "
+                f"for interval '{self.interval}'. Use a later target or earlier end_datetime."
+            )
 
         return candles
 

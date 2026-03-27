@@ -20,6 +20,7 @@ dependencies = [
   "pandas-market-calendars",
   "python-dotenv",
   "supabase",
+  "polygon-api-client",
 ]
 
 [tool.setuptools.packages.find]
