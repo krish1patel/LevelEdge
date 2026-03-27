@@ -544,76 +544,50 @@ class Predictor:
 
 
 
-    def train_xgb(self) -> None:
-        length = len(self.data)
-        splits = self._walk_forward_split(int(length/4), 100, int(length/4), 0)
-        auc_scores = []
-        ps_scores = []
-        pr_scores = []
-        
-        # Add diagnostic info
-        # print(f"\nOverall class distribution:")
-        # print(self.data['Target'].value_counts())
-        # print(f"Overall positive rate: {self.data['Target'].mean():.2%}\n")
+    def train_xgb(self, evaluate: bool = True) -> None:
+        if evaluate:
+            length = len(self.data)
+            splits = self._walk_forward_split(int(length/4), 100, int(length/4), 0)
+            auc_scores = []
+            ps_scores = []
+            pr_scores = []
 
-        for i, (train_idx, test_idx) in enumerate(splits):
-            train = self.data.iloc[train_idx]
-            test = self.data.iloc[test_idx]
+            for i, (train_idx, test_idx) in enumerate(splits):
+                train = self.data.iloc[train_idx]
+                test = self.data.iloc[test_idx]
 
-            X_train = train[self.available_features]
-            y_train = train['Target']
-            X_test = test[self.available_features]
-            y_test = test['Target']
-            
-            # Diagnostic prints
-            # print(f"Split {i+1}:")
-            # print(f"  Train: {len(y_train)} samples, {y_train.sum()} positive ({y_train.mean():.2%})")
-            # print(f"  Test:  {len(y_test)} samples, {y_test.sum()} positive ({y_test.mean():.2%})")
-            
-            # Skip invalid splits
-            if len(y_test.unique()) < 2:
-                # print(f"  ⚠️  SKIPPED - only class {y_test.unique()[0]} in test set\n")
-                continue
-            
-            if len(y_train.unique()) < 2:
-                # print(f"  ⚠️  SKIPPED - only class {y_train.unique()[0]} in train set\n")
-                continue
+                X_train = train[self.available_features]
+                y_train = train['Target']
+                X_test = test[self.available_features]
+                y_test = test['Target']
 
-            # Calculate class weight
-            n_negative = (y_train == 0).sum()
-            n_positive = (y_train == 1).sum()
-            scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
-            
-            # print(f"  scale_pos_weight: {scale_pos_weight:.2f}")
+                if len(y_test.unique()) < 2 or len(y_train.unique()) < 2:
+                    continue
 
-            model = XGBClassifier(
-                n_estimators=300,
-                max_depth=4,
-                learning_rate=0.05,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                objective="binary:logistic",
-                eval_metric="auc",
-                tree_method="hist",
-                scale_pos_weight=scale_pos_weight  # Add this!
-            )
+                n_negative = (y_train == 0).sum()
+                n_positive = (y_train == 1).sum()
+                scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
 
-            model.fit(X_train, y_train)
-            preds = model.predict_proba(X_test)[:, 1]
-            preds_binary = (preds >= .6).astype(int)
-            auc = roc_auc_score(y_test, preds)
-            pr = average_precision_score(y_test, preds)
-            ps = precision_score(y_test, preds_binary)
-            auc_scores.append(auc)
-            ps_scores.append(ps)
-            pr_scores.append(pr)
-            # print(f"  AUC: {auc:.4f}    PS: {ps:.4f}\n")
+                model = XGBClassifier(
+                    n_estimators=300, max_depth=4, learning_rate=0.05,
+                    subsample=0.8, colsample_bytree=0.8,
+                    objective="binary:logistic", eval_metric="auc",
+                    tree_method="hist", scale_pos_weight=scale_pos_weight
+                )
 
-        # Model metrics are the mean of the scores for all models
-        avg_auc = sum(auc_scores) / len(auc_scores) if len(auc_scores) > 0 else 0
-        avg_ps = sum(ps_scores) / len(ps_scores) if len(ps_scores) > 0 else 0
-        avg_pr = sum(pr_scores) / len(pr_scores) if len(pr_scores) > 0 else 0
-        self.xgb_expected_model_metrics = (avg_auc, avg_ps, avg_pr)
+                model.fit(X_train, y_train)
+                preds = model.predict_proba(X_test)[:, 1]
+                preds_binary = (preds >= .6).astype(int)
+                auc_scores.append(roc_auc_score(y_test, preds))
+                ps_scores.append(precision_score(y_test, preds_binary))
+                pr_scores.append(average_precision_score(y_test, preds))
+
+            avg_auc = sum(auc_scores) / len(auc_scores) if auc_scores else 0
+            avg_ps = sum(ps_scores) / len(ps_scores) if ps_scores else 0
+            avg_pr = sum(pr_scores) / len(pr_scores) if pr_scores else 0
+            self.xgb_expected_model_metrics = (avg_auc, avg_ps, avg_pr)
+        else:
+            self.xgb_expected_model_metrics = (0, 0, 0)
 
         # Train model on all data
         X_train = self.data[self.available_features]
@@ -624,27 +598,13 @@ class Predictor:
         scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
 
         self.xgb_model = XGBClassifier(
-            n_estimators=300,
-            max_depth=4,
-            learning_rate=0.05,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            objective="binary:logistic",
-            eval_metric="auc",
-            tree_method="hist",
-            scale_pos_weight=scale_pos_weight  # Add this!
+            n_estimators=300, max_depth=4, learning_rate=0.05,
+            subsample=0.8, colsample_bytree=0.8,
+            objective="binary:logistic", eval_metric="auc",
+            tree_method="hist", scale_pos_weight=scale_pos_weight
         )
 
         self.xgb_model.fit(X_train, y_train)
-        # self.xgb_model = model
-
-
-        # print(f"\n{'='*50}")
-        # print(f"Valid AUC, PS scores: {auc_scores}, {ps_scores}")
-        # if auc_scores:
-            # print(f"Mean AUC: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
-            # print(f"Mean PS: {np.mean(ps_scores):.4f} ± {np.std(ps_scores):.4f}")
-        # print(f"{'='*50}")
 
     def print_xgb_model_metrics(self) -> None:
         print(f"Expected Model Metrics: AUC: {self.xgb_expected_model_metrics[0]:.4f}, PS: {self.xgb_expected_model_metrics[1]:.4f}, PR: {self.xgb_expected_model_metrics[2]:.4f}")
