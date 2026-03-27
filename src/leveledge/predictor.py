@@ -1,16 +1,16 @@
 import math
+from warnings import deprecated
 from sklearn.utils.extmath import weighted_mode
 import yfinance as yf
 import pandas as pd
+import pandas_market_calendars as mcal
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics import precision_score
-from zoneinfo import ZoneInfo
-
-ALLOWED_INTERVALS: list[str] = ["1m", "2m", "5m", "10m", "15m", "30m", "1h", "90m", "1d"]
+from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
 
 
 class Predictor:
@@ -45,18 +45,20 @@ class Predictor:
 
         if self.interval not in ALLOWED_INTERVALS:
             raise ValueError("Invalid interval input.")
-        if self.target_datetime < datetime.now(tz=ZoneInfo('EST')):
+        if self.target_datetime < datetime.now(tz=US_EASTERN):
             raise ValueError("Target Datetime Must be in the future.")
 
         if 'm' in self.interval:
             self.interval_min: int = int(self.interval[:-1])
-        else:
+        elif 'h' in self.interval:
             self.interval_min: int = 60 * int(self.interval[:-1])
+        elif 'd' in self.interval:
+            self.interval_min: int = 60 * 24 * int(self.interval[:-1])
 
         self.data: pd.DataFrame = self.ticker.history(period='max', interval=self.interval)
         self.current_price: float = self.data['Close'].iloc[-1]
         self.target_price_ratio: float = self.price / self.current_price
-        self.candles_ahead: int = self._calculate_candles_ahead()
+        self.candles_ahead: int = self._calculate_candles_ahead_crypto() if self.isCrypto else self._calculate_candles_ahead_stocks()
         self.features: pd.DataFrame = self.prepare_features()
 
         self._create_target_variable()
@@ -78,7 +80,7 @@ class Predictor:
 
         data['Datetime'] = data.index
 
-        print(f'Target Price Ratio: {self.target_price_ratio}')
+        # print(f'Target Price Ratio: {self.target_price_ratio}')
 
         self.data_withna = data
 
@@ -86,6 +88,45 @@ class Predictor:
 
         self.data = data
 
+
+    def _calculate_candles_ahead_stocks(self) -> int:
+        """Calculates how many candles ahead the target datetime is from current candle in market hours."""
+        nyse = mcal.get_calendar('NYSE')
+        current_datetime = self.data.index[-1]
+        delta: timedelta = self.target_datetime - current_datetime
+
+        market_days: int = 0
+        non_market_days: int = 0
+
+        for num_days in range(1, delta.days+1, 1):
+            date: pd.Timestamp = pd.Timestamp(current_datetime + timedelta(days=num_days)).normalize()
+            schedule = nyse.schedule(start_date=date, end_date=date)
+            if schedule.empty:
+                # Not a trading day
+                non_market_days += 1
+            else:
+                market_days += 1
+
+        if self.interval_min == 1440: # interval is 1d
+            return market_days
+        
+        hours_to_subtract: float = market_days*17.5 + non_market_days*24
+
+        market_hours: float = (delta - timedelta(hours=hours_to_subtract, minutes=1)).total_seconds() / 60 / 60
+
+        candles: int = int(market_hours / (self.interval_min/60))
+
+        return candles
+
+    def _calculate_candles_ahead_crypto(self) -> int:
+        """Calculates how may candles ahead the target datetime is from the current candle for cryptos (24hr)."""
+
+        current_datetime = self.data.index[-1]
+        delta: timedelta = self.target_datetime - current_datetime - timedelta(minutes=1)
+
+        return int(delta.total_seconds() / 60 / self.interval_min)
+        
+    @deprecated('Logical Errors')
     def _calculate_candles_ahead(self) -> int:
         """Calculates how many candles ahead the target datetime is from current candle.
 
@@ -102,15 +143,15 @@ class Predictor:
         # Ensure timestamps are timezone-aware in US/Eastern
         last_ts = pd.Timestamp(last_candle_timestamp)
         if last_ts.tzinfo is None:
-            last_ts = last_ts.tz_localize('US/Eastern')
+            last_ts = last_ts.tz_localize(US_EASTERN)
         else:
-            last_ts = last_ts.tz_convert('US/Eastern')
+            last_ts = last_ts.tz_convert(US_EASTERN)
 
         target_ts = pd.Timestamp(target_timestamp)
         if target_ts.tzinfo is None:
-            target_ts = target_ts.tz_localize('US/Eastern')
+            target_ts = target_ts.tz_localize(US_EASTERN)
         else:
-            target_ts = target_ts.tz_convert('US/Eastern')
+            target_ts = target_ts.tz_convert(US_EASTERN)
 
         # If daily interval, count business days between last candle date and target date
         if self.interval.endswith('d'):
@@ -372,7 +413,7 @@ class Predictor:
 
 
     def train_xgb(self) -> None:
-        splits = self._walk_forward_split()
+        splits = self._walk_forward_split(400, 80, 100, 0)
         auc_scores = []
         ps_scores = []
         pr_scores = []
