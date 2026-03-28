@@ -593,6 +593,12 @@ class Predictor:
         X_train = self.data[self.available_features]
         y_train = self.data['Target']
 
+        # If only one class exists, skip training and store a constant predictor
+        if len(y_train.unique()) < 2:
+            self._constant_prediction = float(y_train.iloc[0])
+            self.xgb_model = None
+            return
+
         n_negative = (y_train == 0).sum()
         n_positive = (y_train == 1).sum()
         scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
@@ -604,6 +610,7 @@ class Predictor:
             tree_method="hist", scale_pos_weight=scale_pos_weight
         )
 
+        self._constant_prediction = None
         self.xgb_model.fit(X_train, y_train)
 
     def print_xgb_model_metrics(self) -> None:
@@ -630,6 +637,9 @@ class Predictor:
         boolean - represents prediction
         """
 
+
+        if self._constant_prediction is not None:
+            return self._constant_prediction
 
         prediction = self.xgb_model.predict_proba(
             self.data_withna[self.available_features]
