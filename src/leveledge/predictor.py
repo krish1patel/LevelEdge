@@ -593,7 +593,12 @@ class Predictor:
         X_train = self.data[self.available_features]
         y_train = self.data['Target']
 
-        # If only one class exists, skip training and store a constant predictor
+        # If no data or only one class, skip training and store a constant predictor
+        if len(y_train) == 0:
+            self._constant_prediction = 0.5
+            self.xgb_model = None
+            return
+
         if len(y_train.unique()) < 2:
             self._constant_prediction = float(y_train.iloc[0])
             self.xgb_model = None
