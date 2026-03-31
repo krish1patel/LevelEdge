@@ -593,11 +593,8 @@ class Predictor:
         X_train = self.data[self.available_features]
         y_train = self.data['Target']
 
-        # If no data or only one class, skip training and store a constant predictor
         if len(y_train) == 0:
-            self._constant_prediction = 0.5
-            self.xgb_model = None
-            return
+            raise ValueError(f"No training data available after feature engineering")
 
         if len(y_train.unique()) < 2:
             self._constant_prediction = float(y_train.iloc[0])
