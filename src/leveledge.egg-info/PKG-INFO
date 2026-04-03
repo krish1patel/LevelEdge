@@ -13,6 +13,7 @@ Requires-Dist: xgboost
 Requires-Dist: pandas-market-calendars
 Requires-Dist: python-dotenv
 Requires-Dist: supabase
+Requires-Dist: polygon-api-client
 
 ---
 title: LevelEdge
