@@ -1,8 +1,61 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+import yfinance as yf
+from datetime import datetime, timedelta
 from leveledge import Predictor
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
+
+
+def _parse_price_levels(
+    raw: str,
+    current_price: float | None,
+    is_percentage_mode: bool,
+) -> list[float]:
+    """Parse comma-separated price level strings, converting percentages to absolute prices."""
+    price_levels = []
+    for p in raw.split(","):
+        p = p.strip()
+        if not p:
+            continue
+        if is_percentage_mode:
+            if p.endswith("%"):
+                try:
+                    pct = float(p[:-1])
+                except ValueError:
+                    raise ValueError(f"Invalid percentage value: {p}")
+                if current_price is None:
+                    raise ValueError(
+                        "Percentage mode requires a current price, but could not fetch current price for this ticker."
+                    )
+                price_levels.append(current_price * (1 + pct / 100))
+            else:
+                raise ValueError(
+                    f"In percentage mode, all price levels must end with '%': got '{p}'"
+                )
+        else:
+            try:
+                price_levels.append(float(p))
+            except ValueError:
+                raise ValueError(f"Invalid price level: {p}")
+    return price_levels
+
+
+def perc_pct_str(pct: float) -> str:
+    """Format a percentage change with sign, e.g. 5.0 → '+5.00%', -2.3 → '-2.30%'."""
+    return f"{pct:+.2f}%"
+
+
+def _get_current_price(ticker: str, end_datetime: datetime | None) -> float:
+    """Fetch the most recent close price for a ticker via yfinance."""
+    t = yf.ticker.Ticker(ticker)
+    if end_datetime is not None:
+        start = end_datetime - timedelta(days=7)
+        df = t.history(start=start, end=end_datetime, interval="1m", prepost=False)
+    else:
+        df = t.history(period="5d", interval="1m", prepost=False)
+    if df.empty:
+        raise ValueError(f"Could not fetch current price for {ticker}.")
+    return float(df["Close"].iloc[-1])
 
 
 def run_batch_prediction(
@@ -69,9 +122,15 @@ def show_batch_prediction_dialog(
         price_level = block["price_level"]
         results = block["results"]
 
+        if current_price is not None and current_price != 0:
+            pct_move = ((price_level - current_price) / current_price) * 100
+            price_label = f"${price_level:.2f} ({perc_pct_str(pct_move)})"
+        else:
+            price_label = f"${price_level:.2f}"
+
         st.write(
             f'### {ticker.upper()} predictions for price level '
-            f'${price_level:.2f} at {tgt_datetime.strftime("%m/%d/%Y %I:%M %p")}'
+            f'{price_label} at {tgt_datetime.strftime("%m/%d/%Y %I:%M %p")}'
         )
 
         rows = []
@@ -202,11 +261,22 @@ with st.form("batch_predict_form"):
         # Force preset intervals when the preset is enabled
         intervals = ["15m", "30m", "90m"]
 
-    price_levels_raw = st.text_input(
-        "Price levels ($, comma-separated)",
-        value="0.0",
-        help="Enter one or more price levels separated by commas, e.g. 400, 405.5",
+    price_mode_pct = st.checkbox(
+        "Use percentage mode",
+        value=False,
+        help="When checked, price levels are treated as percentage moves from the current price (e.g. '+2%', '-1.5%'). The '%' suffix is required on each entry.",
     )
+
+    if price_mode_pct:
+        label = "Price levels (% move, comma-separated)"
+        placeholder = "+2%, -1%, +5%"
+        default = "+2%, -2%"
+    else:
+        label = "Price levels ($, comma-separated)"
+        placeholder = "400, 405.5"
+        default = "0.0"
+
+    price_levels_raw = st.text_input(label, value=default, placeholder=placeholder)
     submit = st.form_submit_button("Run batch prediction")
 
 if submit:
@@ -235,16 +305,17 @@ if submit:
     price_levels: list[float] = []
     if not validation_failed:
         try:
-            price_levels = [
-                float(p.strip())
-                for p in price_levels_raw.split(",")
-                if p.strip() != ""
-            ]
-        except ValueError:
-            st.error(
-                "Could not parse price levels. "
-                "Please enter comma-separated numbers, e.g. 400, 405.5"
-            )
+            if price_mode_pct:
+                current_price_for_pct = _get_current_price(ticker, end_datetime if backtest_mode else None)
+                price_levels = _parse_price_levels(
+                    price_levels_raw, current_price_for_pct, is_percentage_mode=True
+                )
+            else:
+                price_levels = _parse_price_levels(
+                    price_levels_raw, current_price=None, is_percentage_mode=False
+                )
+        except ValueError as e:
+            st.error(str(e))
             validation_failed = True
 
     if not validation_failed and not price_levels:
