@@ -19,3 +19,6 @@ web/dist/
 benchmarks/results/predictions.partial.csv
 benchmarks/results_run.log
 build/
+benchmarks/cache/
+benchmarks/results_kalshi_run.log
+benchmarks/results/kalshi/predictions.csv
