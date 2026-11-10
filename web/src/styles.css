@@ -304,7 +304,8 @@ button, input, select { font: inherit; color: inherit; letter-spacing: inherit; 
 .main-col { min-width: 0; }
 .steps { margin: 0 0 var(--s3); padding-left: 1.25em; color: var(--ink-2); display: flex; flex-direction: column; gap: var(--s2); max-width: 65ch; }
 .steps li::marker { color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.kv-inline { grid-template-columns: repeat(auto-fill, minmax(150px, auto) minmax(110px, 1fr)); }
+.kv-inline { grid-template-columns: repeat(auto-fill, minmax(96px, max-content) minmax(150px, 1fr)); column-gap: 12px; }
+.kv-inline dd { text-align: left; }
 .table-scroll { overflow-x: auto; margin: 0 calc(-1 * var(--s1)); padding: 0 var(--s1); }
 .table th.row-h { font-weight: 400; font-size: var(--t-body); color: var(--ink); padding: 8px 16px 8px 0; border-top: 1px solid var(--hairline); text-align: left; white-space: normal; }
 .table tr[data-emph="true"] th.row-h { font-weight: 600; }
