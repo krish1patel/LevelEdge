@@ -139,9 +139,141 @@ export function Research() {
               </dl>
             </Experiment>
           )}
+
+          {r.return_models && <ModelsCard m={r.return_models} />}
+          {r.construction && <ConstructionCard c={r.construction} />}
+          {r.construction && <FrontierCard c={r.construction} />}
+          {r.reward && <RewardCard w={r.reward} />}
+          {r.stock_factors && <FactorsCard f={r.stock_factors} />}
+          {r.literature && <LiteratureCard l={r.literature} />}
+          {r.literature && <BandsCard l={r.literature} />}
         </div>
       )}
     </>
+  );
+}
+
+const sh = (v: number | undefined) => (v == null ? "—" : minus(v, 2));
+const rate = (v: number | undefined, d = 1) => (v == null ? "—" : `${minus(v * 100, d)}%`);
+
+function PerfTable({ rows, cols }: { rows: { label: string; emph?: boolean; cells: string[] }[]; cols: string[] }) {
+  return (
+    <div className="table-scroll">
+      <table className="table">
+        <thead><tr><th scope="col">{cols[0]}</th>{cols.slice(1).map((c) => <th key={c} scope="col" className="r">{c}</th>)}</tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label} data-emph={r.emph ? "true" : undefined}>
+              <th scope="row" className="row-h">{r.label}</th>
+              {r.cells.map((c, i) => <td key={i} className="r num">{c}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ModelsCard({ m }: { m: NonNullable<ResearchResponse["return_models"]> }) {
+  const names: [string, string][] = [["rule", "Trend rule"], ["ridge", "Pooled ridge"], ["spline", "Splines"], ["mixed", "Mixed effects"], ["xgb", "Boosted trees"]];
+  const rw = m.reward_vs_levered_sixty_forty;
+  return (
+    <Experiment id="rm" title="Richer return models" verdict="rejected" verdictText="No gain over the simple trend rule"
+      question="Do ridge regression, splines, a mixed-effects model (per-ETF random slopes) or boosted trees forecast next week's ETF returns better than the 12-month trend rule?"
+      method="Weekly, walked forward year by year from 2011 with penalties chosen on earlier data only; the same sizing, costs and engine for every model. 'Fresh' is 18 sector and country ETFs never used in any earlier test.">
+      <PerfTable cols={["Model", "Forecast R²", "Sharpe", "Sharpe, fresh ETFs"]}
+        rows={names.map(([k, l]) => ({ label: l, emph: k === "rule",
+          cells: [minus(m.main.forecast[k]?.oos_r2 ?? 0, 3), sh(m.main.metrics[k]?.sharpe), sh(m.fresh?.metrics[k]?.sharpe)] }))} />
+      <p className="help">Out-of-sample R² is at or below zero for every model: next week's ETF returns are close to unpredictable from these features. The random effects shrank to zero, so the ETFs don't differ enough to need their own slopes.
+        {rw && ` Levering the best model to ${rate(rw.vol, 0)} volatility returned ${rate(rw.auto_reward.cagr)} a year; 60/40 levered to the same volatility returned ${rate(rw.sixty_forty_levered.cagr)}.`}</p>
+    </Experiment>
+  );
+}
+
+function ConstructionCard({ c }: { c: NonNullable<ResearchResponse["construction"]> }) {
+  const names: [string, string][] = [["vt6040", "Vol-targeted 60/40"], ["rp", "Risk parity"], ["rp_trend", "Risk parity + trend"],
+    ["vt6040_trend", "Vol-targeted 60/40 + trend"], ["current_book", "Unlevered book"], ["sixty_forty", "60/40"]];
+  const vs = c.holdout_sharpe_vs.sixty_forty;
+  return (
+    <Experiment id="cn" title="Risk parity and volatility targeting" verdict="rejected" verdictText="Nothing beats plain 60/40 reliably"
+      question="Do risk-balanced or volatility-targeted portfolios earn more per unit of risk than 60/40, with leverage paid for?"
+      method="Weekly, next-open fills, 5 bp costs, borrowing at T-bills + 2%, gross exposure up to 150%. Best Sharpe before 2020 selected, then 2020 onward read once.">
+      <PerfTable cols={["Design", "Sharpe before 2020", "Sharpe from 2020"]}
+        rows={names.map(([k, l]) => ({ label: l, emph: k === c.selected, cells: [sh(c.dev[k]?.sharpe), sh(c.holdout[k]?.sharpe)] }))} />
+      <p className="help">Vol-targeted 60/40 won before 2020, then trailed 60/40 after it (difference {sh(vs.diff)}, 95% interval {sh(vs.ci95[0])} to {sh(vs.ci95[1])}): it cut exposure after volatility spikes and missed the fast rebounds.</p>
+    </Experiment>
+  );
+}
+
+function FrontierCard({ c }: { c: NonNullable<ResearchResponse["construction"]> }) {
+  const book = c.frontier.filter((f) => f.family === "current_book_levered");
+  return (
+    <Experiment id="fr" title="How much return each unit of risk buys" verdict="neutral" verdictText="Leverage adds return at a steep risk cost; 1.5× was chosen"
+      question="Holding the book at more than 100% gross, financed by margin, how do return and the worst fall scale?"
+      method="The unlevered book's own weights scaled by a fixed multiple, borrowing at T-bills + 2%, 2007 onward. SPY alone: about 10.7% a year with a −55% worst fall.">
+      <PerfTable cols={["Gross", "Return", "Worst fall", "Worst year", "Sharpe"]}
+        rows={book.map((f) => ({ label: `${f.knob}×`, emph: f.knob === 1.5, cells: [rate(f.cagr), rate(f.max_drawdown, 0), rate(f.worst_year, 0), sh(f.sharpe)] }))} />
+      <p className="help">At 2× the book nearly matches SPY's return with a shallower worst fall, but borrowing costs pull Sharpe down as leverage rises.</p>
+    </Experiment>
+  );
+}
+
+function RewardCard({ w }: { w: NonNullable<ResearchResponse["reward"]> }) {
+  const h = w.holdout;
+  return (
+    <Experiment id="rw" title="A bigger trend sleeve with leverage" verdict="rejected" verdictText="Failed the held-out test"
+      question={`Most return before 2020 with the worst fall no deeper than ${rate(w.dd_limit, 0)}: trend share 20–50%, leverage 1–2×.`}
+      method={`20 books, selected on 2007–2019 (picked: ${w.selected.replace("s=", "trend ").replace("|L=", ", ")}×), then 2020 onward read once.`}>
+      <PerfTable cols={["From 2020", "Return", "Volatility", "Worst fall"]}
+        rows={[{ label: "Selected book", emph: true, cells: [rate(h.selected.cagr), rate(h.selected.vol), rate(h.selected.max_drawdown, 0)] },
+               { label: "Unlevered current book", cells: [rate(h.current_book.cagr), rate(h.current_book.vol), rate(h.current_book.max_drawdown, 0)] },
+               { label: "SPY", cells: [rate(h.spy_buy_hold.cagr), rate(h.spy_buy_hold.vol), rate(h.spy_buy_hold.max_drawdown, 0)] }]} />
+      <p className="help">The leverage was spent on a trend sleeve that lagged after 2020: more trend lowered returns at every leverage level.</p>
+    </Experiment>
+  );
+}
+
+function FactorsCard({ f }: { f: NonNullable<ResearchResponse["stock_factors"]> }) {
+  const names: [string, string][] = [["mom_12_1", "Momentum (12-1)"], ["mom_lowvol", "Momentum + low vol"], ["lowvol", "Low volatility"], ["rev_1m", "1-month reversal"]];
+  return (
+    <Experiment id="sf" title="Stock factors on historical S&P 500 members" verdict="rejected" verdictText="No factor beat an equal-weight portfolio of the same stocks"
+      question="Do momentum, low volatility or short-term reversal, holding the top 20% of S&P 500 members each month, beat simply equal-weighting the members?"
+      method={`Point-in-time membership, so the strategy only holds stocks in the index on that date. Yahoo lacks most failed, acquired and renamed members: coverage is ${rate(f.coverage.share_2006, 0)} of members in 2006, ${rate(f.coverage.share_2019, 0)} in 2019 and ${rate(f.coverage.share_2025, 0)} in 2025, so each factor is compared with the same covered stocks. Monthly, 10 bp costs.`}>
+      <PerfTable cols={["Factor", "vs equal weight, before 2020", "after 2020", "Sharpe after 2020"]}
+        rows={names.map(([k, l]) => ({ label: l, cells: [rate(f.dev_vs_ew[k].excess_cagr), rate(f.holdout_vs_ew[k].excess_cagr), sh(f.holdout[k].sharpe)] }))} />
+      <p className="help">Low volatility had the best risk-adjusted record before 2020 and the worst after. A real stock-level test needs survivorship-free data (paid).</p>
+    </Experiment>
+  );
+}
+
+function LiteratureCard({ l }: { l: NonNullable<ResearchResponse["literature"]> }) {
+  const books: [string, string][] = [["book_orig_trend", "Current sleeve (12-month trend)"], ["book_mtp", "Fast/slow blend (Goulding et al. 2023)"],
+    ["book_daa_g12", "Defensive Asset Allocation (Keller & Keuning 2018)"], ["book_gtaa5", "10-month average (Faber 2007)"]];
+  const vs = l.holdout_vs_current_book;
+  return (
+    <Experiment id="lit" title="Published strategies as the book's sleeve" verdict="neutral"
+      verdictText="Defensive Asset Allocation leads but isn't proven: tracked as a shadow book"
+      question="Do strategies from published papers, implemented exactly as specified, beat the current trend sleeve inside the 1.5× book?"
+      method={`${l.period[0]} onward, borrowing at T-bills + 2%, 5 bp costs. Selected on Sharpe before 2020, then 2020 onward read once (fresh for all of them). Corrected for ${l.deflated.trials} strategies tried, there is a ${rate(l.deflated.deflated_sharpe_prob, 0)} chance the winner is not luck; 95% is the usual bar.`}>
+      <PerfTable cols={["Sleeve", "Return", "Sharpe before 2020", "Sharpe from 2020"]}
+        rows={books.map(([k, n]) => ({ label: n, emph: k === l.selected, cells: [rate(l.full[k].cagr), sh(l.dev[k].sharpe), sh(l.holdout[k].sharpe)] }))} />
+      <p className="help">From 2020 the Defensive Asset Allocation book beat the current one by {sh(vs.diff)} Sharpe (95% interval {sh(vs.ci95[0])} to {sh(vs.ci95[1])}). It is followed forward from public prices, untraded, and replaces the live sleeve only on months of evidence.
+        {" "}Turn-of-the-month and overnight-only SPY were rejected: the turn-of-month days earned {l.per_day_bp.tom_window.toFixed(1)} bp a day against {l.per_day_bp.spy_all_days.toFixed(1)} bp on any day, and overnight returns fall from {l.per_day_bp.overnight_0bp.toFixed(1)} to {l.per_day_bp.overnight_1bp.toFixed(1)} bp a day at 1 bp of cost per side.</p>
+    </Experiment>
+  );
+}
+
+function BandsCard({ l }: { l: NonNullable<ResearchResponse["literature"]> }) {
+  const b0 = l.bands["0.00"], bs = l.bands[l.band_selected];
+  return (
+    <Experiment id="bd" title="Rebalancing bands: fewer, larger trades" verdict="adopted" verdictText={`Adopted: trade an ETF only when it drifts ${(Number(l.band_selected) * 100).toFixed(0)} points from target`}
+      question="How much of the trading is worth its cost? Rebalance weekly only the ETFs that drifted past a band."
+      method="Pre-declared choice: the widest band whose tracking error against weekly full rebalancing stays below 0.5% a year. Consistent with Vanguard's threshold-rebalancing research (about 5–21 bp a year).">
+      <PerfTable cols={["Band", "Orders a year", "Costs a year", "Tracking error"]}
+        rows={Object.entries(l.bands).map(([k, v]) => ({ label: k === "0.00" ? "None (weekly)" : `${(Number(k) * 100).toFixed(0)} point${Number(k) === 0.01 ? "" : "s"}`,
+          emph: k === l.band_selected, cells: [v.orders_per_year.toFixed(0), `${v.cost_drag_bp_per_year.toFixed(0)} bp`, rate(v.tracking_error_vs_full, 2)] }))} />
+      <p className="help">Orders fall from {b0.orders_per_year.toFixed(0)} to {bs.orders_per_year.toFixed(0)} a year and costs from {b0.cost_drag_bp_per_year.toFixed(0)} to {bs.cost_drag_bp_per_year.toFixed(0)} bp, so no money is spent on trades too small to matter.</p>
+    </Experiment>
   );
 }
 

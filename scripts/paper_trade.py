@@ -41,7 +41,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--execute", action="store_true", help="submit orders to the Alpaca paper account")
     ap.add_argument("--force", action="store_true", help="rebalance even if today is not the weekly rebalance day")
-    ap.add_argument("--band", type=float, default=0.01)
+    ap.add_argument("--band", type=float, default=live.BAND)
     args = ap.parse_args()
 
     t = live.current_targets()

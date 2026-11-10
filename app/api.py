@@ -460,6 +460,35 @@ def api_research():
         vdf = pd.read_csv(var_csv)
         out["etf_search_points"] = [{"variant": r.variant, "dev": float(r.dev_sharpe), "hold": float(r.hold_sharpe)}
                                     for r in vdf.itertuples()]
+    am, af = _read_json(RESULTS / "alpha_research_main" / "summary.json"), _read_json(RESULTS / "alpha_research_fresh" / "summary.json")
+    if am:
+        pick = lambda r: {"forecast": r["forecast"], "metrics": {k: r["metrics"][k] for k in ("rule", "ridge", "spline", "mixed", "xgb", "auto") if k in r["metrics"]},
+                          "sharpe_vs_rule": r["sharpe_vs_rule"]}
+        out["return_models"] = {"main": pick(am), "fresh": pick(af) if af else None,
+                                "reward_vs_levered_sixty_forty": am.get("reward_vs_levered_sixty_forty")}
+    cr = _read_json(RESULTS / "construction" / "summary.json")
+    if cr:
+        keep = ("vt6040", "rp", "rp_trend", "vt6040_trend", "current_book", "sixty_forty")
+        out["construction"] = {"selected": cr["selected"], "dev": {k: cr["dev"][k] for k in keep}, "holdout": {k: cr["holdout"][k] for k in keep},
+                               "holdout_sharpe_vs": cr["holdout_sharpe_vs"],
+                               "frontier": [f for f in cr["frontier"] if f["borrow_spread"] == 0.02 and f["family"] != "vt6040_targeted"]}
+    rw = _read_json(RESULTS / "reward" / "summary.json")
+    if rw:
+        out["reward"] = {"selected": rw["selected"], "dd_limit": rw["dd_limit"], "holdout": rw["holdout"], "full": rw["full"]}
+    sf = _read_json(RESULTS / "stock_factors" / "summary.json")
+    if sf:
+        out["stock_factors"] = {"period": sf["period"], "coverage": sf["coverage"], "dev_vs_ew": sf["dev_vs_ew"],
+                                "holdout_vs_ew": sf["holdout_vs_ew"],
+                                "dev": {k: sf["dev"][k] for k in ("mom_12_1", "mom_lowvol", "lowvol", "rev_1m", "ew_members")},
+                                "holdout": {k: sf["holdout"][k] for k in ("mom_12_1", "mom_lowvol", "lowvol", "rev_1m", "ew_members")}}
+    lit = _read_json(RESULTS / "literature" / "summary.json")
+    if lit:
+        names = ("book_orig_trend", "book_mtp", "book_daa_g12", "book_gtaa5", "daa_g12", "tom", "overnight_0bp", "overnight_1bp", "sixty_forty")
+        out["literature"] = {"period": lit["period"], "selected": lit["selected_sleeve"],
+                             "full": {k: lit["full"][k] for k in names}, "dev": {k: lit["dev"][k] for k in names},
+                             "holdout": {k: lit["holdout"][k] for k in names},
+                             "holdout_vs_current_book": lit["holdout_vs_current_book"], "deflated": lit["deflated_sharpe_selected"],
+                             "per_day_bp": lit["per_day_in_market_bp"], "bands": lit["bands"], "band_selected": lit["band_selected"]}
     if er:
         out["etf_search"] = {k2: er[k2] for k2 in ("period", "trials", "selected", "deflated_sharpe_dev", "dev", "holdout",
                                                     "holdout_sharpe_vs", "rank_stability")}

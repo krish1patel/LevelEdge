@@ -1,7 +1,10 @@
 # .github/workflows/paper_trade.yml
 # LevelEdge paper-trading loop: after the close each weekday, rebalance the
 # Alpaca PAPER account on the last trading day of the week. Orders queue for
-# the next open. Without the two secrets below it only prints a plan.
+# the next open. Without Alpaca secrets it only prints a plan.
+#
+# On a rebalance it posts a weekly report, and on any failure an alert, as a
+# comment on the "Paper book weekly report" issue (subscribe to it).
 name: Paper Trade
 
 on:
@@ -18,10 +21,19 @@ concurrency:
   group: paper-trade
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   paper-trade:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      # either naming style works; the repository's secrets are ALPACA_API_KEY / ALPACA_SECRET_KEY
+      ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID || secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY || secrets.ALPACA_SECRET_KEY }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,14 +45,33 @@ jobs:
           pip install -r requirements.txt
           pip install --no-deps .
       - name: Rebalance paper account
-        env:
-          # either naming style works; the repository's secrets are ALPACA_API_KEY / ALPACA_SECRET_KEY
-          ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID || secrets.ALPACA_API_KEY }}
-          ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY || secrets.ALPACA_SECRET_KEY }}
         run: python scripts/paper_trade.py --execute ${{ inputs.force && '--force' || '' }} | tee paper_trade.json
+      - name: Weekly report
+        run: |
+          python scripts/weekly_report.py --trade-record paper_trade.json > report.md
+          if [ -s report.md ]; then
+            cat report.md >> "$GITHUB_STEP_SUMMARY"
+            bash scripts/post_report.sh report.md
+          else
+            echo "No report today (not a rebalance day)."
+          fi
+      - name: Alert on failure
+        if: failure()
+        run: |
+          {
+            echo "## Paper trade run failed"
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "No further trades happen until this is fixed; the next scheduled run tries again."
+          } > alert.md
+          bash scripts/post_report.sh alert.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: paper-trade-${{ github.run_id }}
-          path: paper_trade.json
+          path: |
+            paper_trade.json
+            report.md
+          if-no-files-found: ignore
           retention-days: 90

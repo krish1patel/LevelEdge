@@ -87,6 +87,54 @@ def next_rebalance_date(now: datetime | None = None) -> pd.Timestamp:
     return today
 
 
+# Execution: trade an ETF only when it drifts more than BAND from target
+# (benchmarks/literature_research.py: 419 -> 64 orders a year, 21 -> 14 bp/yr of costs,
+# 0.45%/yr tracking error against weekly full rebalancing).
+BAND = 0.02
+LIVE_START = "2026-11-10"          # first paper fills
+
+# Shadow book: the same design with the Keller & Keuning DAA-G12 sleeve in place of
+# the trend sleeve. It won the pre-declared sleeve selection but is not proven
+# (holdout Sharpe +0.06, CI -0.11 to +0.21), so it is tracked from public prices
+# rather than traded. Switch only on months of forward evidence.
+SHADOW_ID = "core6040_daa30_x150_shadow"
+SHADOW_START = "2026-11-10"
+
+
+def shadow_decisions(closes: pd.DataFrame) -> pd.DataFrame:
+    from leveledge import strategies as S
+
+    core = pd.Series(CORE, dtype=float).reindex(closes.columns).fillna(0.0)
+    sleeve = S.daa_g12(closes).reindex(columns=closes.columns).fillna(0.0)
+    return LEVERAGE * (CORE_SHARE * core.values + TREND_SHARE * sleeve)
+
+
+def tracking_since(start: str, cache_dir: str | None = None, now: datetime | None = None) -> pd.DataFrame:
+    """Growth of $1 from ``start`` for the live book's rules, the shadow book, 60/40 and SPY.
+
+    Rebuilt from public prices and the published rules every time, so the shadow
+    record cannot be adjusted after the fact.
+    """
+    from leveledge import strategies as S
+
+    syms = sorted(set(config().universe) | set(S.DAA_SYMBOLS))
+    prices = completed_daily(P.load_prices(syms, start="2005-01-01", cache_dir=cache_dir), now)
+    opens, closes, cash = P.panel(prices, syms)
+    tu = config().universe
+    book, _ = book_decisions(opens[tu], closes[tu], cash)
+    series = {
+        "book_rules": P.backtest(opens, closes, cash, book.reindex(columns=closes.columns).fillna(0.0), 5.0)["ret"],
+        "shadow_daa": P.backtest(opens, closes, cash, shadow_decisions(closes), 5.0)["ret"],
+        "sixty_forty": P.buy_and_hold(closes, {"SPY": 0.6, "IEF": 0.4}, cash, "monthly")["ret"],
+        "spy_buy_hold": P.buy_and_hold(closes, {"SPY": 1.0}, cash, None)["ret"],
+    }
+    df = pd.DataFrame(series).loc[pd.Timestamp(start):].fillna(0.0)
+    if df.empty:
+        return df
+    df.iloc[0] = 0.0                                   # growth starts at the start date's close
+    return (1 + df).cumprod()
+
+
 def current_targets(cache_dir: str | None = None, now: datetime | None = None) -> dict:
     """Target weights from the latest completed close, with the reasoning behind them."""
     cfg = config()
@@ -120,5 +168,6 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
     }
 
 
-__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "book_from_trend", "book_decisions",
+__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "BAND", "LIVE_START",
+           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "tracking_since", "book_from_trend", "book_decisions",
            "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets"]
