@@ -362,15 +362,18 @@ function TrustCard({ bt, live }: { bt: PortfolioBacktest; live: LivePaper | unde
   const h = bt.holdout;
   const startYear = bt.period[0].slice(0, 4);
   const worseThanSpy = bt.crisis_windows.filter((c) => c.book < c.spy_buy_hold);
+  const levered = bt.labels.book.includes("1.5x");
   return (
     <section className="card" aria-labelledby="trust-p-h">
       <div className="card-head"><h2 id="trust-p-h">How far to trust this</h2></div>
       <div className="trust-head" style={{ marginBottom: 16 }}>
         <ShieldCheck size={18} aria-hidden="true" style={{ color: "var(--accent)" }} />
-        <p><strong>{m.book.cagr > m.sixty_forty.cagr ? "More return than 60/40 over the whole backtest, a smaller fall than SPY." : "No more return than 60/40 over the whole backtest."}</strong>
+        <p><strong>{levered
+            ? (m.book.cagr > m.sixty_forty.cagr ? "More return than 60/40 over the whole backtest, a smaller fall than SPY." : "No more return than 60/40 over the whole backtest.")
+            : "Built for smaller crashes, not more return."}</strong>
           Since {startYear}: {fmtRate(m.book.cagr)} a year against {fmtRate(m.sixty_forty.cagr)} for 60/40 and {fmtRate(m.spy_buy_hold.cagr)} for SPY.
-          Since 2020: {fmtRate(h.book.cagr)} against {fmtRate(h.sixty_forty.cagr)} for 60/40{h.book.cagr <= h.sixty_forty.cagr + 0.002 ? ", with deeper falls" : ""}.
-          Borrowing costs mean it does not beat 60/40 on return per unit of risk.</p>
+          Since 2020: {fmtRate(h.book.cagr)} against {fmtRate(h.sixty_forty.cagr)} for 60/40{h.book.max_drawdown < h.sixty_forty.max_drawdown ? ", with deeper falls" : ", with shallower falls"}.{" "}
+          {levered ? "Borrowing costs mean it does not beat 60/40 on return per unit of risk." : "It has matched 60/40's return per unit of risk while falling less; it has not beaten it."}</p>
       </div>
       <dl className="kv">
         <dt>Worst fall, book</dt><dd className="num">{fmtRate(m.book.max_drawdown, 0)}</dd>
@@ -382,7 +385,7 @@ function TrustCard({ bt, live }: { bt: PortfolioBacktest; live: LivePaper | unde
         <dt>95% interval</dt><dd className="num">{fmtNum(full.ci95[0], 2)} to {fmtNum(full.ci95[1], 2)}</dd>
         <dt>Beats random trend sleeves</dt><dd className="num">{beats} of {bt.random_sleeve.sims}</dd>
         <dt>Rules chosen</dt><dd>Before any search</dd>
-        <dt>Leverage</dt><dd className="num">{bt.labels.book.includes("1.5x") ? "1.5×, from the frontier" : "None"}</dd>
+        <dt>Leverage</dt><dd className="num">{levered ? "1.5×" : "None"}</dd>
       </dl>
       {worseThanSpy.length > 0 && (
         <p className="trust-note"><Info size={14} aria-hidden="true" />
@@ -392,7 +395,7 @@ function TrustCard({ bt, live }: { bt: PortfolioBacktest; live: LivePaper | unde
       {live?.status !== "ok" && (
         <p className="trust-note"><Info size={14} aria-hidden="true" />Every number here is a backtest. The live record starts once a paper account is connected and needs months before it says much.</p>
       )}
-      <p className="help">Backtests use total-return ETF prices from Yahoo Finance, fills at the next open, and margin interest at the T-bill rate plus 2%. They can't include taxes. Leverage magnifies losses; a margin call is possible after a very large fall.</p>
+      <p className="help">Backtests use total-return ETF prices from Yahoo Finance, fills at the next open{levered ? ", and margin interest at the T-bill rate plus 2%" : ""}. They can't include taxes.{levered ? " Leverage magnifies losses; a margin call is possible after a very large fall." : " The book runs without margin because brokers only allow it from $2,000 of equity."}</p>
     </section>
   );
 }

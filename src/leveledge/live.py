@@ -28,9 +28,13 @@ CORE_SHARE = 0.7
 TREND_SHARE = 0.3
 # Chosen from the reward/risk frontier (benchmarks/construction_research.py):
 # 2007-2026 backtest 9.0%/yr, max drawdown -35%, with borrowing at T-bill + 2%.
-LEVERAGE = 1.5
-MAX_GROSS = 1.6            # hard ceiling for order planning (drift above 1.5x is trimmed back)
-STRATEGY_ID = "core6040_trend30_x150_v2"
+# The paper account is sized like the real one it rehearses: $100. Brokers allow
+# margin only from $2,000 of equity (FINRA), so the book runs unlevered: the
+# 2007-2026 backtest is 7.3%/yr with a -24% worst fall (60/40: 8.0%, -33%).
+# The 1.5x version (core6040_trend30_x150_v2) needs an account of $2,000 or more.
+LEVERAGE = 1.0
+MAX_GROSS = 1.0            # hard ceiling for order planning: never borrow
+STRATEGY_ID = "core6040_trend30_x100_v3"
 
 
 def config() -> P.StrategyConfig:

@@ -49,7 +49,7 @@ def main(n_random: int = 200):
         "spy_buy_hold": P.buy_and_hold(closes, {"SPY": 1.0}, cash, None).loc[start:],
         "trend_sleeve_alone": P.backtest(opens, closes, cash, trend, cfg.cost_bps).loc[start:],
     }
-    labels = {"book": "LevelEdge book (1.5x: 60/40 + 30% trend)", "sixty_forty": "60/40", "spy_buy_hold": "SPY buy-and-hold",
+    labels = {"book": "LevelEdge book (60/40 + 30% trend)", "sixty_forty": "60/40", "spy_buy_hold": "SPY buy-and-hold",
               "trend_sleeve_alone": "Trend sleeve alone"}
 
     # random-sleeve books: same core, sleeve signals drawn at the sleeve's long rate

@@ -103,7 +103,7 @@ class AlpacaBroker:
 
 def plan_orders(targets: dict[str, float], equity: float, cash: float, positions: dict[str, dict],
                 prices: dict[str, float], fractionable: dict[str, bool], band: float = 0.01,
-                min_notional: float = 5.0, max_gross: float = 1.0) -> list[Order]:
+                min_notional: float = 1.0, max_gross: float = 1.0) -> list[Order]:
     """Orders that move the account toward ``targets`` (weights of equity).
 
     positions : symbol -> {"market_value": $, "qty": shares}

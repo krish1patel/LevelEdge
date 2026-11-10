@@ -139,7 +139,9 @@ Space secrets:
 
 ## Paper trading
 
-`.github/workflows/paper_trade.yml` runs `scripts/paper_trade.py --execute` after the close on weekdays. On the last trading day of each week it rebalances the Alpaca **paper** account to the book's targets; orders fill at the next open. Add the two Alpaca secrets to the GitHub repository for it to trade; without them it prints the plan for a hypothetical $100,000 account.
+`.github/workflows/paper_trade.yml` runs `scripts/paper_trade.py --execute` after the close on weekdays. On the last trading day of each week it rebalances the Alpaca **paper** account to the book's targets, trading an ETF only when it has drifted more than 2 points from target; orders fill at the next open. After each rebalance it posts a report (and on any failure an alert) on the "Paper book weekly report" issue. Add the two Alpaca secrets to the GitHub repository for it to trade; without them it prints the plan for a hypothetical $100,000 account.
+
+The paper account is sized at **$100**, like the real account it rehearses. Brokers allow margin only from $2,000 of equity, so the book runs unlevered (`core6040_trend30_x100_v3`). Orders go down to Alpaca's $1 fractional minimum.
 
 ```bash
 python scripts/paper_trade.py --force          # dry run: plan against the real paper account (or $100k)

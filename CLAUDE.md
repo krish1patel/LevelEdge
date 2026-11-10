@@ -60,8 +60,9 @@ m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 | `model.py` | `LevelForecaster`: `VolScaler` (diurnal profile + mean-reverting variance, fitted by likelihood) → z-scores → `EmpiricalBaseline` (kernel survival function + Student-t tail) → XGBoost boosted from the baseline margin with a monotone constraint on the level → non-negative, intercept-free stacker → **held-out-fold gate** (classifier weight 0 unless it beats the baseline on the last fold) |
 | `predictor.py` | `forecast()` with an LRU cache; `Predictor` = backward-compatible one-level API used by the scripts |
 | `portfolio.py` | ETF data, momentum signals, vol-targeted sizing, daily backtest with next-open fills and costs, metrics, block-bootstrap Sharpe CIs, deflated Sharpe |
-| `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_v1`), weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()` |
-| `broker.py` | Alpaca client locked to paper; `plan_orders()` never borrows and skips drift under the band |
+| `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_x100_v3`: unlevered, sized for a $100 account, which brokers don't allow margin on below $2,000), 2% rebalancing band, weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()`, the shadow DAA book and `tracking_since()` |
+| `broker.py` | Alpaca client locked to paper; `plan_orders()` never exceeds `max_gross` (1.0 = no borrowing), skips drift under the band, $1 minimum order |
+| `strategies.py` | Published rules as specified: Keller & Keuning DAA-G12, Faber GTAA5 |
 | `kalshi.py` / `edge.py` | Kalshi public market data (live and archived candles); after-fee edge and joint event-level Kelly sizing |
 
 Validation: expanding walk-forward, last 60% of rows in 6 folds, purge `h` bars plus embargo `h` bars. Metrics: log loss, Brier, AUC, reliability, 80%-range coverage, per-level Brier skill vs climatology.

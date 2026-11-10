@@ -47,8 +47,7 @@ def account_curve(b: AlpacaBroker) -> pd.Series:
     h = b.portfolio_history(period="1A", timeframe="1D")
     s = pd.Series(h.get("equity") or [], index=pd.to_datetime(h.get("timestamp") or [], unit="s"), dtype=float)
     s.index = s.index.tz_localize("UTC").tz_convert(US_EASTERN).normalize().tz_localize(None)
-    s = s[s > 0]
-    return s[s.index >= pd.Timestamp(live.LIVE_START)]
+    return s[s > 0]          # the account's own history (a reset clears it), so the first point is the start
 
 
 def main() -> int:
@@ -78,7 +77,7 @@ def main() -> int:
               f"| Equity | {money(equity)} |",
               f"| Today | {money(equity - last)} ({pct(equity / last - 1)}) |",
               f"| Past week | {pct(equity / week_base - 1)} |",
-              f"| Since {live.LIVE_START} | {pct(equity / start_eq - 1)} |",
+              f"| Since {curve.index[0]:%Y-%m-%d} ({money(start_eq)}) | {pct(equity / start_eq - 1)} |",
               f"| Below peak | {pct(equity / peak - 1)} |",
               f"| Cash (negative = margin) | {money(float(acct['cash']))} |", ""]
 
@@ -96,13 +95,13 @@ def main() -> int:
 
     # live account vs the rules and benchmarks over the same days
     try:
-        tr = live.tracking_since(live.LIVE_START)
+        tr = live.tracking_since(curve.index[0].strftime("%Y-%m-%d"))
         if len(tr) >= 2 and len(curve) >= 2:
             acct_ret = equity / start_eq - 1
             rows = [("Paper account (actual)", acct_ret), ("Book rules (model)", tr["book_rules"].iloc[-1] - 1),
                     ("Shadow DAA book", tr["shadow_daa"].iloc[-1] - 1), ("60/40", tr["sixty_forty"].iloc[-1] - 1),
                     ("SPY", tr["spy_buy_hold"].iloc[-1] - 1)]
-            lines += [f"### Since {live.LIVE_START}", "", "| | Return |", "|---|---|"] + [f"| {n} | {pct(r)} |" for n, r in rows]
+            lines += [f"### Since {curve.index[0]:%Y-%m-%d}", "", "| | Return |", "|---|---|"] + [f"| {n} | {pct(r)} |" for n, r in rows]
             lines += ["", "Actual vs model shows execution slippage; the shadow book is the untraded DAA candidate.", ""]
     except Exception as e:  # noqa: BLE001 - the report must still go out
         lines += [f"_Benchmark comparison unavailable: {e}_", ""]

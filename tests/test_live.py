@@ -78,6 +78,16 @@ def test_plan_borrows_only_up_to_max_gross():
     assert sum(o.notional for o in capped if o.side == "buy") <= 16_000 + 1e-6
 
 
+def test_plan_for_a_100_dollar_account_never_borrows_and_respects_the_band():
+    targets = {"SPY": 0.449, "IEF": 0.28, "VNQ": 0.033, "EFA": 0.032, "DBC": 0.03, "IWM": 0.026, "EEM": 0.021, "QQQ": 0.019}
+    orders = plan_orders(targets, equity=100.0, cash=100.0, positions={}, prices={}, fractionable={}, band=live.BAND,
+                         max_gross=live.MAX_GROSS)
+    bought = {o.symbol for o in orders}
+    assert bought == {s for s, w in targets.items() if w >= live.BAND}   # QQQ at 1.9% waits until it clears the 2% band
+    assert sum(o.notional for o in orders) <= 100.0
+    assert all(o.notional >= 1.0 for o in orders)                         # Alpaca's fractional minimum
+
+
 def test_plan_whole_shares_when_not_fractionable():
     orders = plan_orders({"DBC": 0.2}, equity=10_000, cash=10_000, positions={}, prices={"DBC": 23.0},
                          fractionable={"DBC": False})
