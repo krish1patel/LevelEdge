@@ -135,7 +135,7 @@ Every push to `main` syncs to the HuggingFace Space (`.github/workflows/sync_to_
 
 Space secrets:
 - `SUPABASE_URL` and `SUPABASE_KEY`: enable the **Track record** tab, which reads `forwardtest_logs`.
-- `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY` (paper keys): show the live paper account on the **Portfolio** tab.
+- `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY` (paper keys; `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` also work): show the live paper account on the **Portfolio** tab.
 
 ## Paper trading
 

@@ -34,8 +34,9 @@ jobs:
           pip install --no-deps .
       - name: Rebalance paper account
         env:
-          ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID }}
-          ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY }}
+          # either naming style works; the repository's secrets are ALPACA_API_KEY / ALPACA_SECRET_KEY
+          ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID || secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY || secrets.ALPACA_SECRET_KEY }}
         run: python scripts/paper_trade.py --execute ${{ inputs.force && '--force' || '' }} | tee paper_trade.json
       - uses: actions/upload-artifact@v4
         if: always()

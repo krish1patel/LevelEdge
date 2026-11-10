@@ -26,7 +26,7 @@ uv venv -p 3.13 .venv && uv pip install -p .venv -r requirements.txt && uv pip i
 cd web && npm ci && npm run build      # frontend → web/dist
 ```
 
-`.env` (optional): `SUPABASE_URL`, `SUPABASE_KEY` (track record and forward-test logging), `POLYGON_API_KEY`, `ALPACA_API_KEY_ID` + `ALPACA_API_SECRET_KEY` (paper keys: live paper account on the Portfolio tab and the paper-trading job).
+`.env` (optional): `SUPABASE_URL`, `SUPABASE_KEY` (track record and forward-test logging), `POLYGON_API_KEY`, `ALPACA_API_KEY_ID` + `ALPACA_API_SECRET_KEY` (or `ALPACA_API_KEY` + `ALPACA_SECRET_KEY`; paper keys: live paper account on the Portfolio tab and the paper-trading job).
 Set `LEVELEDGE_DISABLE_LOGGING=1` to stop `Predictor.predict_xgb()` writing to Supabase (tests and benchmarks set this).
 
 ## Running things

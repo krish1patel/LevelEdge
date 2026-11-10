@@ -39,6 +39,18 @@ def test_broker_refuses_live_endpoint(monkeypatch):
     assert AlpacaBroker("k", "s").is_paper
 
 
+def test_credentials_accept_both_naming_styles(monkeypatch):
+    from leveledge.broker import KEY_NAMES, SECRET_NAMES, credentials
+    for n in KEY_NAMES + SECRET_NAMES:
+        monkeypatch.delenv(n, raising=False)
+    assert credentials() is None
+    monkeypatch.setenv("ALPACA_API_KEY", "k")
+    monkeypatch.setenv("ALPACA_SECRET_KEY", "s")
+    assert credentials() == ("k", "s")
+    monkeypatch.setenv("ALPACA_API_KEY_ID", "k2")
+    assert credentials()[0] == "k2"
+
+
 def test_plan_never_borrows():
     orders = plan_orders({"SPY": 0.6, "IEF": 0.4}, equity=10_000, cash=1_000,
                          positions={"GLD": {"market_value": 2_000, "qty": 10}},
