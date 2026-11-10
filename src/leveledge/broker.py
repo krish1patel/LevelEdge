@@ -35,9 +35,14 @@ class Order:
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
+KEY_NAMES = ("ALPACA_API_KEY_ID", "APCA_API_KEY_ID", "ALPACA_API_KEY")
+SECRET_NAMES = ("ALPACA_API_SECRET_KEY", "APCA_API_SECRET_KEY", "ALPACA_SECRET_KEY")
+
+
 def credentials() -> tuple[str, str] | None:
-    key = os.environ.get("ALPACA_API_KEY_ID") or os.environ.get("APCA_API_KEY_ID")
-    secret = os.environ.get("ALPACA_API_SECRET_KEY") or os.environ.get("APCA_API_SECRET_KEY")
+    """Alpaca keys from the environment, accepting the common naming styles."""
+    key = next((os.environ[n] for n in KEY_NAMES if os.environ.get(n)), None)
+    secret = next((os.environ[n] for n in SECRET_NAMES if os.environ.get(n)), None)
     return (key, secret) if key and secret else None
 
 
