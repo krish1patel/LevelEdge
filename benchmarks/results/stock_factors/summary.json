@@ -1,0 +1,495 @@
+{
+ "period": [
+  "2006-01-31",
+  "2026-11-10"
+ ],
+ "members_last_update": "2026-08-18",
+ "coverage": {
+  "mean_share": 0.771,
+  "min_share": 0.547,
+  "share_2006": 0.556,
+  "share_2019": 0.836,
+  "share_2025": 0.968
+ },
+ "full": {
+  "mom_12_1": {
+   "start": "2006-01-31",
+   "end": "2026-11-10",
+   "years": 20.75,
+   "cagr": 0.0884,
+   "vol": 0.2115,
+   "sharpe": 0.426,
+   "sortino": 0.538,
+   "max_drawdown": -0.5627,
+   "calmar": 0.157,
+   "worst_month": -0.1793,
+   "pct_positive_months": 0.633,
+   "total_return": 4.7918,
+   "turnover_per_year": 6.47
+  },
+  "mom_lowvol": {
+   "start": "2006-01-31",
+   "end": "2026-11-10",
+   "years": 20.75,
+   "cagr": 0.0919,
+   "vol": 0.1708,
+   "sharpe": 0.501,
+   "sortino": 0.624,
+   "max_drawdown": -0.4763,
+   "calmar": 0.193,
+   "worst_month": -0.151,
+   "pct_positive_months": 0.618,
+   "total_return": 5.1911,
+   "turnover_per_year": 5.93
+  },
+  "lowvol": {
+   "start": "2006-01-31",
+   "end": "2026-11-10",
+   "years": 20.75,
+   "cagr": 0.1,
+   "vol": 0.1472,
+   "sharpe": 0.606,
+   "sortino": 0.75,
+   "max_drawdown": -0.4007,
+   "calmar": 0.25,
+   "worst_month": -0.124,
+   "pct_positive_months": 0.633,
+   "total_return": 6.2204,
+   "turnover_per_year": 1.99
+  },
+  "rev_1m": {
+   "start": "2006-01-31",
+   "end": "2026-11-10",
+   "years": 20.75,
+   "cagr": 0.0807,
+   "vol": 0.266,
+   "sharpe": 0.361,
+   "sortino": 0.455,
+   "max_drawdown": -0.7577,
+   "calmar": 0.106,
+   "worst_month": -0.2668,
+   "pct_positive_months": 0.61,
+   "total_return": 4.0007,
+   "turnover_per_year": 19.0
+  },
+  "ew_members": {
+   "start": "2006-01-31",
+   "end": "2026-11-10",
+   "years": 20.75,
+   "cagr": 0.1121,
+   "vol": 0.2077,
+   "sharpe": 0.534,
+   "sortino": 0.657,
+   "max_drawdown": -0.5863,
+   "calmar": 0.191,
+   "worst_month": -0.2031,
+   "pct_positive_months": 0.657,
+   "total_return": 8.0664,
+   "turnover_per_year": 0.76
+  },
+  "spy_buy_hold": {
+   "start": "2006-01-31",
+   "end": "2026-11-10",
+   "years": 20.75,
+   "cagr": 0.109,
+   "vol": 0.1922,
+   "sharpe": 0.546,
+   "sortino": 0.669,
+   "max_drawdown": -0.5519,
+   "calmar": 0.198,
+   "worst_month": -0.1652,
+   "pct_positive_months": 0.665,
+   "total_return": 7.5555,
+   "turnover_per_year": 0.0
+  }
+ },
+ "full_vs_ew": {
+  "mom_12_1": {
+   "excess_cagr": -0.0259,
+   "tracking_error": 0.1042,
+   "info_ratio": -0.199,
+   "ir_ci95": [
+    -0.546,
+    0.256
+   ]
+  },
+  "mom_lowvol": {
+   "excess_cagr": -0.0301,
+   "tracking_error": 0.1014,
+   "info_ratio": -0.25,
+   "ir_ci95": [
+    -0.638,
+    0.188
+   ]
+  },
+  "lowvol": {
+   "excess_cagr": -0.0278,
+   "tracking_error": 0.113,
+   "info_ratio": -0.192,
+   "ir_ci95": [
+    -0.604,
+    0.2
+   ]
+  },
+  "rev_1m": {
+   "excess_cagr": -0.0202,
+   "tracking_error": 0.1048,
+   "info_ratio": -0.143,
+   "ir_ci95": [
+    -0.531,
+    0.22
+   ]
+  }
+ },
+ "full_sharpe_vs_spy": {
+  "mom_12_1": {
+   "diff": -0.12,
+   "ci95": [
+    -0.27,
+    0.055
+   ]
+  },
+  "mom_lowvol": {
+   "diff": -0.046,
+   "ci95": [
+    -0.231,
+    0.133
+   ]
+  },
+  "lowvol": {
+   "diff": 0.06,
+   "ci95": [
+    -0.192,
+    0.293
+   ]
+  },
+  "ew_members": {
+   "diff": -0.012,
+   "ci95": [
+    -0.133,
+    0.094
+   ]
+  }
+ },
+ "dev": {
+  "mom_12_1": {
+   "start": "2006-01-31",
+   "end": "2019-12-31",
+   "years": 13.9,
+   "cagr": 0.0713,
+   "vol": 0.2047,
+   "sharpe": 0.384,
+   "sortino": 0.479,
+   "max_drawdown": -0.5627,
+   "calmar": 0.127,
+   "worst_month": -0.1793,
+   "pct_positive_months": 0.637,
+   "total_return": 1.6059,
+   "turnover_per_year": 6.48
+  },
+  "mom_lowvol": {
+   "start": "2006-01-31",
+   "end": "2019-12-31",
+   "years": 13.9,
+   "cagr": 0.086,
+   "vol": 0.1632,
+   "sharpe": 0.518,
+   "sortino": 0.65,
+   "max_drawdown": -0.4763,
+   "calmar": 0.18,
+   "worst_month": -0.151,
+   "pct_positive_months": 0.631,
+   "total_return": 2.1478,
+   "turnover_per_year": 6.08
+  },
+  "lowvol": {
+   "start": "2006-01-31",
+   "end": "2019-12-31",
+   "years": 13.9,
+   "cagr": 0.1103,
+   "vol": 0.1371,
+   "sharpe": 0.749,
+   "sortino": 0.95,
+   "max_drawdown": -0.4007,
+   "calmar": 0.275,
+   "worst_month": -0.124,
+   "pct_positive_months": 0.673,
+   "total_return": 3.2817,
+   "turnover_per_year": 1.86
+  },
+  "rev_1m": {
+   "start": "2006-01-31",
+   "end": "2019-12-31",
+   "years": 13.9,
+   "cagr": 0.0802,
+   "vol": 0.2656,
+   "sharpe": 0.381,
+   "sortino": 0.473,
+   "max_drawdown": -0.7577,
+   "calmar": 0.106,
+   "worst_month": -0.2611,
+   "pct_positive_months": 0.619,
+   "total_return": 1.9243,
+   "turnover_per_year": 18.87
+  },
+  "ew_members": {
+   "start": "2006-01-31",
+   "end": "2019-12-31",
+   "years": 13.9,
+   "cagr": 0.1082,
+   "vol": 0.2074,
+   "sharpe": 0.545,
+   "sortino": 0.664,
+   "max_drawdown": -0.5863,
+   "calmar": 0.185,
+   "worst_month": -0.2031,
+   "pct_positive_months": 0.679,
+   "total_return": 3.1722,
+   "turnover_per_year": 0.75
+  },
+  "spy_buy_hold": {
+   "start": "2006-01-31",
+   "end": "2019-12-31",
+   "years": 13.9,
+   "cagr": 0.0903,
+   "vol": 0.1881,
+   "sharpe": 0.493,
+   "sortino": 0.601,
+   "max_drawdown": -0.5519,
+   "calmar": 0.164,
+   "worst_month": -0.1652,
+   "pct_positive_months": 0.685,
+   "total_return": 2.3265,
+   "turnover_per_year": 0.0
+  }
+ },
+ "dev_vs_ew": {
+  "mom_12_1": {
+   "excess_cagr": -0.0379,
+   "tracking_error": 0.092,
+   "info_ratio": -0.374,
+   "ir_ci95": [
+    -0.847,
+    0.18
+   ]
+  },
+  "mom_lowvol": {
+   "excess_cagr": -0.0326,
+   "tracking_error": 0.0968,
+   "info_ratio": -0.294,
+   "ir_ci95": [
+    -0.808,
+    0.24
+   ]
+  },
+  "lowvol": {
+   "excess_cagr": -0.0164,
+   "tracking_error": 0.1113,
+   "info_ratio": -0.092,
+   "ir_ci95": [
+    -0.624,
+    0.419
+   ]
+  },
+  "rev_1m": {
+   "excess_cagr": -0.0172,
+   "tracking_error": 0.1046,
+   "info_ratio": -0.114,
+   "ir_ci95": [
+    -0.626,
+    0.346
+   ]
+  }
+ },
+ "dev_sharpe_vs_spy": {
+  "mom_12_1": {
+   "diff": -0.109,
+   "ci95": [
+    -0.306,
+    0.089
+   ]
+  },
+  "mom_lowvol": {
+   "diff": 0.024,
+   "ci95": [
+    -0.197,
+    0.243
+   ]
+  },
+  "lowvol": {
+   "diff": 0.255,
+   "ci95": [
+    0.001,
+    0.5
+   ]
+  },
+  "ew_members": {
+   "diff": 0.051,
+   "ci95": [
+    -0.04,
+    0.138
+   ]
+  }
+ },
+ "holdout": {
+  "mom_12_1": {
+   "start": "2020-01-02",
+   "end": "2026-11-10",
+   "years": 6.84,
+   "cagr": 0.1238,
+   "vol": 0.2249,
+   "sharpe": 0.505,
+   "sortino": 0.654,
+   "max_drawdown": -0.3506,
+   "calmar": 0.353,
+   "worst_month": -0.1265,
+   "pct_positive_months": 0.627,
+   "total_return": 1.2226,
+   "turnover_per_year": 6.45
+  },
+  "mom_lowvol": {
+   "start": "2020-01-02",
+   "end": "2026-11-10",
+   "years": 6.84,
+   "cagr": 0.1039,
+   "vol": 0.1855,
+   "sharpe": 0.472,
+   "sortino": 0.584,
+   "max_drawdown": -0.352,
+   "calmar": 0.295,
+   "worst_month": -0.1253,
+   "pct_positive_months": 0.59,
+   "total_return": 0.9668,
+   "turnover_per_year": 5.63
+  },
+  "lowvol": {
+   "start": "2020-01-02",
+   "end": "2026-11-10",
+   "years": 6.84,
+   "cagr": 0.0794,
+   "vol": 0.1657,
+   "sharpe": 0.372,
+   "sortino": 0.45,
+   "max_drawdown": -0.3481,
+   "calmar": 0.228,
+   "worst_month": -0.1197,
+   "pct_positive_months": 0.554,
+   "total_return": 0.6864,
+   "turnover_per_year": 2.26
+  },
+  "rev_1m": {
+   "start": "2020-01-02",
+   "end": "2026-11-10",
+   "years": 6.84,
+   "cagr": 0.0816,
+   "vol": 0.2668,
+   "sharpe": 0.321,
+   "sortino": 0.417,
+   "max_drawdown": -0.4745,
+   "calmar": 0.172,
+   "worst_month": -0.2668,
+   "pct_positive_months": 0.59,
+   "total_return": 0.71,
+   "turnover_per_year": 19.27
+  },
+  "ew_members": {
+   "start": "2020-01-02",
+   "end": "2026-11-10",
+   "years": 6.84,
+   "cagr": 0.1201,
+   "vol": 0.2082,
+   "sharpe": 0.512,
+   "sortino": 0.642,
+   "max_drawdown": -0.3966,
+   "calmar": 0.303,
+   "worst_month": -0.1841,
+   "pct_positive_months": 0.614,
+   "total_return": 1.1731,
+   "turnover_per_year": 0.78
+  },
+  "spy_buy_hold": {
+   "start": "2020-01-02",
+   "end": "2026-11-10",
+   "years": 6.84,
+   "cagr": 0.1481,
+   "vol": 0.2002,
+   "sharpe": 0.648,
+   "sortino": 0.803,
+   "max_drawdown": -0.3372,
+   "calmar": 0.439,
+   "worst_month": -0.1249,
+   "pct_positive_months": 0.627,
+   "total_return": 1.5719,
+   "turnover_per_year": 0.0
+  }
+ },
+ "holdout_vs_ew": {
+  "mom_12_1": {
+   "excess_cagr": -0.001,
+   "tracking_error": 0.1253,
+   "info_ratio": 0.055,
+   "ir_ci95": [
+    -0.501,
+    0.806
+   ]
+  },
+  "mom_lowvol": {
+   "excess_cagr": -0.0249,
+   "tracking_error": 0.1103,
+   "info_ratio": -0.173,
+   "ir_ci95": [
+    -0.786,
+    0.563
+   ]
+  },
+  "lowvol": {
+   "excess_cagr": -0.0505,
+   "tracking_error": 0.1164,
+   "info_ratio": -0.387,
+   "ir_ci95": [
+    -1.114,
+    0.261
+   ]
+  },
+  "rev_1m": {
+   "excess_cagr": -0.0263,
+   "tracking_error": 0.1052,
+   "info_ratio": -0.201,
+   "ir_ci95": [
+    -0.915,
+    0.446
+   ]
+  }
+ },
+ "holdout_sharpe_vs_spy": {
+  "mom_12_1": {
+   "diff": -0.143,
+   "ci95": [
+    -0.441,
+    0.153
+   ]
+  },
+  "mom_lowvol": {
+   "diff": -0.175,
+   "ci95": [
+    -0.534,
+    0.158
+   ]
+  },
+  "lowvol": {
+   "diff": -0.276,
+   "ci95": [
+    -0.801,
+    0.164
+   ]
+  },
+  "ew_members": {
+   "diff": -0.135,
+   "ci95": [
+    -0.435,
+    0.121
+   ]
+  }
+ },
+ "seconds": 229.3
+}
