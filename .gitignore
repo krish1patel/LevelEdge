@@ -10,3 +10,12 @@ charts_yesterday/
 .DS_Store
 
 src/leveledge/__pycache__/
+# v2
+.venv/
+web/node_modules/
+web/dist/
+**/__pycache__/
+.pytest_cache/
+benchmarks/results/predictions.partial.csv
+benchmarks/results_run.log
+build/
