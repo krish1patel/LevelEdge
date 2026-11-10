@@ -1,6 +1,6 @@
-# Development guide
+# CLAUDE.md
 
-How this repository is organised, how to run it, and the rules that keep its results trustworthy.
+Guidance for Claude Code when working in this repository.
 
 ## What this project is
 
@@ -82,7 +82,7 @@ Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benc
 
 ## Frontend
 
-`web/src/`: `App.tsx` (shell with Portfolio / Forecaster / Research sections; hash routes `#research`, `#forecast`, `#diagnostics`, `#track`, default portfolio; `?ticker=` links open the forecaster), `components/Portfolio.tsx`, `components/Research.tsx`, `components/FanChart.tsx` (signature chart, x-axis in trading bars), `LevelsPanel`, `TrustPanel`, `Diagnostics`, `TrackRecord`, `XYChart`. Hand-built SVG with d3-scale/d3-shape. Tokens live in `styles.css`. Design context: `PRODUCT.md`, `DESIGN.md`.
+`web/src/`: `App.tsx` (shell with Portfolio / Forecaster / Research sections; hash routes `#research`, `#forecast`, `#diagnostics`, `#track`, default portfolio; `?ticker=` links open the forecaster), `components/Portfolio.tsx`, `components/Research.tsx`, `components/FanChart.tsx` (signature chart, x-axis in trading bars), `LevelsPanel`, `TrustPanel`, `Diagnostics`, `TrackRecord`, `XYChart`. Hand-built SVG with d3-scale/d3-shape. Tokens live in `styles.css`. Design context: `PRODUCT.md`, `DESIGN.md`, `.impeccable/surfaces/`.
 
 ## Deployment
 
