@@ -190,6 +190,8 @@ export interface Targets {
   next_rebalance: string;
   weights: Record<string, number>;
   cash_weight: number;
+  gross: number;
+  leverage: number;
   assets: TargetAsset[];
   sleeve_gross: number;
 }

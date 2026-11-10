@@ -3,8 +3,8 @@ Alpaca brokerage: paper trading by default, never live unless explicitly allowed
 
 Safety rules enforced here, not just documented:
 * the client refuses any non-paper endpoint unless LEVELEDGE_ALLOW_LIVE_TRADING=1;
-* :func:`plan_orders` never spends more than the cash it has after sells, so
-  the account's margin is never used (Alpaca paper accounts allow 2x by default);
+* :func:`plan_orders` never takes total long exposure above ``max_gross`` times
+  equity (1.0 = no borrowing; the book uses 1.5, under Alpaca's 2x overnight limit);
 * trades smaller than the band are skipped to keep turnover and costs down.
 """
 from __future__ import annotations
@@ -98,13 +98,13 @@ class AlpacaBroker:
 
 def plan_orders(targets: dict[str, float], equity: float, cash: float, positions: dict[str, dict],
                 prices: dict[str, float], fractionable: dict[str, bool], band: float = 0.01,
-                min_notional: float = 5.0) -> list[Order]:
+                min_notional: float = 5.0, max_gross: float = 1.0) -> list[Order]:
     """Orders that move the account toward ``targets`` (weights of equity).
 
     positions : symbol -> {"market_value": $, "qty": shares}
     band      : skip a symbol if its weight is within ``band`` of target (unless exiting fully)
-    Sells come first; buys are scaled down so they never exceed cash plus sale
-    proceeds, so the account never borrows.
+    Sells come first; buys are scaled down so total long exposure never exceeds
+    ``max_gross`` x equity (with max_gross = 1 they never exceed cash plus sale proceeds).
     """
     if equity <= 0:
         return []
@@ -131,7 +131,10 @@ def plan_orders(targets: dict[str, float], equity: float, cash: float, positions
         else:
             buys.append((s, diff, px))
     proceeds = sum(o.notional if o.notional is not None else (o.qty or 0) * prices.get(o.symbol, 0.0) for o in sells)
-    budget = max(0.0, cash + proceeds) * 0.995            # small buffer for price moves before the fill
+    long_after_sells = sum(float(p.get("market_value", 0.0)) for p in positions.values()) - proceeds
+    budget = max(0.0, max_gross * equity - long_after_sells) * 0.995   # buffer for price moves before the fill
+    if max_gross <= 1.0:
+        budget = min(budget, max(0.0, cash + proceeds) * 0.995)
     want = sum(d for _, d, _ in buys)
     scale = min(1.0, budget / want) if want > 0 else 1.0
     note = "" if scale == 1 else " (cash-limited)"

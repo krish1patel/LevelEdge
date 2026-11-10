@@ -8,13 +8,14 @@ from leveledge.broker import AlpacaBroker, LiveTradingRefused, plan_orders
 from leveledge.constants import US_EASTERN as ET
 
 
-def test_book_combines_core_and_sleeve():
+def test_book_combines_core_and_sleeve_at_leverage():
     trend = pd.Series({"SPY": 0.2, "IEF": 0.1, "GLD": 0.25, "TLT": 0.0})
     book = live.book_from_trend(trend)
-    assert book["SPY"] == pytest.approx(0.7 * 0.6 + 0.3 * 0.2)
-    assert book["IEF"] == pytest.approx(0.7 * 0.4 + 0.3 * 0.1)
-    assert book["GLD"] == pytest.approx(0.3 * 0.25)
-    assert book.sum() <= 1.0 + 1e-12
+    L = live.LEVERAGE
+    assert book["SPY"] == pytest.approx(L * (0.7 * 0.6 + 0.3 * 0.2))
+    assert book["IEF"] == pytest.approx(L * (0.7 * 0.4 + 0.3 * 0.1))
+    assert book["GLD"] == pytest.approx(L * 0.3 * 0.25)
+    assert book.sum() <= live.MAX_GROSS + 1e-12
 
 
 def test_rebalance_day_is_last_trading_day_of_week():
@@ -53,6 +54,16 @@ def test_plan_skips_small_drift_and_exits_fully():
                                     "TLT": {"market_value": 1, "qty": 0.01}},
                          prices={"SPY": 605, "IEF": 98.75, "TLT": 100}, fractionable={})
     assert [(o.symbol, o.side, o.qty) for o in orders] == [("TLT", "sell", 0.01)]
+
+
+def test_plan_borrows_only_up_to_max_gross():
+    orders = plan_orders({"SPY": 0.9, "IEF": 0.6}, equity=10_000, cash=10_000, positions={},
+                         prices={"SPY": 600, "IEF": 95}, fractionable={}, max_gross=1.5)
+    spend = sum(o.notional for o in orders if o.side == "buy")
+    assert 10_000 < spend <= 15_000 + 1e-6            # uses margin, but never beyond 1.5x equity
+    capped = plan_orders({"SPY": 1.5, "IEF": 0.6}, equity=10_000, cash=10_000, positions={},
+                         prices={"SPY": 600, "IEF": 95}, fractionable={}, max_gross=1.6)
+    assert sum(o.notional for o in capped if o.side == "buy") <= 16_000 + 1e-6
 
 
 def test_plan_whole_shares_when_not_fractionable():

@@ -26,7 +26,11 @@ from leveledge.sessions import nyse_schedule
 CORE = {"SPY": 0.6, "IEF": 0.4}
 CORE_SHARE = 0.7
 TREND_SHARE = 0.3
-STRATEGY_ID = "core6040_trend30_v1"
+# Chosen from the reward/risk frontier (benchmarks/construction_research.py):
+# 2007-2026 backtest 9.0%/yr, max drawdown -35%, with borrowing at T-bill + 2%.
+LEVERAGE = 1.5
+MAX_GROSS = 1.6            # hard ceiling for order planning (drift above 1.5x is trimmed back)
+STRATEGY_ID = "core6040_trend30_x150_v2"
 
 
 def config() -> P.StrategyConfig:
@@ -34,9 +38,9 @@ def config() -> P.StrategyConfig:
 
 
 def book_from_trend(trend: pd.Series) -> pd.Series:
-    """Combine one decision's trend-sleeve weights with the fixed core."""
+    """Combine one decision's trend-sleeve weights with the fixed core, at the book's leverage."""
     core = pd.Series(CORE, dtype=float).reindex(trend.index).fillna(0.0)
-    return CORE_SHARE * core + TREND_SHARE * trend
+    return LEVERAGE * (CORE_SHARE * core + TREND_SHARE * trend)
 
 
 def book_decisions(opens, closes, cash, cfg: P.StrategyConfig | None = None, vol=None, signal=None, corr=None):
@@ -101,10 +105,12 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
         "rebalance_today": is_rebalance_day(d),
         "weights": {k: round(float(v), 5) for k, v in book.items()},
         "cash_weight": round(float(1 - book.sum()), 5),
+        "gross": round(float(book.sum()), 4),
+        "leverage": LEVERAGE,
         "assets": [
             {"symbol": s, "name": P.UNIVERSE[s], "weight": round(float(book[s]), 5),
-             "core_weight": round(CORE_SHARE * CORE.get(s, 0.0), 5),
-             "trend_weight": round(TREND_SHARE * float(trend[s]), 5),
+             "core_weight": round(LEVERAGE * CORE_SHARE * CORE.get(s, 0.0), 5),
+             "trend_weight": round(LEVERAGE * TREND_SHARE * float(trend[s]), 5),
              "trend_on": bool(signal.loc[d, s] == 1), "return_12m": round(float(lookback_ret[s]), 4),
              "vol_annual": round(float(vol.loc[d, s] * np.sqrt(P.TRADING_DAYS)), 4),
              "last_close": round(float(closes.loc[d, s]), 4)}
@@ -114,5 +120,5 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
     }
 
 
-__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "STRATEGY_ID", "book_from_trend", "book_decisions",
+__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "book_from_trend", "book_decisions",
            "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets"]

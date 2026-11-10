@@ -56,7 +56,7 @@ def main() -> int:
     creds = credentials()
     prices = {a["symbol"]: a["last_close"] for a in t["assets"]}
     if not creds:
-        orders = plan_orders(t["weights"], 100_000.0, 100_000.0, {}, prices, {}, band=args.band)
+        orders = plan_orders(t["weights"], 100_000.0, 100_000.0, {}, prices, {}, band=args.band, max_gross=live.MAX_GROSS)
         record.update(action="plan only: no Alpaca keys (hypothetical $100,000 account)",
                       orders=[o.as_dict() for o in orders])
         print(json.dumps(record, indent=1))
@@ -68,7 +68,12 @@ def main() -> int:
     positions = {p["symbol"]: {"market_value": float(p["market_value"]), "qty": float(p["qty"])}
                  for p in broker.positions()}
     fractionable = {s: bool(broker.asset(s).get("fractionable", False)) for s in t["weights"]}
-    orders = plan_orders(t["weights"], equity, cash, positions, prices, fractionable, band=args.band)
+    if float(acct.get("multiplier", 1)) < live.LEVERAGE:
+        record.update(action=f"refused: the account's margin multiplier ({acct.get('multiplier')}) is below the book's {live.LEVERAGE}x")
+        print(json.dumps(record, indent=1))
+        return 1
+    orders = plan_orders(t["weights"], equity, cash, positions, prices, fractionable, band=args.band,
+                         max_gross=live.MAX_GROSS)
     record.update(account={"equity": equity, "cash": cash, "paper": broker.is_paper},
                   positions=positions, orders=[o.as_dict() for o in orders])
     if not args.execute:

@@ -49,7 +49,8 @@ export function Portfolio() {
         </h1>
         {data ? (
           <dl className="facts">
-            <div><dt>Design</dt><dd>70% in 60/40, 30% in trend</dd></div>
+            <div><dt>Design</dt><dd>{t?.leverage && t.leverage !== 1 ? `${t.leverage}× of ` : ""}70% 60/40 + 30% trend</dd></div>
+            {t && t.gross > 1 && <div><dt>Gross exposure</dt><dd className="num">{fmtRate(t.gross, 0)} (margin)</dd></div>}
             {t && <div><dt>Targets from</dt><dd>Close of {fmtIsoDay(t.as_of_close)}</dd></div>}
             {t && <div><dt>Next rebalance</dt><dd>{fmtIsoDay(t.next_rebalance)}, after the close</dd></div>}
             {t && <div><dt>Trend sleeve invested</dt><dd className="num">{fmtRate(t.sleeve_gross, 0)}</dd></div>}
@@ -321,25 +322,33 @@ function TargetsCard({ t, loading }: { t: Targets | null; loading: boolean }) {
                   </td>
                   <td className="r">
                     <div className="pcell">
-                      <span className="pbar" aria-hidden="true"><i style={{ width: `${Math.min(100, a.weight / 0.5 * 100)}%` }} /></span>
+                      <span className="pbar" aria-hidden="true"><i style={{ width: `${Math.min(100, a.weight / 0.75 * 100)}%` }} /></span>
                       <span className="pval num">{fmtRate(a.weight, 1)}</span>
                     </div>
                   </td>
                 </tr>
               ))}
-              <tr>
-                <td className="level">Cash<span className="move">T-bill rate</span></td>
-                <td />
-                <td className="r">
-                  <div className="pcell">
-                    <span className="pbar" aria-hidden="true"><i style={{ width: `${Math.min(100, t.cash_weight / 0.5 * 100)}%` }} /></span>
-                    <span className="pval num">{fmtRate(t.cash_weight, 1)}</span>
-                  </div>
-                </td>
-              </tr>
+              {t.cash_weight >= 0 ? (
+                <tr>
+                  <td className="level">Cash<span className="move">T-bill rate</span></td>
+                  <td />
+                  <td className="r">
+                    <div className="pcell">
+                      <span className="pbar" aria-hidden="true"><i style={{ width: `${Math.min(100, t.cash_weight / 0.75 * 100)}%` }} /></span>
+                      <span className="pval num">{fmtRate(t.cash_weight, 1)}</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td className="level">Borrowed<span className="move">On margin</span></td>
+                  <td />
+                  <td className="r"><span className="pval num">{fmtRate(-t.cash_weight, 1)}</span></td>
+                </tr>
+              )}
             </tbody>
           </table>
-          <p className="help">SPY and IEF carry the fixed 60/40 core. The trend sleeve holds an ETF only while its 12-month return beats cash, sized to a 10% volatility target with no borrowing. Bars are drawn to 50% of the account.</p>
+          <p className="help">SPY and IEF carry the fixed 60/40 core. The trend sleeve holds an ETF only while its 12-month return beats cash, sized to a 10% volatility target.{t.leverage > 1 ? ` The whole book is held at ${t.leverage}×, so about ${fmtRate(t.gross - 1, 0)} of the account is borrowed on margin.` : ""} Bars are drawn to 75% of the account.</p>
         </>
       )}
     </section>
@@ -349,25 +358,41 @@ function TargetsCard({ t, loading }: { t: Targets | null; loading: boolean }) {
 function TrustCard({ bt, live }: { bt: PortfolioBacktest; live: LivePaper | undefined }) {
   const full = bt.sharpe_vs_sixty_forty.full;
   const beats = Math.round((1 - bt.random_sleeve.p_value_book_sharpe) * bt.random_sleeve.sims);
+  const m = bt.metrics;
+  const h = bt.holdout;
+  const startYear = bt.period[0].slice(0, 4);
+  const worseThanSpy = bt.crisis_windows.filter((c) => c.book < c.spy_buy_hold);
   return (
     <section className="card" aria-labelledby="trust-p-h">
       <div className="card-head"><h2 id="trust-p-h">How far to trust this</h2></div>
       <div className="trust-head" style={{ marginBottom: 16 }}>
         <ShieldCheck size={18} aria-hidden="true" style={{ color: "var(--accent)" }} />
-        <p><strong>Built for smaller crashes, not more return.</strong>
-          It has matched 60/40's return per unit of risk while falling less. It has not beaten it.</p>
+        <p><strong>{m.book.cagr > m.sixty_forty.cagr ? "More return than 60/40 over the whole backtest, a smaller fall than SPY." : "No more return than 60/40 over the whole backtest."}</strong>
+          Since {startYear}: {fmtRate(m.book.cagr)} a year against {fmtRate(m.sixty_forty.cagr)} for 60/40 and {fmtRate(m.spy_buy_hold.cagr)} for SPY.
+          Since 2020: {fmtRate(h.book.cagr)} against {fmtRate(h.sixty_forty.cagr)} for 60/40{h.book.cagr <= h.sixty_forty.cagr + 0.002 ? ", with deeper falls" : ""}.
+          Borrowing costs mean it does not beat 60/40 on return per unit of risk.</p>
       </div>
       <dl className="kv">
-        <dt>Worst fall, book vs 60/40</dt><dd className="num">{fmtRate(bt.metrics.book.max_drawdown, 0)} vs {fmtRate(bt.metrics.sixty_forty.max_drawdown, 0)}</dd>
+        <dt>Worst fall, book</dt><dd className="num">{fmtRate(m.book.max_drawdown, 0)}</dd>
+        <dt>Worst fall, 60/40</dt><dd className="num">{fmtRate(m.sixty_forty.max_drawdown, 0)}</dd>
+        <dt>Worst fall, SPY</dt><dd className="num">{fmtRate(m.spy_buy_hold.max_drawdown, 0)}</dd>
+        <dt>Worst fall since 2020, book vs 60/40</dt><dd className="num">{fmtRate(h.book.max_drawdown, 0)} vs {fmtRate(h.sixty_forty.max_drawdown, 0)}</dd>
+        <dt>Worst month, book</dt><dd className="num">{fmtRate(m.book.worst_month, 1)}</dd>
         <dt>Sharpe, book minus 60/40</dt><dd className="num">{full.diff >= 0 ? "+" : "−"}{Math.abs(full.diff).toFixed(2)}</dd>
         <dt>95% interval</dt><dd className="num">{fmtNum(full.ci95[0], 2)} to {fmtNum(full.ci95[1], 2)}</dd>
         <dt>Beats random trend sleeves</dt><dd className="num">{beats} of {bt.random_sleeve.sims}</dd>
         <dt>Rules chosen</dt><dd>Before any search</dd>
+        <dt>Leverage</dt><dd className="num">{bt.labels.book.includes("1.5x") ? "1.5×, from the frontier" : "None"}</dd>
       </dl>
+      {worseThanSpy.length > 0 && (
+        <p className="trust-note"><Info size={14} aria-hidden="true" />
+          Leverage cuts both ways: in the {worseThanSpy.map((c) => c.label.toLowerCase()).join(" and ")} the book fell further than SPY,
+          because stocks and the bonds it holds on margin fell together.</p>
+      )}
       {live?.status !== "ok" && (
         <p className="trust-note"><Info size={14} aria-hidden="true" />Every number here is a backtest. The live record starts once a paper account is connected and needs months before it says much.</p>
       )}
-      <p className="help">Backtests use total-return ETF prices from Yahoo Finance. They assume fills at the next open and can't include taxes.</p>
+      <p className="help">Backtests use total-return ETF prices from Yahoo Finance, fills at the next open, and margin interest at the T-bill rate plus 2%. They can't include taxes. Leverage magnifies losses; a margin call is possible after a very large fall.</p>
     </section>
   );
 }
