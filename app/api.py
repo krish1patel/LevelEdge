@@ -38,6 +38,11 @@ from leveledge import ALLOWED_INTERVALS, US_EASTERN, forecast  # noqa: E402
 from leveledge.sessions import DAILY_MIN, interval_minutes  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+try:  # local runs read keys from .env; the Space gets them as secrets
+    from dotenv import load_dotenv
+    load_dotenv(ROOT / ".env")
+except ImportError:
+    pass
 DIST = ROOT / "web" / "dist"
 BENCHMARK = ROOT / "benchmarks" / "results" / "summary.json"
 SUGGESTED = ["SPY", "QQQ", "NVDA", "TSLA", "AAPL", "MSFT", "IWM", "BTC-USD", "ETH-USD"]

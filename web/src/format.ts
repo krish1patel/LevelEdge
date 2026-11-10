@@ -80,8 +80,10 @@ export function horizonPhrase(bars: number, interval: string): string {
   return `${bars} × ${mins}-min bars (${span} of trading)`;
 }
 
-export const fmtMoney = (v: number, digits = 2) =>
-  `${v < 0 ? "−" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+export const fmtMoney = (v: number, digits = 2) => {
+  const r = Math.abs(v) < 0.5 * 10 ** -digits ? 0 : v;   // no "−$0" for values that round to zero
+  return `${r < 0 ? "−" : ""}$${Math.abs(r).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+};
 
 /** Signed percent from a fraction: 0.0734 -> "+7.3%", -0.2366 -> "−23.7%". */
 export const fmtSignedPct = (f: number, digits = 1) => fmtSigned(f * 100, digits);
