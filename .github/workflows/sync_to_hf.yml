@@ -1,19 +1,28 @@
 # .github/workflows/sync_to_hf.yml
+# Deploy main to the HuggingFace Space.
+#
+# The Space rejects binary files anywhere in pushed history, so instead of
+# pushing GitHub's commits we push one new commit per sync: main's current
+# files minus binaries (compressed research data, images, .DS_Store), on top
+# of the Space's own history. It is a normal fast-forward push, never a force push.
 name: Sync to HuggingFace
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: hf-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Push to HuggingFace
+          fetch-depth: 1
+      - name: Push snapshot to HuggingFace
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          git remote add space https://krish1patel:$HF_TOKEN@huggingface.co/spaces/krish1patel/LevelEdge
-          git push space main
+        run: bash scripts/sync_space.sh "https://krish1patel:${HF_TOKEN}@huggingface.co/spaces/krish1patel/LevelEdge"
