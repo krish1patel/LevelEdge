@@ -247,6 +247,30 @@ export interface ResearchResponse {
     holdout_sharpe_vs: Record<string, DiffCI>;
     rank_stability: { spearman_dev_vs_holdout: number; top10_dev_holdout_ranks: number[] } };
   etf_search_points?: { variant: string; dev: number; hold: number }[];
+  return_models?: {
+    main: ModelStudy; fresh: ModelStudy | null;
+    reward_vs_levered_sixty_forty?: { vol: number; auto_reward: PerfMetrics; sixty_forty_levered: PerfMetrics };
+  };
+  construction?: { selected: string; dev: Record<string, PerfMetrics>; holdout: Record<string, PerfMetrics>;
+    holdout_sharpe_vs: Record<string, DiffCI>;
+    frontier: { family: string; knob: number; cagr: number; vol: number; sharpe: number; max_drawdown: number; worst_year: number }[] };
+  reward?: { selected: string; dd_limit: number; holdout: Record<string, PerfMetrics>; full: Record<string, PerfMetrics> };
+  stock_factors?: { period: [string, string]; coverage: { share_2006: number; share_2019: number; share_2025: number };
+    dev_vs_ew: Record<string, { excess_cagr: number; info_ratio: number; ir_ci95: [number, number] }>;
+    holdout_vs_ew: Record<string, { excess_cagr: number; info_ratio: number; ir_ci95: [number, number] }>;
+    dev: Record<string, PerfMetrics>; holdout: Record<string, PerfMetrics> };
+  literature?: { period: [string, string]; selected: string; full: Record<string, PerfMetrics>; dev: Record<string, PerfMetrics>;
+    holdout: Record<string, PerfMetrics>; holdout_vs_current_book: DiffCI;
+    deflated: { deflated_sharpe_prob: number; trials: number };
+    per_day_bp: Record<string, number>;
+    bands: Record<string, { cagr: number; turnover_per_year: number; cost_drag_bp_per_year: number; orders_per_year: number; tracking_error_vs_full: number }>;
+    band_selected: string };
+}
+
+export interface ModelStudy {
+  forecast: Record<string, { oos_r2: number; ic_mean: number }>;
+  metrics: Record<string, PerfMetrics>;
+  sharpe_vs_rule: Record<string, DiffCI>;
 }
 
 export const getResearch = () => call<ResearchResponse>("/api/research");
