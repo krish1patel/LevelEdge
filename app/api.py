@@ -320,6 +320,142 @@ def api_benchmark():
     return {"status": "ok", **json.loads(BENCHMARK.read_text())}
 
 
+# ---------------------------------------------------------------------------
+# paper portfolio
+# ---------------------------------------------------------------------------
+RESULTS = ROOT / "benchmarks" / "results"
+_PF_LOCK = threading.Lock()
+_PF_CACHE: dict = {}
+
+
+def _cached(key: str, ttl: float, fn):
+    with _PF_LOCK:
+        hit = _PF_CACHE.get(key)
+        if hit and time.time() - hit[0] < ttl:
+            return hit[1]
+    val = fn()
+    with _PF_LOCK:
+        _PF_CACHE[key] = (time.time(), val)
+    return val
+
+
+def _read_json(path: Path):
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+def _live_paper() -> dict:
+    from leveledge.broker import AlpacaBroker, credentials
+
+    creds = credentials()
+    if not creds:
+        return {"status": "not_configured",
+                "message": "Add ALPACA_API_KEY_ID and ALPACA_API_SECRET_KEY (paper keys) to show the live paper account."}
+    try:
+        b = AlpacaBroker(*creds)
+        acct = b.account()
+        hist = b.portfolio_history(period="1A", timeframe="1D")
+        positions = b.positions()
+        orders = b.orders(status="all", limit=25)
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": f"Couldn't read the Alpaca paper account: {e}"}
+    eq = pd.Series(hist.get("equity") or [], index=pd.to_datetime(hist.get("timestamp") or [], unit="s"), dtype=float)
+    eq = eq[eq > 0]
+    curve = []
+    if len(eq) >= 2:
+        eq.index = eq.index.tz_localize("UTC").tz_convert(US_EASTERN).normalize().tz_localize(None)
+        start = eq.index[0]
+        try:
+            import yfinance as yf
+            px = pd.concat({s: yf.Ticker(s).history(start=start - timedelta(days=5), interval="1d", auto_adjust=True)["Close"]
+                            for s in ("SPY", "IEF")}, axis=1)
+            px.index = px.index.tz_localize(None).normalize()
+            px = px.reindex(eq.index).ffill()
+            r = px.pct_change().fillna(0.0)
+            spy = (1 + r["SPY"]).cumprod()
+            sixty = (1 + 0.6 * r["SPY"] + 0.4 * r["IEF"]).cumprod()
+        except Exception:  # noqa: BLE001
+            spy = sixty = pd.Series(np.nan, index=eq.index)
+        book = eq / eq.iloc[0]
+        curve = [{"date": d.strftime("%Y-%m-%d"), "book": float(book[d]), "spy_buy_hold": _num(spy.get(d)),
+                  "sixty_forty": _num(sixty.get(d))} for d in eq.index]
+    return _clean({
+        "status": "ok", "paper": b.is_paper,
+        "account": {"equity": float(acct["equity"]), "cash": float(acct["cash"]),
+                    "last_equity": float(acct.get("last_equity") or acct["equity"])},
+        "positions": [{"symbol": p["symbol"], "qty": float(p["qty"]), "market_value": float(p["market_value"]),
+                       "unrealized_pl": float(p["unrealized_pl"]), "weight": float(p["market_value"]) / float(acct["equity"])}
+                      for p in positions],
+        "orders": [{"symbol": o["symbol"], "side": o["side"], "status": o["status"],
+                    "notional": _num(o.get("notional")), "qty": _num(o.get("qty")),
+                    "filled_avg_price": _num(o.get("filled_avg_price")), "submitted_at": o.get("submitted_at"),
+                    "filled_at": o.get("filled_at")} for o in orders],
+        "curve": curve,
+    })
+
+
+def _num(x):
+    try:
+        v = float(x)
+        return v if math.isfinite(v) else None
+    except (TypeError, ValueError):
+        return None
+
+
+@app.get("/api/portfolio")
+def api_portfolio():
+    from leveledge import live
+
+    backtest = _read_json(RESULTS / "paper_portfolio" / "summary.json")
+    try:
+        targets = _cached("targets", 1800, live.current_targets)
+        targets_status = "ok"
+    except Exception as e:  # noqa: BLE001
+        targets, targets_status = None, f"Couldn't compute today's targets: {e}"
+    return _clean({"strategy": live.STRATEGY_ID,
+                   "design": {"core": live.CORE, "core_share": live.CORE_SHARE, "trend_share": live.TREND_SHARE},
+                   "targets": targets, "targets_status": targets_status,
+                   "backtest": backtest, "live": _cached("live", 300, _live_paper)})
+
+
+@app.get("/api/research")
+def api_research():
+    """What was tested and what failed, from the saved benchmark results."""
+    k = _read_json(RESULTS / "kalshi" / "summary.json")
+    mk = _read_json(RESULTS / "kalshi" / "maker_summary.json")
+    kh = _read_json(RESULTS / "kalshi_horizon" / "summary.json")
+    er = _read_json(RESULTS / "etf_research" / "summary.json")
+    et = _read_json(RESULTS / "etf_trend" / "summary.json")
+    v1 = _read_json(BENCHMARK)
+    out = {}
+    if v1:
+        out["forecaster"] = {"forecasts": v1.get("forecasts"), "overall": v1.get("overall"),
+                             "brier_diff_v2_minus_v1": v1.get("brier_diff_v2_minus_v1")}
+    if k:
+        out["kalshi_taker"] = {"rows": k["rows"], "events": k["events"], "period": k["period"],
+                               "liquid": {"rows": k["liquid"]["rows"], "calibration": k["liquid"]["calibration"],
+                                          "brier_v2_minus_market": k["liquid"]["brier_v2_minus_market"],
+                                          "primary": k["liquid"]["strategies"]["p_v2|theta=0.02|fee=0.07"]},
+                               "by_series_x_offset": k.get("calibration_by_series_x_offset")}
+    if mk:
+        res = mk["results"]
+        out["kalshi_maker"] = {"variants": len(res), "rows": mk["rows"],
+                               "results": [{"variant": key, "model_avg_pnl_cents": v["model"].get("avg_pnl_cents"),
+                                            "model_ci95": v["model"].get("avg_pnl_cents_ci95"), "model_fills": v["model"].get("fills"),
+                                            "mid_avg_pnl_cents": v["control_mid"].get("avg_pnl_cents")} for key, v in res.items()]}
+    if kh:
+        out["kalshi_horizon"] = {"rows": kh["rows"], "events": kh["events"], "period": kh["period"],
+                                 "liquid": {"calibration": kh["liquid"]["calibration"],
+                                            "brier_v2_minus_market": kh["liquid"]["brier_v2_minus_market"],
+                                            "primary": kh["liquid"]["strategies"]["p_v2|theta=0.02|fee=0.07"]}}
+    if et:
+        out["etf_trend"] = {"period": et["period"], "metrics": et["metrics"], "vol_engine": et["vol_engine"]["mean_qlike"],
+                            "random_picker": et["random_picker"]}
+    if er:
+        out["etf_search"] = {k2: er[k2] for k2 in ("period", "trials", "selected", "deflated_sharpe_dev", "dev", "holdout",
+                                                    "holdout_sharpe_vs", "rank_stability")}
+    return _clean(out)
+
+
 @app.get("/api/health")
 def api_health():
     return {"ok": True, "intervals": ALLOWED_INTERVALS, "suggested": SUGGESTED,

@@ -1,0 +1,854 @@
+{
+  "rows_before_session_filter": 35368,
+  "rows": 35368,
+  "events": 1211,
+  "days": 606,
+  "period": [
+    "2024-02-15",
+    "2026-11-09"
+  ],
+  "by_series_rows": {
+    "KXINXU": 12264,
+    "KXNASDAQ100U": 23104
+  },
+  "primary_test": {
+    "signal": "p_v2",
+    "theta": 0.02,
+    "fee_rate": 0.07
+  },
+  "calibration": {
+    "mid": {
+      "n": 35368,
+      "brier": 0.12024,
+      "log_loss": 0.38049,
+      "ece": 0.0295
+    },
+    "p_base": {
+      "n": 35368,
+      "brier": 0.12072,
+      "log_loss": 0.38424,
+      "ece": 0.0259
+    },
+    "p_v2": {
+      "n": 35368,
+      "brier": 0.12073,
+      "log_loss": 0.38434,
+      "ece": 0.0259
+    },
+    "p_blend": {
+      "n": 35266,
+      "brier": 0.11911,
+      "log_loss": 0.3772,
+      "ece": 0.0261
+    }
+  },
+  "brier_v2_minus_market": {
+    "diff": 0.00048,
+    "ci95": [
+      -0.00148,
+      0.00257
+    ],
+    "n": 35368
+  },
+  "brier_base_minus_market": {
+    "diff": 0.00048,
+    "ci95": [
+      -0.00151,
+      0.00257
+    ],
+    "n": 35368
+  },
+  "brier_blend_minus_market": {
+    "diff": -0.00102,
+    "ci95": [
+      -0.00219,
+      7e-05
+    ],
+    "n": 35266
+  },
+  "blend_model_weight_last": 0.3885,
+  "xgb_active_share": 0.024,
+  "avg_spread_cents": 5.24,
+  "liquid": {
+    "max_spread": 0.05,
+    "rows": 28730,
+    "calibration": {
+      "mid": {
+        "n": 28730,
+        "brier": 0.11302,
+        "log_loss": 0.36107,
+        "ece": 0.0224
+      },
+      "p_v2": {
+        "n": 28730,
+        "brier": 0.11548,
+        "log_loss": 0.37118,
+        "ece": 0.0248
+      },
+      "p_blend": {
+        "n": 28631,
+        "brier": 0.11333,
+        "log_loss": 0.3616,
+        "ece": 0.0219
+      }
+    },
+    "brier_v2_minus_market": {
+      "diff": 0.00246,
+      "ci95": [
+        0.00081,
+        0.00421
+      ],
+      "n": 28730
+    },
+    "brier_blend_minus_market": {
+      "diff": 0.00049,
+      "ci95": [
+        -0.00019,
+        0.00124
+      ],
+      "n": 28631
+    },
+    "strategies": {
+      "p_v2|theta=0.0|fee=0.07": {
+        "trades": 14740,
+        "days_traded": 602,
+        "avg_pnl_cents": -2.31,
+        "total_pnl_per_contract_usd": -340.52,
+        "hit_rate": 0.4112,
+        "avg_edge_cents": 3.466,
+        "sharpe_daily_annualized": -1.73,
+        "max_drawdown_usd": -390.76,
+        "avg_pnl_cents_ci95": [
+          -3.964,
+          -0.68
+        ]
+      },
+      "p_v2|theta=0.02|fee=0.07": {
+        "trades": 8017,
+        "days_traded": 547,
+        "avg_pnl_cents": -2.406,
+        "total_pnl_per_contract_usd": -192.88,
+        "hit_rate": 0.3661,
+        "avg_edge_cents": 5.628,
+        "sharpe_daily_annualized": -1.28,
+        "max_drawdown_usd": -208.78,
+        "avg_pnl_cents_ci95": [
+          -4.676,
+          -0.101
+        ],
+        "random_picker": {
+          "mean_total_usd": -199.97,
+          "p5_p95_total_usd": [
+            -251.66,
+            -151.39
+          ],
+          "p_value_strategy_beats_random": 0.41
+        }
+      },
+      "p_v2|theta=0.05|fee=0.07": {
+        "trades": 3446,
+        "days_traded": 348,
+        "avg_pnl_cents": -0.854,
+        "total_pnl_per_contract_usd": -29.42,
+        "hit_rate": 0.359,
+        "avg_edge_cents": 8.768,
+        "sharpe_daily_annualized": -0.27,
+        "max_drawdown_usd": -70.4,
+        "avg_pnl_cents_ci95": [
+          -4.423,
+          3.511
+        ]
+      },
+      "p_blend|theta=0.0|fee=0.07": {
+        "trades": 4713,
+        "days_traded": 376,
+        "avg_pnl_cents": -1.463,
+        "total_pnl_per_contract_usd": -68.96,
+        "hit_rate": 0.7865,
+        "avg_edge_cents": 1.903,
+        "sharpe_daily_annualized": -0.69,
+        "max_drawdown_usd": -94.67,
+        "avg_pnl_cents_ci95": [
+          -3.979,
+          1.223
+        ]
+      },
+      "p_blend|theta=0.02|fee=0.07": {
+        "trades": 1301,
+        "days_traded": 110,
+        "avg_pnl_cents": -2.534,
+        "total_pnl_per_contract_usd": -32.97,
+        "hit_rate": 0.7548,
+        "avg_edge_cents": 5.102,
+        "sharpe_daily_annualized": -0.49,
+        "max_drawdown_usd": -54.92,
+        "avg_pnl_cents_ci95": [
+          -8.052,
+          4.098
+        ],
+        "random_picker": {
+          "mean_total_usd": -33.23,
+          "p5_p95_total_usd": [
+            -54.94,
+            -10.1
+          ],
+          "p_value_strategy_beats_random": 0.49
+        }
+      },
+      "p_blend|theta=0.05|fee=0.07": {
+        "trades": 483,
+        "days_traded": 33,
+        "avg_pnl_cents": -5.016,
+        "total_pnl_per_contract_usd": -24.23,
+        "hit_rate": 0.7039,
+        "avg_edge_cents": 8.508,
+        "sharpe_daily_annualized": -0.61,
+        "max_drawdown_usd": -32.02,
+        "avg_pnl_cents_ci95": [
+          -10.053,
+          7.283
+        ]
+      }
+    }
+  },
+  "calibration_by_series": {
+    "KXINXU": {
+      "mid": {
+        "n": 12264,
+        "brier": 0.11972,
+        "log_loss": 0.37873,
+        "ece": 0.0222
+      },
+      "p_v2": {
+        "n": 12264,
+        "brier": 0.12218,
+        "log_loss": 0.39076,
+        "ece": 0.0237
+      }
+    },
+    "KXNASDAQ100U": {
+      "mid": {
+        "n": 23104,
+        "brier": 0.12052,
+        "log_loss": 0.38142,
+        "ece": 0.0335
+      },
+      "p_v2": {
+        "n": 23104,
+        "brier": 0.11995,
+        "log_loss": 0.38094,
+        "ece": 0.028
+      }
+    }
+  },
+  "calibration_by_series_x_offset": {
+    "KXINXU|90": {
+      "mid": {
+        "n": 3003,
+        "brier": 0.10958,
+        "log_loss": 0.34866,
+        "ece": 0.0255
+      },
+      "p_v2": {
+        "n": 3003,
+        "brier": 0.11423,
+        "log_loss": 0.37681,
+        "ece": 0.0232
+      }
+    },
+    "KXINXU|210": {
+      "mid": {
+        "n": 4149,
+        "brier": 0.11594,
+        "log_loss": 0.37135,
+        "ece": 0.0287
+      },
+      "p_v2": {
+        "n": 4149,
+        "brier": 0.11917,
+        "log_loss": 0.38338,
+        "ece": 0.0333
+      }
+    },
+    "KXINXU|330": {
+      "mid": {
+        "n": 5112,
+        "brier": 0.12874,
+        "log_loss": 0.40237,
+        "ece": 0.0204
+      },
+      "p_v2": {
+        "n": 5112,
+        "brier": 0.1293,
+        "log_loss": 0.40495,
+        "ece": 0.0197
+      }
+    },
+    "KXNASDAQ100U|90": {
+      "mid": {
+        "n": 5569,
+        "brier": 0.10724,
+        "log_loss": 0.34356,
+        "ece": 0.0276
+      },
+      "p_v2": {
+        "n": 5569,
+        "brier": 0.10989,
+        "log_loss": 0.36058,
+        "ece": 0.0232
+      }
+    },
+    "KXNASDAQ100U|210": {
+      "mid": {
+        "n": 7709,
+        "brier": 0.11603,
+        "log_loss": 0.36903,
+        "ece": 0.044
+      },
+      "p_v2": {
+        "n": 7709,
+        "brier": 0.11714,
+        "log_loss": 0.3717,
+        "ece": 0.0414
+      }
+    },
+    "KXNASDAQ100U|330": {
+      "mid": {
+        "n": 9826,
+        "brier": 0.13157,
+        "log_loss": 0.41261,
+        "ece": 0.0288
+      },
+      "p_v2": {
+        "n": 9826,
+        "brier": 0.12786,
+        "log_loss": 0.39972,
+        "ece": 0.0236
+      }
+    }
+  },
+  "calibration_by_offset": {
+    "90": {
+      "mid": {
+        "n": 8572,
+        "brier": 0.10806,
+        "log_loss": 0.34535,
+        "ece": 0.0251
+      },
+      "p_v2": {
+        "n": 8572,
+        "brier": 0.11141,
+        "log_loss": 0.36627,
+        "ece": 0.0219
+      }
+    },
+    "210": {
+      "mid": {
+        "n": 11858,
+        "brier": 0.116,
+        "log_loss": 0.36984,
+        "ece": 0.0381
+      },
+      "p_v2": {
+        "n": 11858,
+        "brier": 0.11785,
+        "log_loss": 0.37578,
+        "ece": 0.0366
+      }
+    },
+    "330": {
+      "mid": {
+        "n": 14938,
+        "brier": 0.1306,
+        "log_loss": 0.4091,
+        "ece": 0.0259
+      },
+      "p_v2": {
+        "n": 14938,
+        "brier": 0.12835,
+        "log_loss": 0.40151,
+        "ece": 0.022
+      }
+    }
+  },
+  "strategies": {
+    "p_v2|theta=0.0|fee=0.07": {
+      "trades": 16910,
+      "days_traded": 603,
+      "avg_pnl_cents": -2.636,
+      "total_pnl_per_contract_usd": -445.82,
+      "hit_rate": 0.419,
+      "avg_edge_cents": 3.464,
+      "sharpe_daily_annualized": -1.87,
+      "max_drawdown_usd": -473.48,
+      "avg_pnl_cents_ci95": [
+        -4.385,
+        -0.859
+      ]
+    },
+    "p_v2|theta=0.0|fee=0.035": {
+      "trades": 19000,
+      "days_traded": 606,
+      "avg_pnl_cents": -2.484,
+      "total_pnl_per_contract_usd": -471.88,
+      "hit_rate": 0.4184,
+      "avg_edge_cents": 3.491,
+      "sharpe_daily_annualized": -1.92,
+      "max_drawdown_usd": -499.84,
+      "avg_pnl_cents_ci95": [
+        -4.108,
+        -0.887
+      ]
+    },
+    "p_v2|theta=0.02|fee=0.07": {
+      "trades": 9277,
+      "days_traded": 554,
+      "avg_pnl_cents": -2.993,
+      "total_pnl_per_contract_usd": -277.69,
+      "hit_rate": 0.377,
+      "avg_edge_cents": 5.583,
+      "sharpe_daily_annualized": -1.48,
+      "max_drawdown_usd": -289.49,
+      "avg_pnl_cents_ci95": [
+        -5.331,
+        -0.602
+      ],
+      "random_picker": {
+        "mean_total_usd": -301.28,
+        "p5_p95_total_usd": [
+          -357.59,
+          -244.85
+        ],
+        "p_value_strategy_beats_random": 0.2405
+      }
+    },
+    "p_v2|theta=0.02|fee=0.035": {
+      "trades": 10524,
+      "days_traded": 571,
+      "avg_pnl_cents": -2.544,
+      "total_pnl_per_contract_usd": -267.77,
+      "hit_rate": 0.3827,
+      "avg_edge_cents": 5.584,
+      "sharpe_daily_annualized": -1.37,
+      "max_drawdown_usd": -283.36,
+      "avg_pnl_cents_ci95": [
+        -4.747,
+        -0.282
+      ],
+      "random_picker": {
+        "mean_total_usd": -296.36,
+        "p5_p95_total_usd": [
+          -356.54,
+          -235.04
+        ],
+        "p_value_strategy_beats_random": 0.22
+      }
+    },
+    "p_v2|theta=0.05|fee=0.07": {
+      "trades": 3962,
+      "days_traded": 356,
+      "avg_pnl_cents": -1.277,
+      "total_pnl_per_contract_usd": -50.58,
+      "hit_rate": 0.373,
+      "avg_edge_cents": 8.69,
+      "sharpe_daily_annualized": -0.39,
+      "max_drawdown_usd": -89.52,
+      "avg_pnl_cents_ci95": [
+        -4.958,
+        3.036
+      ]
+    },
+    "p_v2|theta=0.05|fee=0.035": {
+      "trades": 4449,
+      "days_traded": 386,
+      "avg_pnl_cents": -1.392,
+      "total_pnl_per_contract_usd": -61.91,
+      "hit_rate": 0.3711,
+      "avg_edge_cents": 8.721,
+      "sharpe_daily_annualized": -0.46,
+      "max_drawdown_usd": -85.43,
+      "avg_pnl_cents_ci95": [
+        -5.001,
+        2.539
+      ]
+    },
+    "p_base|theta=0.0|fee=0.07": {
+      "trades": 16807,
+      "days_traded": 603,
+      "avg_pnl_cents": -2.737,
+      "total_pnl_per_contract_usd": -459.95,
+      "hit_rate": 0.4129,
+      "avg_edge_cents": 3.411,
+      "sharpe_daily_annualized": -1.94,
+      "max_drawdown_usd": -484.15,
+      "avg_pnl_cents_ci95": [
+        -4.517,
+        -0.982
+      ]
+    },
+    "p_base|theta=0.0|fee=0.035": {
+      "trades": 18900,
+      "days_traded": 606,
+      "avg_pnl_cents": -2.558,
+      "total_pnl_per_contract_usd": -483.37,
+      "hit_rate": 0.4131,
+      "avg_edge_cents": 3.44,
+      "sharpe_daily_annualized": -1.97,
+      "max_drawdown_usd": -506.32,
+      "avg_pnl_cents_ci95": [
+        -4.186,
+        -0.976
+      ]
+    },
+    "p_base|theta=0.02|fee=0.07": {
+      "trades": 9153,
+      "days_traded": 550,
+      "avg_pnl_cents": -2.961,
+      "total_pnl_per_contract_usd": -271.01,
+      "hit_rate": 0.3722,
+      "avg_edge_cents": 5.521,
+      "sharpe_daily_annualized": -1.45,
+      "max_drawdown_usd": -279.73,
+      "avg_pnl_cents_ci95": [
+        -5.29,
+        -0.371
+      ],
+      "random_picker": {
+        "mean_total_usd": -297.89,
+        "p5_p95_total_usd": [
+          -355.34,
+          -240.32
+        ],
+        "p_value_strategy_beats_random": 0.213
+      }
+    },
+    "p_base|theta=0.02|fee=0.035": {
+      "trades": 10414,
+      "days_traded": 570,
+      "avg_pnl_cents": -2.592,
+      "total_pnl_per_contract_usd": -269.93,
+      "hit_rate": 0.3779,
+      "avg_edge_cents": 5.518,
+      "sharpe_daily_annualized": -1.38,
+      "max_drawdown_usd": -278.64,
+      "avg_pnl_cents_ci95": [
+        -4.799,
+        -0.327
+      ],
+      "random_picker": {
+        "mean_total_usd": -292.98,
+        "p5_p95_total_usd": [
+          -353.59,
+          -233.03
+        ],
+        "p_value_strategy_beats_random": 0.266
+      }
+    },
+    "p_base|theta=0.05|fee=0.07": {
+      "trades": 3878,
+      "days_traded": 350,
+      "avg_pnl_cents": -1.48,
+      "total_pnl_per_contract_usd": -57.4,
+      "hit_rate": 0.3682,
+      "avg_edge_cents": 8.586,
+      "sharpe_daily_annualized": -0.45,
+      "max_drawdown_usd": -89.47,
+      "avg_pnl_cents_ci95": [
+        -5.45,
+        2.844
+      ]
+    },
+    "p_base|theta=0.05|fee=0.035": {
+      "trades": 4365,
+      "days_traded": 376,
+      "avg_pnl_cents": -1.644,
+      "total_pnl_per_contract_usd": -71.74,
+      "hit_rate": 0.3654,
+      "avg_edge_cents": 8.617,
+      "sharpe_daily_annualized": -0.53,
+      "max_drawdown_usd": -85.43,
+      "avg_pnl_cents_ci95": [
+        -5.159,
+        2.099
+      ]
+    },
+    "p_blend|theta=0.0|fee=0.07": {
+      "trades": 5358,
+      "days_traded": 378,
+      "avg_pnl_cents": -1.749,
+      "total_pnl_per_contract_usd": -93.73,
+      "hit_rate": 0.7872,
+      "avg_edge_cents": 1.871,
+      "sharpe_daily_annualized": -0.69,
+      "max_drawdown_usd": -106.4,
+      "avg_pnl_cents_ci95": [
+        -4.835,
+        1.366
+      ]
+    },
+    "p_blend|theta=0.0|fee=0.035": {
+      "trades": 6844,
+      "days_traded": 440,
+      "avg_pnl_cents": -1.269,
+      "total_pnl_per_contract_usd": -86.82,
+      "hit_rate": 0.7629,
+      "avg_edge_cents": 1.819,
+      "sharpe_daily_annualized": -0.57,
+      "max_drawdown_usd": -96.02,
+      "avg_pnl_cents_ci95": [
+        -3.816,
+        1.478
+      ]
+    },
+    "p_blend|theta=0.02|fee=0.07": {
+      "trades": 1499,
+      "days_traded": 112,
+      "avg_pnl_cents": -2.191,
+      "total_pnl_per_contract_usd": -32.85,
+      "hit_rate": 0.7638,
+      "avg_edge_cents": 4.904,
+      "sharpe_daily_annualized": -0.39,
+      "max_drawdown_usd": -65.09,
+      "avg_pnl_cents_ci95": [
+        -8.635,
+        5.492
+      ],
+      "random_picker": {
+        "mean_total_usd": -52.93,
+        "p5_p95_total_usd": [
+          -78.24,
+          -28.87
+        ],
+        "p_value_strategy_beats_random": 0.079
+      }
+    },
+    "p_blend|theta=0.02|fee=0.035": {
+      "trades": 1857,
+      "days_traded": 137,
+      "avg_pnl_cents": -2.288,
+      "total_pnl_per_contract_usd": -42.49,
+      "hit_rate": 0.7544,
+      "avg_edge_cents": 4.793,
+      "sharpe_daily_annualized": -0.47,
+      "max_drawdown_usd": -65.58,
+      "avg_pnl_cents_ci95": [
+        -7.785,
+        4.362
+      ],
+      "random_picker": {
+        "mean_total_usd": -55.84,
+        "p5_p95_total_usd": [
+          -83.4,
+          -27.7
+        ],
+        "p_value_strategy_beats_random": 0.217
+      }
+    },
+    "p_blend|theta=0.05|fee=0.07": {
+      "trades": 507,
+      "days_traded": 33,
+      "avg_pnl_cents": -4.485,
+      "total_pnl_per_contract_usd": -22.74,
+      "hit_rate": 0.712,
+      "avg_edge_cents": 8.44,
+      "sharpe_daily_annualized": -0.56,
+      "max_drawdown_usd": -33.14,
+      "avg_pnl_cents_ci95": [
+        -9.911,
+        7.911
+      ]
+    },
+    "p_blend|theta=0.05|fee=0.035": {
+      "trades": 594,
+      "days_traded": 38,
+      "avg_pnl_cents": -3.171,
+      "total_pnl_per_contract_usd": -18.84,
+      "hit_rate": 0.7189,
+      "avg_edge_cents": 8.466,
+      "sharpe_daily_annualized": -0.43,
+      "max_drawdown_usd": -35.59,
+      "avg_pnl_cents_ci95": [
+        -8.967,
+        9.451
+      ]
+    }
+  },
+  "primary_by_series": {
+    "KXINXU": {
+      "trades": 3781,
+      "days_traded": 518,
+      "avg_pnl_cents": -3.102,
+      "total_pnl_per_contract_usd": -117.3,
+      "hit_rate": 0.3777,
+      "avg_edge_cents": 5.771,
+      "sharpe_daily_annualized": -1.85,
+      "max_drawdown_usd": -130.16,
+      "avg_pnl_cents_ci95": [
+        -5.09,
+        -1.05
+      ]
+    },
+    "KXNASDAQ100U": {
+      "trades": 5496,
+      "days_traded": 488,
+      "avg_pnl_cents": -2.918,
+      "total_pnl_per_contract_usd": -160.39,
+      "hit_rate": 0.3765,
+      "avg_edge_cents": 5.454,
+      "sharpe_daily_annualized": -1.19,
+      "max_drawdown_usd": -168.4,
+      "avg_pnl_cents_ci95": [
+        -5.663,
+        0.124
+      ]
+    }
+  },
+  "primary_by_offset": {
+    "90": {
+      "trades": 2455,
+      "days_traded": 356,
+      "avg_pnl_cents": -4.332,
+      "total_pnl_per_contract_usd": -106.36,
+      "hit_rate": 0.3764,
+      "avg_edge_cents": 5.876,
+      "sharpe_daily_annualized": -1.29,
+      "max_drawdown_usd": -111.76,
+      "avg_pnl_cents_ci95": [
+        -8.112,
+        -0.422
+      ]
+    },
+    "210": {
+      "trades": 3277,
+      "days_traded": 416,
+      "avg_pnl_cents": -3.247,
+      "total_pnl_per_contract_usd": -106.4,
+      "hit_rate": 0.2948,
+      "avg_edge_cents": 5.902,
+      "sharpe_daily_annualized": -1.48,
+      "max_drawdown_usd": -119.96,
+      "avg_pnl_cents_ci95": [
+        -5.81,
+        -0.289
+      ]
+    },
+    "330": {
+      "trades": 3545,
+      "days_traded": 452,
+      "avg_pnl_cents": -1.832,
+      "total_pnl_per_contract_usd": -64.93,
+      "hit_rate": 0.4533,
+      "avg_edge_cents": 5.085,
+      "sharpe_daily_annualized": -0.63,
+      "max_drawdown_usd": -76.56,
+      "avg_pnl_cents_ci95": [
+        -5.412,
+        1.758
+      ]
+    }
+  },
+  "primary_by_side": {
+    "no": {
+      "trades": 4397,
+      "days_traded": 428,
+      "avg_pnl_cents": -1.787,
+      "total_pnl_per_contract_usd": -78.6,
+      "hit_rate": 0.396,
+      "avg_edge_cents": 5.334,
+      "sharpe_daily_annualized": -0.6,
+      "max_drawdown_usd": -136.08,
+      "avg_pnl_cents_ci95": [
+        -5.387,
+        2.163
+      ]
+    },
+    "yes": {
+      "trades": 4880,
+      "days_traded": 520,
+      "avg_pnl_cents": -4.08,
+      "total_pnl_per_contract_usd": -199.09,
+      "hit_rate": 0.3598,
+      "avg_edge_cents": 5.808,
+      "sharpe_daily_annualized": -0.87,
+      "max_drawdown_usd": -211.68,
+      "avg_pnl_cents_ci95": [
+        -9.703,
+        1.358
+      ]
+    }
+  },
+  "primary_by_price": {
+    "(0.0, 0.1]": {
+      "trades": 1792,
+      "days_traded": 366,
+      "avg_pnl_cents": 0.25,
+      "total_pnl_per_contract_usd": 4.48,
+      "hit_rate": 0.2349,
+      "avg_edge_cents": 5.508,
+      "sharpe_daily_annualized": 0.09,
+      "max_drawdown_usd": -20.8,
+      "avg_pnl_cents_ci95": [
+        -2.843,
+        3.934
+      ]
+    },
+    "(0.1, 0.3]": {
+      "trades": 2329,
+      "days_traded": 439,
+      "avg_pnl_cents": -0.459,
+      "total_pnl_per_contract_usd": -10.68,
+      "hit_rate": 0.4908,
+      "avg_edge_cents": 6.22,
+      "sharpe_daily_annualized": -0.13,
+      "max_drawdown_usd": -44.84,
+      "avg_pnl_cents_ci95": [
+        -5.071,
+        3.959
+      ]
+    },
+    "(0.3, 0.7]": {
+      "trades": 1318,
+      "days_traded": 335,
+      "avg_pnl_cents": -4.698,
+      "total_pnl_per_contract_usd": -61.91,
+      "hit_rate": 0.5296,
+      "avg_edge_cents": 6.118,
+      "sharpe_daily_annualized": -1.01,
+      "max_drawdown_usd": -69.15,
+      "avg_pnl_cents_ci95": [
+        -9.772,
+        1.023
+      ]
+    },
+    "(0.7, 0.9]": {
+      "trades": 2236,
+      "days_traded": 412,
+      "avg_pnl_cents": -7.177,
+      "total_pnl_per_contract_usd": -160.48,
+      "hit_rate": 0.4401,
+      "avg_edge_cents": 5.23,
+      "sharpe_daily_annualized": -1.46,
+      "max_drawdown_usd": -171.62,
+      "avg_pnl_cents_ci95": [
+        -12.85,
+        -1.558
+      ]
+    },
+    "(0.9, 1.0]": {
+      "trades": 1602,
+      "days_traded": 254,
+      "avg_pnl_cents": -3.064,
+      "total_pnl_per_contract_usd": -49.09,
+      "hit_rate": 0.1567,
+      "avg_edge_cents": 4.795,
+      "sharpe_daily_annualized": -1.07,
+      "max_drawdown_usd": -67.96,
+      "avg_pnl_cents_ci95": [
+        -6.285,
+        1.024
+      ]
+    }
+  },
+  "reference_buy_favourite_avg_pnl_cents": -2.203,
+  "reference_sell_longshots_avg_pnl_cents": 0.088
+}
