@@ -1,0 +1,647 @@
+{
+  "rows": 8771,
+  "tickers": 7213,
+  "days": 48,
+  "results": {
+    "margin=0.01|window=5|maker_fee=0.0175": {
+      "model": {
+        "orders": 12514,
+        "fills": 2861,
+        "fill_rate": 0.229,
+        "avg_pnl_cents": -6.418,
+        "avg_pnl_cents_ci95": [
+          -9.031,
+          -3.984
+        ],
+        "total_usd": -183.62,
+        "sharpe_daily_annualized": -10.53,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 4.703,
+          "KXINXU": -4.123,
+          "KXNASDAQ100U": -7.996
+        }
+      },
+      "control_mid": {
+        "orders": 16456,
+        "fills": 3683,
+        "fill_rate": 0.224,
+        "avg_pnl_cents": -8.626,
+        "avg_pnl_cents_ci95": [
+          -10.955,
+          -6.313
+        ],
+        "total_usd": -317.71,
+        "sharpe_daily_annualized": -15.61,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 6.831,
+          "KXINXU": -8.274,
+          "KXNASDAQ100U": -8.891
+        }
+      }
+    },
+    "margin=0.01|window=15|maker_fee=0.0175": {
+      "model": {
+        "orders": 12514,
+        "fills": 4798,
+        "fill_rate": 0.383,
+        "avg_pnl_cents": -8.533,
+        "avg_pnl_cents_ci95": [
+          -10.613,
+          -6.558
+        ],
+        "total_usd": -409.4,
+        "sharpe_daily_annualized": -16.8,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -7.079,
+          "KXINXU": -4.487,
+          "KXNASDAQ100U": -10.343
+        }
+      },
+      "control_mid": {
+        "orders": 16456,
+        "fills": 6115,
+        "fill_rate": 0.372,
+        "avg_pnl_cents": -10.353,
+        "avg_pnl_cents_ci95": [
+          -12.077,
+          -8.81
+        ],
+        "total_usd": -633.09,
+        "sharpe_daily_annualized": -22.29,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 0.799,
+          "KXINXU": -9.052,
+          "KXNASDAQ100U": -10.924
+        }
+      }
+    },
+    "margin=0.01|window=close|maker_fee=0.0175": {
+      "model": {
+        "orders": 12514,
+        "fills": 6487,
+        "fill_rate": 0.518,
+        "avg_pnl_cents": -9.489,
+        "avg_pnl_cents_ci95": [
+          -11.248,
+          -7.887
+        ],
+        "total_usd": -615.53,
+        "sharpe_daily_annualized": -21.25,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -7.079,
+          "KXINXU": -4.496,
+          "KXNASDAQ100U": -11.367
+        }
+      },
+      "control_mid": {
+        "orders": 16456,
+        "fills": 8269,
+        "fill_rate": 0.502,
+        "avg_pnl_cents": -10.838,
+        "avg_pnl_cents_ci95": [
+          -12.222,
+          -9.594
+        ],
+        "total_usd": -896.21,
+        "sharpe_daily_annualized": -25.95,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 0.799,
+          "KXINXU": -8.295,
+          "KXNASDAQ100U": -11.769
+        }
+      }
+    },
+    "margin=0.02|window=5|maker_fee=0.0175": {
+      "model": {
+        "orders": 8748,
+        "fills": 1885,
+        "fill_rate": 0.215,
+        "avg_pnl_cents": -6.097,
+        "avg_pnl_cents_ci95": [
+          -9.545,
+          -2.452
+        ],
+        "total_usd": -114.93,
+        "sharpe_daily_annualized": -7.4,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 42.571,
+          "KXINXU": -4.198,
+          "KXNASDAQ100U": -7.474
+        }
+      },
+      "control_mid": {
+        "orders": 8312,
+        "fills": 1662,
+        "fill_rate": 0.2,
+        "avg_pnl_cents": -12.702,
+        "avg_pnl_cents_ci95": [
+          -16.05,
+          -9.322
+        ],
+        "total_usd": -211.11,
+        "sharpe_daily_annualized": -13.02,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 43.569,
+          "KXINXU": -13.689,
+          "KXNASDAQ100U": -12.045
+        }
+      }
+    },
+    "margin=0.02|window=15|maker_fee=0.0175": {
+      "model": {
+        "orders": 8748,
+        "fills": 3308,
+        "fill_rate": 0.378,
+        "avg_pnl_cents": -8.339,
+        "avg_pnl_cents_ci95": [
+          -11.038,
+          -5.652
+        ],
+        "total_usd": -275.84,
+        "sharpe_daily_annualized": -12.17,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 0.574,
+          "KXINXU": -4.31,
+          "KXNASDAQ100U": -10.101
+        }
+      },
+      "control_mid": {
+        "orders": 8312,
+        "fills": 2835,
+        "fill_rate": 0.341,
+        "avg_pnl_cents": -13.547,
+        "avg_pnl_cents_ci95": [
+          -15.657,
+          -11.528
+        ],
+        "total_usd": -384.06,
+        "sharpe_daily_annualized": -16.17,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 1.574,
+          "KXINXU": -13.755,
+          "KXNASDAQ100U": -13.47
+        }
+      }
+    },
+    "margin=0.02|window=close|maker_fee=0.0175": {
+      "model": {
+        "orders": 8748,
+        "fills": 4581,
+        "fill_rate": 0.524,
+        "avg_pnl_cents": -9.568,
+        "avg_pnl_cents_ci95": [
+          -11.81,
+          -7.492
+        ],
+        "total_usd": -438.29,
+        "sharpe_daily_annualized": -17.11,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 0.574,
+          "KXINXU": -4.583,
+          "KXNASDAQ100U": -11.39
+        }
+      },
+      "control_mid": {
+        "orders": 8312,
+        "fills": 3884,
+        "fill_rate": 0.467,
+        "avg_pnl_cents": -13.619,
+        "avg_pnl_cents_ci95": [
+          -15.138,
+          -12.162
+        ],
+        "total_usd": -528.95,
+        "sharpe_daily_annualized": -17.74,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 1.574,
+          "KXINXU": -13.032,
+          "KXNASDAQ100U": -13.845
+        }
+      }
+    },
+    "margin=0.03|window=5|maker_fee=0.0175": {
+      "model": {
+        "orders": 6632,
+        "fills": 1252,
+        "fill_rate": 0.189,
+        "avg_pnl_cents": -6.631,
+        "avg_pnl_cents_ci95": [
+          -10.2,
+          -2.761
+        ],
+        "total_usd": -83.02,
+        "sharpe_daily_annualized": -7.42,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -6.406,
+          "KXNASDAQ100U": -6.792
+        }
+      },
+      "control_mid": {
+        "orders": 7868,
+        "fills": 1521,
+        "fill_rate": 0.193,
+        "avg_pnl_cents": -13.097,
+        "avg_pnl_cents_ci95": [
+          -16.407,
+          -9.503
+        ],
+        "total_usd": -199.21,
+        "sharpe_daily_annualized": -12.6,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -14.925,
+          "KXNASDAQ100U": -11.829
+        }
+      }
+    },
+    "margin=0.03|window=15|maker_fee=0.0175": {
+      "model": {
+        "orders": 6632,
+        "fills": 2248,
+        "fill_rate": 0.339,
+        "avg_pnl_cents": -8.718,
+        "avg_pnl_cents_ci95": [
+          -12.137,
+          -5.709
+        ],
+        "total_usd": -195.99,
+        "sharpe_daily_annualized": -10.91,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -40.42,
+          "KXINXU": -5.328,
+          "KXNASDAQ100U": -10.223
+        }
+      },
+      "control_mid": {
+        "orders": 7868,
+        "fills": 2594,
+        "fill_rate": 0.33,
+        "avg_pnl_cents": -13.726,
+        "avg_pnl_cents_ci95": [
+          -15.877,
+          -11.57
+        ],
+        "total_usd": -356.06,
+        "sharpe_daily_annualized": -15.49,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -14.577,
+          "KXNASDAQ100U": -13.358
+        }
+      }
+    },
+    "margin=0.03|window=close|maker_fee=0.0175": {
+      "model": {
+        "orders": 6632,
+        "fills": 3245,
+        "fill_rate": 0.489,
+        "avg_pnl_cents": -9.438,
+        "avg_pnl_cents_ci95": [
+          -12.037,
+          -7.153
+        ],
+        "total_usd": -306.27,
+        "sharpe_daily_annualized": -14.51,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -40.42,
+          "KXINXU": -5.223,
+          "KXNASDAQ100U": -10.975
+        }
+      },
+      "control_mid": {
+        "orders": 7868,
+        "fills": 3599,
+        "fill_rate": 0.457,
+        "avg_pnl_cents": -13.422,
+        "avg_pnl_cents_ci95": [
+          -15.046,
+          -11.927
+        ],
+        "total_usd": -483.05,
+        "sharpe_daily_annualized": -16.88,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -13.374,
+          "KXNASDAQ100U": -13.439
+        }
+      }
+    },
+    "margin=0.01|window=5|maker_fee=0.0": {
+      "model": {
+        "orders": 12514,
+        "fills": 2861,
+        "fill_rate": 0.229,
+        "avg_pnl_cents": -6.1,
+        "avg_pnl_cents_ci95": [
+          -8.714,
+          -3.665
+        ],
+        "total_usd": -174.52,
+        "sharpe_daily_annualized": -10.03,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 5.0,
+          "KXINXU": -3.82,
+          "KXNASDAQ100U": -7.668
+        }
+      },
+      "control_mid": {
+        "orders": 16456,
+        "fills": 3683,
+        "fill_rate": 0.224,
+        "avg_pnl_cents": -8.293,
+        "avg_pnl_cents_ci95": [
+          -10.618,
+          -5.988
+        ],
+        "total_usd": -305.44,
+        "sharpe_daily_annualized": -15.09,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 7.143,
+          "KXINXU": -7.929,
+          "KXNASDAQ100U": -8.565
+        }
+      }
+    },
+    "margin=0.01|window=15|maker_fee=0.0": {
+      "model": {
+        "orders": 12514,
+        "fills": 4798,
+        "fill_rate": 0.383,
+        "avg_pnl_cents": -8.23,
+        "avg_pnl_cents_ci95": [
+          -10.311,
+          -6.254
+        ],
+        "total_usd": -394.86,
+        "sharpe_daily_annualized": -16.31,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -6.75,
+          "KXINXU": -4.196,
+          "KXNASDAQ100U": -10.035
+        }
+      },
+      "control_mid": {
+        "orders": 16456,
+        "fills": 6115,
+        "fill_rate": 0.372,
+        "avg_pnl_cents": -10.03,
+        "avg_pnl_cents_ci95": [
+          -11.75,
+          -8.487
+        ],
+        "total_usd": -613.35,
+        "sharpe_daily_annualized": -21.85,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 1.125,
+          "KXINXU": -8.721,
+          "KXNASDAQ100U": -10.604
+        }
+      }
+    },
+    "margin=0.01|window=close|maker_fee=0.0": {
+      "model": {
+        "orders": 12514,
+        "fills": 6487,
+        "fill_rate": 0.518,
+        "avg_pnl_cents": -9.196,
+        "avg_pnl_cents_ci95": [
+          -10.96,
+          -7.595
+        ],
+        "total_usd": -596.57,
+        "sharpe_daily_annualized": -20.78,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -6.75,
+          "KXINXU": -4.217,
+          "KXNASDAQ100U": -11.07
+        }
+      },
+      "control_mid": {
+        "orders": 16456,
+        "fills": 8269,
+        "fill_rate": 0.502,
+        "avg_pnl_cents": -10.522,
+        "avg_pnl_cents_ci95": [
+          -11.904,
+          -9.281
+        ],
+        "total_usd": -870.06,
+        "sharpe_daily_annualized": -25.59,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 1.125,
+          "KXINXU": -7.977,
+          "KXNASDAQ100U": -11.454
+        }
+      }
+    },
+    "margin=0.02|window=5|maker_fee=0.0": {
+      "model": {
+        "orders": 8748,
+        "fills": 1885,
+        "fill_rate": 0.215,
+        "avg_pnl_cents": -5.764,
+        "avg_pnl_cents_ci95": [
+          -9.21,
+          -2.116
+        ],
+        "total_usd": -108.66,
+        "sharpe_daily_annualized": -7.03,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 43.0,
+          "KXINXU": -3.884,
+          "KXNASDAQ100U": -7.128
+        }
+      },
+      "control_mid": {
+        "orders": 8312,
+        "fills": 1662,
+        "fill_rate": 0.2,
+        "avg_pnl_cents": -12.326,
+        "avg_pnl_cents_ci95": [
+          -15.667,
+          -8.945
+        ],
+        "total_usd": -204.85,
+        "sharpe_daily_annualized": -12.8,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 44.0,
+          "KXINXU": -13.307,
+          "KXNASDAQ100U": -11.673
+        }
+      }
+    },
+    "margin=0.02|window=15|maker_fee=0.0": {
+      "model": {
+        "orders": 8748,
+        "fills": 3308,
+        "fill_rate": 0.378,
+        "avg_pnl_cents": -8.023,
+        "avg_pnl_cents_ci95": [
+          -10.721,
+          -5.332
+        ],
+        "total_usd": -265.39,
+        "sharpe_daily_annualized": -11.79,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 1.0,
+          "KXINXU": -4.007,
+          "KXNASDAQ100U": -9.779
+        }
+      },
+      "control_mid": {
+        "orders": 8312,
+        "fills": 2835,
+        "fill_rate": 0.341,
+        "avg_pnl_cents": -13.181,
+        "avg_pnl_cents_ci95": [
+          -15.289,
+          -11.159
+        ],
+        "total_usd": -373.68,
+        "sharpe_daily_annualized": -16.03,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 2.0,
+          "KXINXU": -13.376,
+          "KXNASDAQ100U": -13.11
+        }
+      }
+    },
+    "margin=0.02|window=close|maker_fee=0.0": {
+      "model": {
+        "orders": 8748,
+        "fills": 4581,
+        "fill_rate": 0.524,
+        "avg_pnl_cents": -9.262,
+        "avg_pnl_cents_ci95": [
+          -11.501,
+          -7.186
+        ],
+        "total_usd": -424.31,
+        "sharpe_daily_annualized": -16.72,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 1.0,
+          "KXINXU": -4.294,
+          "KXNASDAQ100U": -11.079
+        }
+      },
+      "control_mid": {
+        "orders": 8312,
+        "fills": 3884,
+        "fill_rate": 0.467,
+        "avg_pnl_cents": -13.253,
+        "avg_pnl_cents_ci95": [
+          -14.77,
+          -11.794
+        ],
+        "total_usd": -514.74,
+        "sharpe_daily_annualized": -17.65,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": 2.0,
+          "KXINXU": -12.654,
+          "KXNASDAQ100U": -13.484
+        }
+      }
+    },
+    "margin=0.03|window=5|maker_fee=0.0": {
+      "model": {
+        "orders": 6632,
+        "fills": 1252,
+        "fill_rate": 0.189,
+        "avg_pnl_cents": -6.292,
+        "avg_pnl_cents_ci95": [
+          -9.86,
+          -2.42
+        ],
+        "total_usd": -78.78,
+        "sharpe_daily_annualized": -7.09,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -6.088,
+          "KXNASDAQ100U": -6.438
+        }
+      },
+      "control_mid": {
+        "orders": 7868,
+        "fills": 1521,
+        "fill_rate": 0.193,
+        "avg_pnl_cents": -12.719,
+        "avg_pnl_cents_ci95": [
+          -16.024,
+          -9.129
+        ],
+        "total_usd": -193.45,
+        "sharpe_daily_annualized": -12.4,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -14.543,
+          "KXNASDAQ100U": -11.453
+        }
+      }
+    },
+    "margin=0.03|window=15|maker_fee=0.0": {
+      "model": {
+        "orders": 6632,
+        "fills": 2248,
+        "fill_rate": 0.339,
+        "avg_pnl_cents": -8.397,
+        "avg_pnl_cents_ci95": [
+          -11.817,
+          -5.388
+        ],
+        "total_usd": -188.76,
+        "sharpe_daily_annualized": -10.61,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -40.0,
+          "KXINXU": -5.02,
+          "KXNASDAQ100U": -9.895
+        }
+      },
+      "control_mid": {
+        "orders": 7868,
+        "fills": 2594,
+        "fill_rate": 0.33,
+        "avg_pnl_cents": -13.357,
+        "avg_pnl_cents_ci95": [
+          -15.51,
+          -11.203
+        ],
+        "total_usd": -346.48,
+        "sharpe_daily_annualized": -15.36,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -14.195,
+          "KXNASDAQ100U": -12.994
+        }
+      }
+    },
+    "margin=0.03|window=close|maker_fee=0.0": {
+      "model": {
+        "orders": 6632,
+        "fills": 3245,
+        "fill_rate": 0.489,
+        "avg_pnl_cents": -9.129,
+        "avg_pnl_cents_ci95": [
+          -11.731,
+          -6.842
+        ],
+        "total_usd": -296.22,
+        "sharpe_daily_annualized": -14.23,
+        "by_series_avg_pnl_cents": {
+          "KXBTCD": -40.0,
+          "KXINXU": -4.927,
+          "KXNASDAQ100U": -10.66
+        }
+      },
+      "control_mid": {
+        "orders": 7868,
+        "fills": 3599,
+        "fill_rate": 0.457,
+        "avg_pnl_cents": -13.053,
+        "avg_pnl_cents_ci95": [
+          -14.676,
+          -11.559
+        ],
+        "total_usd": -469.78,
+        "sharpe_daily_annualized": -16.81,
+        "by_series_avg_pnl_cents": {
+          "KXINXU": -12.994,
+          "KXNASDAQ100U": -13.075
+        }
+      }
+    }
+  }
+}

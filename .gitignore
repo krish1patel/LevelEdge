@@ -22,3 +22,5 @@ build/
 benchmarks/cache/
 benchmarks/results_kalshi_run.log
 benchmarks/results/kalshi/predictions.csv
+benchmarks/results_kalshi_*.log
+benchmarks/results/kalshi_horizon/predictions.csv

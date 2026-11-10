@@ -156,12 +156,12 @@ def _init(bars_by_sym):
 
 
 def _fit_case(case):
-    sym, T, d, strikes = case
+    sym, T, d, strikes, interval = case
     raw = _BARS[sym]
     crypto = is_crypto_ticker(sym)
-    imin = interval_minutes(INTERVAL)
+    imin = interval_minutes(interval)
     try:
-        bars = clean_bars(raw, INTERVAL, sym, d.to_pydatetime())
+        bars = clean_bars(raw, interval, sym, d.to_pydatetime())
         hz = compute_horizon(bars.index[-1], T.to_pydatetime(), imin, crypto)
         if hz.effective_target != T:   # forecast must resolve exactly on the contract's time
             return None
@@ -177,13 +177,13 @@ def _fit_case(case):
         return {"error": f"{type(e).__name__}: {e}"}
 
 
-def build_rows(series, bars, markets, candles, procs) -> pd.DataFrame:
+def build_rows(series, bars, markets, candles, procs, offsets=OFFSETS_MIN, interval=INTERVAL) -> pd.DataFrame:
     spec = SERIES[series]
     cases, meta = [], []
     mk = markets.set_index("ticker")
     for ev, c in candles.groupby("event_ticker"):
         T = mk.loc[c["ticker"].iloc[0], "close_time"]
-        for off in OFFSETS_MIN:
+        for off in offsets:
             d = T - pd.Timedelta(minutes=off)
             q = quote_at(c, d)
             if q.empty:
@@ -193,7 +193,7 @@ def build_rows(series, bars, markets, candles, procs) -> pd.DataFrame:
             q = q[(q["mid"] >= MID_RANGE[0]) & (q["mid"] <= MID_RANGE[1])]
             if q.empty:
                 continue
-            cases.append((spec.underlying, T, d, q["strike"].to_numpy()))
+            cases.append((spec.underlying, T, d, q["strike"].to_numpy(), interval))
             meta.append((ev, T, d, off, q))
     print(f"[{series}] fitting {len(cases)} decision points", flush=True)
     rows = []

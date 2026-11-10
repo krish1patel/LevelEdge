@@ -165,11 +165,13 @@ class KalshiClient:
             for m in d.get("markets", []) or []:
                 for c in m.get("candlesticks", []) or []:
                     frames.append(_candle_row(m.get("market_ticker"), c))
-        df = pd.DataFrame(frames)
-        if df.empty:
-            return df
-        df["ts"] = pd.to_datetime(df["ts"], unit="s", utc=True).dt.tz_convert(US_EASTERN)
-        return df.sort_values(["ticker", "ts"]).reset_index(drop=True)
+        return _candles_frame(frames)
+
+    def historical_candles(self, ticker: str, start: datetime, end: datetime, period_min: int = 1) -> pd.DataFrame:
+        """Candles for one archived market (older than the batch endpoint serves)."""
+        d = self.get(f"/historical/markets/{ticker}/candlesticks",
+                     {"start_ts": _ts(start), "end_ts": _ts(end), "period_interval": period_min})
+        return _candles_frame([_candle_row(ticker, c) for c in d.get("candlesticks", []) or []])
 
 
 # ---------------------------------------------------------------------------
@@ -191,16 +193,29 @@ def _f(x) -> float | None:
 
 
 def _candle_row(ticker: str, c: dict) -> dict:
+    """Live candles use ``*_dollars``/``*_fp`` field names; archived candles drop the suffix."""
     bid, ask, px = c.get("yes_bid") or {}, c.get("yes_ask") or {}, c.get("price") or {}
+
+    def close(x):
+        return _f(x.get("close_dollars", x.get("close")))
+
     return {
         "ticker": ticker,
         "ts": c.get("end_period_ts"),
-        "bid": _f(bid.get("close_dollars")),
-        "ask": _f(ask.get("close_dollars")),
-        "last": _f(px.get("close_dollars")),
-        "volume": _f(c.get("volume_fp")) or 0.0,
-        "open_interest": _f(c.get("open_interest_fp")) or 0.0,
+        "bid": close(bid),
+        "ask": close(ask),
+        "last": close(px),
+        "volume": _f(c.get("volume_fp", c.get("volume"))) or 0.0,
+        "open_interest": _f(c.get("open_interest_fp", c.get("open_interest"))) or 0.0,
     }
+
+
+def _candles_frame(rows: list[dict]) -> pd.DataFrame:
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    df["ts"] = pd.to_datetime(df["ts"], unit="s", utc=True).dt.tz_convert(US_EASTERN)
+    return df.sort_values(["ticker", "ts"]).reset_index(drop=True)
 
 
 def markets_frame(rows: list[dict]) -> pd.DataFrame:
