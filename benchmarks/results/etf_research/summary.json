@@ -1,0 +1,202 @@
+{
+  "period": {
+    "dev": [
+      "2007-02-28",
+      "2019-12-31"
+    ],
+    "holdout": [
+      "2020-01-01",
+      "2026-11-09"
+    ]
+  },
+  "trials": 80,
+  "selected": "mom6|invvol|monthly|IEF",
+  "deflated_sharpe_dev": {
+    "sharpe_annual": 1.024,
+    "expected_max_sharpe_of_noise_annual": 0.448,
+    "deflated_sharpe_prob": 0.9804,
+    "trials": 80
+  },
+  "dev": {
+    "selected": {
+      "start": "2007-02-28",
+      "end": "2019-12-31",
+      "years": 12.83,
+      "cagr": 0.0754,
+      "vol": 0.0651,
+      "sharpe": 1.024,
+      "sortino": 1.466,
+      "max_drawdown": -0.0823,
+      "calmar": 0.916,
+      "worst_month": -0.0463,
+      "pct_positive_months": 0.658,
+      "total_return": 1.5431,
+      "turnover_per_year": 3.46
+    },
+    "sixty_forty": {
+      "start": "2007-02-28",
+      "end": "2019-12-31",
+      "years": 12.83,
+      "cagr": 0.0769,
+      "vol": 0.1041,
+      "sharpe": 0.684,
+      "sortino": 0.855,
+      "max_drawdown": -0.326,
+      "calmar": 0.236,
+      "worst_month": -0.1026,
+      "pct_positive_months": 0.671,
+      "total_return": 1.587
+    },
+    "spy_buy_hold": {
+      "start": "2007-02-28",
+      "end": "2019-12-31",
+      "years": 12.83,
+      "cagr": 0.0896,
+      "vol": 0.1936,
+      "sharpe": 0.497,
+      "sortino": 0.608,
+      "max_drawdown": -0.5519,
+      "calmar": 0.162,
+      "worst_month": -0.1652,
+      "pct_positive_months": 0.677,
+      "total_return": 2.0071
+    },
+    "original_mom12_voltarget_weekly": {
+      "start": "2007-02-28",
+      "end": "2019-12-31",
+      "years": 12.83,
+      "cagr": 0.0554,
+      "vol": 0.0785,
+      "sharpe": 0.621,
+      "sortino": 0.832,
+      "max_drawdown": -0.1518,
+      "calmar": 0.365,
+      "worst_month": -0.078,
+      "pct_positive_months": 0.626,
+      "total_return": 0.9969
+    }
+  },
+  "holdout": {
+    "selected": {
+      "start": "2020-01-02",
+      "end": "2026-11-09",
+      "years": 6.84,
+      "cagr": 0.0328,
+      "vol": 0.0803,
+      "sharpe": 0.087,
+      "sortino": 0.12,
+      "max_drawdown": -0.1916,
+      "calmar": 0.171,
+      "worst_month": -0.0478,
+      "pct_positive_months": 0.566,
+      "total_return": 0.2472,
+      "turnover_per_year": 3.82
+    },
+    "sixty_forty": {
+      "start": "2020-01-02",
+      "end": "2026-11-09",
+      "years": 6.84,
+      "cagr": 0.0891,
+      "vol": 0.1204,
+      "sharpe": 0.532,
+      "sortino": 0.687,
+      "max_drawdown": -0.2129,
+      "calmar": 0.418,
+      "worst_month": -0.0744,
+      "pct_positive_months": 0.639,
+      "total_return": 0.7923
+    },
+    "spy_buy_hold": {
+      "start": "2020-01-02",
+      "end": "2026-11-09",
+      "years": 6.84,
+      "cagr": 0.1482,
+      "vol": 0.2003,
+      "sharpe": 0.648,
+      "sortino": 0.803,
+      "max_drawdown": -0.3372,
+      "calmar": 0.439,
+      "worst_month": -0.1249,
+      "pct_positive_months": 0.627,
+      "total_return": 1.5719
+    }
+  },
+  "holdout_sharpe_vs": {
+    "sixty_forty": {
+      "diff": -0.445,
+      "ci95": [
+        -0.968,
+        -0.003
+      ]
+    },
+    "spy_buy_hold": {
+      "diff": -0.561,
+      "ci95": [
+        -1.256,
+        -0.024
+      ]
+    }
+  },
+  "holdout_combo_6040_plus_30pct_selected": {
+    "metrics": {
+      "start": "2020-01-02",
+      "end": "2026-11-09",
+      "years": 6.84,
+      "cagr": 0.0729,
+      "vol": 0.1012,
+      "sharpe": 0.464,
+      "sortino": 0.602,
+      "max_drawdown": -0.2003,
+      "calmar": 0.364,
+      "worst_month": -0.0664,
+      "pct_positive_months": 0.639,
+      "total_return": 0.6177
+    },
+    "sharpe_vs_sixty_forty": {
+      "diff": -0.068,
+      "ci95": [
+        -0.185,
+        0.031
+      ]
+    }
+  },
+  "rank_stability": {
+    "spearman_dev_vs_holdout": -0.725,
+    "p_value": 0.0,
+    "top10_dev_holdout_ranks": [
+      71,
+      70,
+      68,
+      75,
+      74,
+      69,
+      78,
+      48,
+      42,
+      73
+    ],
+    "holdout_sharpe_of_dev_top10_mean": 0.131,
+    "holdout_sharpe_all_mean": 0.366
+  },
+  "by_signal_dev_sharpe_mean": {
+    "dual12_top3": 0.399,
+    "dual6_top3": 0.536,
+    "mom1": 0.538,
+    "mom12": 0.744,
+    "mom3": 0.772,
+    "mom6": 0.808,
+    "multi": 0.814,
+    "sma200": 0.755
+  },
+  "by_signal_hold_sharpe_mean": {
+    "dual12_top3": 0.568,
+    "dual6_top3": 0.485,
+    "mom1": 0.312,
+    "mom12": 0.312,
+    "mom3": 0.236,
+    "mom6": 0.33,
+    "multi": 0.32,
+    "sma200": 0.366
+  },
+  "seconds": 79.9
+}

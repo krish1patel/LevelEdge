@@ -205,6 +205,117 @@ def strategy_weights(opens, closes, cash, cfg: StrategyConfig, vol: pd.DataFrame
 
 
 # ---------------------------------------------------------------------------
+# research variants (signals and sizing schemes from the trend literature)
+# ---------------------------------------------------------------------------
+def multi_horizon_signal(closes, cash, lookbacks=(21, 63, 126, 252)) -> pd.DataFrame:
+    """Fraction of horizons on which the asset beats cash (0, .25, ..., 1)."""
+    sigs = [momentum_signal(closes, cash, lb) for lb in lookbacks]
+    return sum(sigs) / len(sigs)
+
+
+def sma_signal(closes, window: int = 200) -> pd.DataFrame:
+    """1 when the close is above its ``window``-day simple moving average (Faber 2007)."""
+    sma = closes.rolling(window).mean()
+    return (closes > sma).astype(float).where(sma.notna())
+
+
+def dual_momentum_signal(closes, cash, lookback: int, top: int = 3) -> pd.DataFrame:
+    """Hold the ``top`` assets by trailing return, only if each also beats cash (Antonacci)."""
+    ret = closes / closes.shift(lookback) - 1
+    absolute = momentum_signal(closes, cash, lookback)
+    rank = ret.rank(axis=1, ascending=False)
+    return ((rank <= top).astype(float) * absolute).where(ret.notna())
+
+
+SIGNALS = {
+    "mom1": lambda c, k: momentum_signal(c, k, 21),
+    "mom3": lambda c, k: momentum_signal(c, k, 63),
+    "mom6": lambda c, k: momentum_signal(c, k, 126),
+    "mom12": lambda c, k: momentum_signal(c, k, 252),
+    "multi": lambda c, k: multi_horizon_signal(c, k),
+    "sma200": lambda c, k: sma_signal(c, 200),
+    "dual6_top3": lambda c, k: dual_momentum_signal(c, k, 126, 3),
+    "dual12_top3": lambda c, k: dual_momentum_signal(c, k, 252, 3),
+}
+
+
+def sleeve_weights(signal: pd.Series, daily_vol: pd.Series, sizing: str, top: int | None = None,
+                   defensive: str | None = None) -> pd.Series:
+    """Weights without portfolio vol targeting; total exposure <= 100%.
+
+    Trend (``top`` is None): every asset owns a sleeve, 1/N each ("equal") or
+    proportional to 1/vol ("invvol"); a sleeve is invested in proportion to its
+    signal (0..1). Dual momentum (``top`` = k): k slots; the chosen assets
+    share ``held/k`` of capital, equally or by 1/vol.
+    Capital left idle earns cash, or goes to ``defensive`` (e.g. "IEF") if given.
+    """
+    ok = signal.notna() & daily_vol.notna() & (daily_vol > 0)
+    on = signal.where(ok).fillna(0.0).clip(0, 1)
+    w = pd.Series(0.0, index=signal.index)
+    if top:
+        chosen = on > 0
+        if chosen.any():
+            share = chosen.sum() / top
+            raw = (1 / daily_vol[chosen]) if sizing == "invvol" else pd.Series(1.0, index=on.index[chosen])
+            w[chosen] = raw / raw.sum() * share
+    else:
+        if not ok.any():
+            return w
+        raw = (1 / daily_vol.where(ok)) if sizing == "invvol" else ok.astype(float)
+        base = (raw / raw.sum()).fillna(0.0)
+        w = base * on
+    if sizing not in ("equal", "invvol"):
+        raise ValueError(sizing)
+    idle = max(0.0, 1.0 - float(w.sum()))
+    if defensive and defensive in w.index and idle > 0:
+        w[defensive] += idle
+    return w
+
+
+def variant_weights(closes, cash, vol, corr, spec: dict) -> pd.DataFrame:
+    """Decision-date weights for one research variant ``spec``.
+
+    spec keys: signal (name in SIGNALS), sizing ("equal"|"invvol"|"voltarget"),
+    rebalance ("weekly"|"monthly"), defensive (None|"IEF").
+    """
+    sig = SIGNALS[spec["signal"]](closes, cash)
+    top = 3 if spec["signal"].startswith("dual") else None
+    dates = rebalance_dates(closes.index, spec["rebalance"])
+    rows = {}
+    for d in dates:
+        i = closes.index.get_loc(d)
+        if i < 253 or d not in corr:
+            continue
+        if spec["sizing"] == "voltarget":
+            rows[d] = target_weights(sig.loc[d], vol.loc[d], corr[d], StrategyConfig())
+        else:
+            rows[d] = sleeve_weights(sig.loc[d], vol.loc[d], spec["sizing"], top, spec.get("defensive"))
+    return pd.DataFrame(rows).T.reindex(columns=closes.columns).fillna(0.0)
+
+
+def deflated_sharpe(returns_excess: pd.Series, trial_sharpes_daily: np.ndarray) -> dict:
+    """Deflated Sharpe ratio (Bailey & Lopez de Prado 2014) for the best of N trials.
+
+    Probability that the true Sharpe exceeds the maximum expected from N
+    unskilled trials, given non-normal returns. Inputs are daily (not annualised).
+    """
+    from scipy.stats import kurtosis, norm, skew
+
+    x = returns_excess.dropna().to_numpy()
+    T = len(x)
+    sr = x.mean() / x.std(ddof=1)
+    g3, g4 = skew(x), kurtosis(x, fisher=False)
+    n = len(trial_sharpes_daily)
+    v = np.var(trial_sharpes_daily, ddof=1)
+    euler = 0.5772156649
+    sr0 = np.sqrt(v) * ((1 - euler) * norm.ppf(1 - 1 / n) + euler * norm.ppf(1 - 1 / (n * np.e)))
+    z = (sr - sr0) * np.sqrt(T - 1) / np.sqrt(1 - g3 * sr + (g4 - 1) / 4 * sr ** 2)
+    return {"sharpe_annual": round(float(sr * np.sqrt(TRADING_DAYS)), 3),
+            "expected_max_sharpe_of_noise_annual": round(float(sr0 * np.sqrt(TRADING_DAYS)), 3),
+            "deflated_sharpe_prob": round(float(norm.cdf(z)), 4), "trials": n}
+
+
+# ---------------------------------------------------------------------------
 # backtest
 # ---------------------------------------------------------------------------
 def backtest(opens: pd.DataFrame, closes: pd.DataFrame, cash: pd.Series, decisions: pd.DataFrame,
@@ -332,4 +443,5 @@ def qlike(realized_var: np.ndarray, forecast_var: np.ndarray) -> float:
 
 __all__ = ["UNIVERSE", "StrategyConfig", "load_prices", "panel", "ewma_vol", "leveledge_vol", "vol_forecasts",
            "momentum_signal", "target_weights", "strategy_weights", "backtest", "buy_and_hold", "metrics",
-           "sharpe_diff_ci", "qlike", "rebalance_dates", "rolling_corr"]
+           "sharpe_diff_ci", "qlike", "rebalance_dates", "rolling_corr", "SIGNALS",
+           "sleeve_weights", "variant_weights", "deflated_sharpe"]
