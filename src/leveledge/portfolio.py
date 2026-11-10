@@ -293,6 +293,41 @@ def variant_weights(closes, cash, vol, corr, spec: dict) -> pd.DataFrame:
     return pd.DataFrame(rows).T.reindex(columns=closes.columns).fillna(0.0)
 
 
+ASSET_CLASSES = {
+    "equities": ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ"],
+    "bonds": ["IEF", "TLT", "LQD"],
+    "real_assets": ["GLD", "DBC"],
+}
+
+
+def scale_to_vol(w: pd.Series, daily_vol: pd.Series, corr: pd.DataFrame, target_vol: float,
+                 max_gross: float, max_weight: float = 1.0) -> pd.Series:
+    """Scale a weight vector so its forecast annual vol hits ``target_vol``, within caps."""
+    ann = (daily_vol * np.sqrt(TRADING_DAYS)).reindex(w.index).fillna(0)
+    cov = corr.reindex(index=w.index, columns=w.index).fillna(0).to_numpy() * np.outer(ann, ann)
+    pv = float(np.sqrt(max(w.to_numpy() @ cov @ w.to_numpy(), 1e-12)))
+    out = w * (target_vol / pv)
+    out = out.clip(upper=max_weight)
+    if out.sum() > max_gross:
+        out *= max_gross / out.sum()
+    return out
+
+
+def risk_parity_weights(daily_vol: pd.Series, corr: pd.DataFrame, target_vol: float, max_gross: float,
+                        classes: dict[str, list[str]] | None = None, max_weight: float = 1.0) -> pd.Series:
+    """Equal risk per asset class, equal risk within each class (inverse vol), scaled to ``target_vol``."""
+    classes = classes or ASSET_CLASSES
+    w = pd.Series(0.0, index=daily_vol.index)
+    present = {k: [a for a in v if a in daily_vol.index and daily_vol.get(a, 0) > 0] for k, v in classes.items()}
+    present = {k: v for k, v in present.items() if v}
+    for k, members in present.items():
+        inv = 1 / daily_vol[members]
+        sub = inv / inv.sum()
+        sub = scale_to_vol(sub, daily_vol, corr, 1.0, 1e9)          # unit-vol sleeve
+        w[members] += sub / len(present)
+    return scale_to_vol(w, daily_vol, corr, target_vol, max_gross, max_weight)
+
+
 def deflated_sharpe(returns_excess: pd.Series, trial_sharpes_daily: np.ndarray) -> dict:
     """Deflated Sharpe ratio (Bailey & Lopez de Prado 2014) for the best of N trials.
 
@@ -319,10 +354,12 @@ def deflated_sharpe(returns_excess: pd.Series, trial_sharpes_daily: np.ndarray) 
 # backtest
 # ---------------------------------------------------------------------------
 def backtest(opens: pd.DataFrame, closes: pd.DataFrame, cash: pd.Series, decisions: pd.DataFrame,
-             cost_bps: float = 5.0) -> pd.DataFrame:
+             cost_bps: float = 5.0, borrow_spread: float = 0.02) -> pd.DataFrame:
     """Daily simulation: weights decided at close t trade at the open of t+1.
 
     Holdings drift with prices between trades; uninvested capital earns cash.
+    Gross exposure above 100% is financed at the cash rate plus ``borrow_spread``
+    (annual), a stand-in for a broker's margin rate.
     Returns the daily portfolio return, gross exposure and turnover, starting
     from the first decision.
     """
@@ -343,12 +380,12 @@ def backtest(opens: pd.DataFrame, closes: pd.DataFrame, cash: pd.Series, decisio
             v1 = 1 + w @ (gap[t] - 1)                  # overnight on old weights (cash ~0 overnight)
             w_open = w * gap[t] / v1
             turnover = float(np.abs(pending - w_open).sum())
-            v2 = 1 + pending @ (intra[t] - 1) + (1 - pending.sum()) * cr[t]
+            v2 = 1 + pending @ (intra[t] - 1) + (1 - pending.sum()) * cr[t] - max(0.0, pending.sum() - 1) * borrow_spread / TRADING_DAYS
             r = v1 * v2 * (1 - turnover * cost_bps / 1e4) - 1
             w = pending * intra[t] / v2
             pending = None
         else:
-            r = w @ (on[t] - 1) + (1 - w.sum()) * cr[t]
+            r = w @ (on[t] - 1) + (1 - w.sum()) * cr[t] - max(0.0, w.sum() - 1) * borrow_spread / TRADING_DAYS
             w = w * on[t] / (1 + r)
         if t in pos:
             pending = pos[t]
@@ -444,4 +481,5 @@ def qlike(realized_var: np.ndarray, forecast_var: np.ndarray) -> float:
 __all__ = ["UNIVERSE", "StrategyConfig", "load_prices", "panel", "ewma_vol", "leveledge_vol", "vol_forecasts",
            "momentum_signal", "target_weights", "strategy_weights", "backtest", "buy_and_hold", "metrics",
            "sharpe_diff_ci", "qlike", "rebalance_dates", "rolling_corr", "SIGNALS",
-           "sleeve_weights", "variant_weights", "deflated_sharpe"]
+           "sleeve_weights", "variant_weights", "deflated_sharpe",
+           "ASSET_CLASSES", "scale_to_vol", "risk_parity_weights"]
