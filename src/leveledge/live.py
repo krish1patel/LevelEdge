@@ -69,6 +69,20 @@ def is_rebalance_day(day: pd.Timestamp) -> bool:
     return bool(this_week) and day == max(this_week)
 
 
+def next_rebalance_date(now: datetime | None = None) -> pd.Timestamp:
+    """The next weekly rebalance session (today if it is one and the job has not run yet)."""
+    now = now or datetime.now(tz=US_EASTERN)
+    today = pd.Timestamp(now.date())
+    sched = nyse_schedule(today, today + pd.Timedelta(days=14))
+    for d in sched.index:
+        d = pd.Timestamp(d).normalize()
+        if d == today and now.hour * 60 + now.minute >= 17 * 60 + 45:
+            continue        # this week's job has already run after today's close
+        if is_rebalance_day(d):
+            return d
+    return today
+
+
 def current_targets(cache_dir: str | None = None, now: datetime | None = None) -> dict:
     """Target weights from the latest completed close, with the reasoning behind them."""
     cfg = config()
@@ -96,8 +110,9 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
              "last_close": round(float(closes.loc[d, s]), 4)}
             for s in cfg.universe],
         "sleeve_gross": round(float(trend.sum()), 4),
+        "next_rebalance": next_rebalance_date(now).strftime("%Y-%m-%d"),
     }
 
 
 __all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "STRATEGY_ID", "book_from_trend", "book_decisions",
-           "completed_daily", "is_rebalance_day", "current_targets"]
+           "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets"]

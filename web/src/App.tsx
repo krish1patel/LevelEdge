@@ -7,11 +7,25 @@ import { LevelsPanel } from "./components/LevelsPanel";
 import { TrustPanel } from "./components/TrustPanel";
 import { Diagnostics } from "./components/Diagnostics";
 import { TrackRecord } from "./components/TrackRecord";
+import { Portfolio } from "./components/Portfolio";
+import { Research } from "./components/Research";
 
 const INTERVALS = ["1m", "2m", "5m", "15m", "30m", "1h", "90m", "1d"];
 const SUGGESTED = ["SPY", "QQQ", "NVDA", "TSLA", "AAPL", "MSFT", "IWM", "BTC-USD", "ETH-USD"];
 type Preset = "close" | "next" | "hour" | "custom";
 type Tab = "forecast" | "diagnostics" | "track";
+type Section = "portfolio" | "forecaster" | "research";
+const SECTIONS: [Section, string][] = [["portfolio", "Portfolio"], ["forecaster", "Forecaster"], ["research", "Research"]];
+
+/** Route from the URL: #research, forecaster tabs (#forecast, #diagnostics, #track), else the portfolio.
+ *  Links that carry ?ticker= (the old forecaster URLs) still open the forecaster. */
+function routeFromUrl(): { section: Section; tab: Tab } {
+  const h = window.location.hash.replace("#", "");
+  if (h === "research") return { section: "research", tab: "forecast" };
+  if (h === "forecast" || h === "diagnostics" || h === "track") return { section: "forecaster", tab: h };
+  if (!h && new URLSearchParams(window.location.search).has("ticker")) return { section: "forecaster", tab: "forecast" };
+  return { section: "portfolio", tab: "forecast" };
+}
 type Theme = "system" | "light" | "dark";
 
 const store = {
@@ -61,21 +75,23 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [prev, setPrev] = useState<Record<string, number>>({});
   const [flash, setFlash] = useState<Set<string>>(new Set());
-  const [tab, setTabState] = useState<Tab>(() => {
-    const h = window.location.hash.replace("#", "");
-    return h === "diagnostics" || h === "track" ? h : "forecast";
-  });
-  const setTab = (t: Tab) => {
+  const [tab, setTabState] = useState<Tab>(() => routeFromUrl().tab);
+  const [section, setSectionState] = useState<Section>(() => routeFromUrl().section);
+  const go = (sec: Section, t: Tab = tab) => {
+    setSectionState(sec);
     setTabState(t);
-    try { history.replaceState(null, "", t === "forecast" ? window.location.pathname : `#${t}`); } catch { /* sandboxed */ }
+    const hash = sec === "portfolio" ? "" : sec === "research" ? "#research" : `#${t}`;
+    try { history.replaceState(null, "", `${window.location.pathname}${window.location.search}${hash}`); } catch { /* sandboxed */ }
   };
+  const setTab = (t: Tab) => go("forecaster", t);
   const [theme, setTheme] = useState<Theme>(() => (store.get("le.theme") as Theme) ?? "system");
   const abort = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const onHash = () => {
-      const h = window.location.hash.replace("#", "");
-      setTabState(h === "diagnostics" || h === "track" ? h : "forecast");
+      const r = routeFromUrl();
+      setSectionState(r.section);
+      setTabState(r.tab);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -108,7 +124,6 @@ export default function App() {
       store.set("le.ticker", sym);
       store.set("le.interval", interval);
       store.set("le.levels", JSON.stringify(lv));
-      document.title = `${res.meta.ticker} ${fmtPrice(res.meta.spot)} · LevelEdge`;
     } catch (e) {
       if ((e as Error).name !== "AbortError") setError((e as Error).message);
     } finally {
@@ -116,9 +131,15 @@ export default function App() {
     }
   }, [ticker, preset, custom, interval, levels, backtest, asOf, data]);
 
-  // first load: run the default forecast so the screen teaches itself
+  // first visit to the forecaster: run the default forecast so the screen teaches itself
   const ran = useRef(false);
-  useEffect(() => { if (!ran.current) { ran.current = true; run(); } }, [run]);
+  useEffect(() => { if (section === "forecaster" && !ran.current) { ran.current = true; run(); } }, [run, section]);
+  useEffect(() => {
+    if (section === "portfolio") document.title = "Paper book · LevelEdge";
+    else if (section === "research") document.title = "Research · LevelEdge";
+    else if (data) document.title = `${data.meta.ticker} ${fmtPrice(data.meta.spot)} · LevelEdge`;
+    else document.title = "Forecaster · LevelEdge";
+  }, [section, data]);
 
   function onLevels(next: string[]) {
     setLevels(next);
@@ -139,7 +160,19 @@ export default function App() {
             </svg>
             LevelEdge
           </div>
-          <form className="controls" onSubmit={(e) => { e.preventDefault(); run(); }} aria-label="Forecast settings">
+          <nav className="section-nav" aria-label="Sections">
+            {SECTIONS.map(([k, l]) => (
+              <a key={k} href={k === "portfolio" ? window.location.pathname : k === "research" ? "#research" : "#forecast"}
+                 aria-current={section === k ? "page" : undefined}
+                 onClick={(e) => { e.preventDefault(); go(k, k === "forecaster" ? tab : "forecast"); }}>{l}</a>
+            ))}
+          </nav>
+          <div className="topbar-spacer" />
+          <button type="button" className="btn btn-ghost btn-icon" onClick={() => setTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system")}
+                  aria-label={`Theme: ${theme}. Change theme`} title={`Theme: ${theme}`}>
+            {theme === "system" ? <Monitor size={16} /> : theme === "light" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          {section === "forecaster" && <form className="controls" onSubmit={(e) => { e.preventDefault(); run(); }} aria-label="Forecast settings">
             <label className="field">
               <span>Ticker</span>
               <input className="input ticker-input" value={ticker} list="tickers" autoComplete="off" spellCheck={false}
@@ -180,15 +213,14 @@ export default function App() {
               {busy ? <Loader2 size={16} className="spin" aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
               {busy ? "Forecasting" : "Forecast"}
             </button>
-          </form>
-          <button type="button" className="btn btn-ghost btn-icon" onClick={() => setTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system")}
-                  aria-label={`Theme: ${theme}. Change theme`} title={`Theme: ${theme}`}>
-            {theme === "system" ? <Monitor size={16} /> : theme === "light" ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
+          </form>}
         </div>
       </header>
 
       <main>
+        {section === "portfolio" && <Portfolio />}
+        {section === "research" && <Research />}
+        {section === "forecaster" && <>
         {error && (
           <div className="banner" data-tone="error" role="alert">
             <AlertCircle size={18} aria-hidden="true" />
@@ -265,11 +297,14 @@ export default function App() {
         {tab === "track" && (
           <div id="panel-track" role="tabpanel" aria-labelledby="tab-track"><TrackRecord /></div>
         )}
+        </>}
       </main>
 
       <footer className="site-foot">
-        <span>Probabilities, not trade advice. Regular-session bars from Yahoo Finance; forecasts resolve on the last bar close at or before your target.</span>
-        <span>{meta ? `Fitted in ${meta.elapsed_s.toFixed(1)} s · ` : ""}LevelEdge v2</span>
+        <span>{section === "forecaster"
+          ? "Probabilities, not trade advice. Regular-session bars from Yahoo Finance; forecasts resolve on the last bar close at or before your target."
+          : "Research and paper trading only, not investment advice. Prices from Yahoo Finance, Kalshi and Alpaca."}</span>
+        <span>{section === "forecaster" && meta ? `Fitted in ${meta.elapsed_s.toFixed(1)} s · ` : ""}LevelEdge v2</span>
       </footer>
     </div>
   );

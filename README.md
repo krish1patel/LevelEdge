@@ -10,11 +10,31 @@ pinned: false
 
 # LevelEdge
 
-**Calibrated probabilities that a stock or crypto price closes above your levels at a target time.**
+**A calibrated price-level forecaster, a paper-traded ETF portfolio, and an honest record of what did and didn't beat the market.**
 
-Give it a ticker, a target time and some levels (`665`, `+1%`, `-0.5%`). LevelEdge returns P(close above) for each level, the whole forecast distribution (80% range, median, fan chart), and the out-of-sample evidence for how far to trust it.
+The dashboard has three sections:
 
-> Probabilities, not trade advice.
+- **Portfolio:** a paper-traded book of 70% 60/40 (SPY/IEF) plus a 30% trend-following sleeve across 11 ETFs, rebalanced weekly through an Alpaca paper account, scored against 60/40 and SPY.
+- **Forecaster:** give it a ticker, a target time and some levels (`665`, `+1%`, `-0.5%`); it returns P(close above) for each level, the forecast distribution, and the out-of-sample evidence for how far to trust it.
+- **Research:** every trading idea that was tested, with the numbers, including the ones that failed.
+
+> Research and paper trading only. Not investment advice.
+
+## What we tested
+
+Every idea had to beat a simple alternative on data it hadn't seen, after costs.
+
+| Idea | Result |
+|---|---|
+| Forecaster v2 vs the original v1 | **Adopted.** Brier 0.126 vs 0.185 on 4,800 held-out forecasts. |
+| Trading Kalshi's hourly S&P 500 / Nasdaq-100 / Bitcoin contracts at the market price | **No edge.** On liquid quotes the market is better calibrated (Brier 0.1040 vs 0.1063); trading the difference loses about 2¢ per contract after fees. |
+| Market-making on Kalshi around the model's fair value | **Loses** 6–10¢ per fill in all 18 variants (adverse selection). |
+| Kalshi from the morning for the 4 PM settle, Feb 2024 – Nov 2026 | **No edge** (Brier 0.1155 vs market 0.1130). |
+| 12-month trend following across 11 ETFs | **Real signal** (beats 99% of random pickers) but no better return per unit of risk than 60/40; much smaller drawdowns. Kept as a sleeve. |
+| Best of 80 trend variants chosen on 2007–2019 | **Failed the 2020–2026 holdout.** Dev and holdout rankings were negatively correlated (−0.73). |
+| LevelEdge's volatility model vs EWMA on daily ETF data | **Tie**; EWMA is used. |
+
+The paper book: 2007–2026 backtest 7.3%/yr, Sharpe 0.63, worst fall −24% (60/40: 8.0%, 0.62, −33%). Its goal is smaller crashes, not more return. Details: `benchmarks/results/*/summary.json`.
 
 ## Accuracy
 
@@ -115,6 +135,18 @@ Every push to `main` syncs to the HuggingFace Space (`.github/workflows/sync_to_
 
 Space secrets:
 - `SUPABASE_URL` and `SUPABASE_KEY`: enable the **Track record** tab, which reads `forwardtest_logs`.
+- `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY` (paper keys): show the live paper account on the **Portfolio** tab.
+
+## Paper trading
+
+`.github/workflows/paper_trade.yml` runs `scripts/paper_trade.py --execute` after the close on weekdays. On the last trading day of each week it rebalances the Alpaca **paper** account to the book's targets; orders fill at the next open. Add the two Alpaca secrets to the GitHub repository for it to trade; without them it prints the plan for a hypothetical $100,000 account.
+
+```bash
+python scripts/paper_trade.py --force          # dry run: plan against the real paper account (or $100k)
+python scripts/paper_trade.py --force --execute  # submit to the paper account now
+```
+
+Safety: `leveledge.broker` refuses any non-paper Alpaca endpoint unless `LEVELEDGE_ALLOW_LIVE_TRADING=1`, never spends more than its cash (the paper account's margin is never used), and skips drift under 1% of equity.
 
 ## Forward test
 
@@ -130,10 +162,13 @@ Space secrets:
 ## Project layout
 
 ```
-src/leveledge/   sessions.py  data.py  features.py  model.py  predictor.py  polygon_data.py
-app/api.py       FastAPI: forecast, track record, benchmark, static UI
+src/leveledge/   forecaster: sessions.py  data.py  features.py  model.py  predictor.py  polygon_data.py
+                 portfolio:  portfolio.py (engine)  live.py (the traded book)  broker.py (Alpaca paper)
+                 market data: kalshi.py  edge.py (edge and event-level Kelly sizing)
+app/api.py       FastAPI: forecast, track record, benchmark, portfolio, research, static UI
 web/             React + Vite dashboard (hand-built SVG charts)
-benchmarks/      compare.py (v1 vs v2), legacy_v1.py (frozen v1), results/
-scripts/         forwardtest.py, update_outcomes.py, backtests
+benchmarks/      compare.py (v1 vs v2), kalshi_edge.py, kalshi_maker.py, kalshi_horizon.py,
+                 etf_trend.py, etf_research.py, paper_portfolio.py, legacy_v1.py, results/
+scripts/         paper_trade.py, forwardtest.py, update_outcomes.py, backtests
 tests/           offline pytest suite
 ```

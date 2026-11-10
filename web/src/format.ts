@@ -15,7 +15,7 @@ export const fmtSigned = (v: number, digits = 2, suffix = "%") =>
   `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}${suffix}`;
 
 export const fmtNum = (v: number | null | undefined, digits = 3) =>
-  v == null || Number.isNaN(v) ? "—" : v.toFixed(digits);
+  v == null || Number.isNaN(v) ? "—" : `${v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}`;
 
 export const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
@@ -79,6 +79,18 @@ export function horizonPhrase(bars: number, interval: string): string {
   const span = total >= 60 ? `${+(total / 60).toFixed(1)} h` : `${total} min`;
   return `${bars} × ${mins}-min bars (${span} of trading)`;
 }
+
+export const fmtMoney = (v: number, digits = 2) =>
+  `${v < 0 ? "−" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+
+/** Signed percent from a fraction: 0.0734 -> "+7.3%", -0.2366 -> "−23.7%". */
+export const fmtSignedPct = (f: number, digits = 1) => fmtSigned(f * 100, digits);
+
+/** Plain percent from a fraction without the <1% / >99% clamping used for probabilities. */
+export const fmtRate = (f: number, digits = 1) => `${f < 0 ? "−" : ""}${Math.abs(f * 100).toFixed(digits)}%`;
+
+/** "2026-11-13" -> "Fri, Nov 13". */
+export const fmtIsoDay = (iso: string) => fmtEventDate(iso.slice(0, 10));
 
 export function fmtEventDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);

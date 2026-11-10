@@ -10,6 +10,7 @@ export interface Series {
   kind?: "line" | "dots";
   dashed?: boolean;
   hollow?: boolean;        // dots drawn as rings: a second, non-colour cue
+  connect?: boolean;       // dots: join them with a faint line (default true; false for scatter plots)
 }
 
 interface Props {
@@ -24,9 +25,20 @@ interface Props {
   summary: string;
   xTitle?: string;
   yTitle?: string;
+  xTicks?: number[];           // explicit tick positions (e.g. year starts on an index axis)
+  xTip?: (v: number) => string; // tooltip heading, when it should be more precise than the tick label
+  hline?: number;              // horizontal reference line (e.g. zero)
 }
 
-export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260, diagonal, vline, summary, xTitle, yTitle }: Props) {
+/** Keep at most ``max`` ticks, evenly spaced through the list. */
+function thin(ticks: number[], max: number) {
+  if (ticks.length <= max) return ticks;
+  const step = Math.ceil(ticks.length / max);
+  return ticks.filter((_, i) => i % step === 0);
+}
+
+export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260, diagonal, vline, summary, xTitle, yTitle,
+                          xTicks, xTip, hline }: Props) {
   const [ref, width] = useWidth<HTMLDivElement>(480);
   const svgRef = useRef<SVGSVGElement>(null);
   const [hx, setHx] = useState<number | null>(null);
@@ -63,10 +75,11 @@ export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260
               <text x={-8} y={y(t)} dy="0.32em" textAnchor="end" className="num">{yLabel(t)}</text>
             </g>
           ))}
-          {x.ticks(Math.max(3, Math.floor(iw / 80))).map((t) => (
+          {(xTicks ? thin(xTicks, Math.max(3, Math.floor(iw / 64))) : x.ticks(Math.max(3, Math.floor(iw / 80)))).map((t) => (
             <text key={t} x={x(t)} y={ih + 18} textAnchor="middle" className="num">{xLabel(t)}</text>
           ))}
           <line className="axis-line" x1={0} x2={iw} y1={ih} y2={ih} />
+          {hline != null && <line x1={0} x2={iw} y1={y(hline)} y2={y(hline)} stroke="var(--hairline-strong)" strokeWidth={1} />}
           {xTitle && <text x={iw / 2} y={ih + 38} textAnchor="middle">{xTitle}</text>}
           {yTitle && <text transform={`translate(${-46},${ih / 2}) rotate(-90)`} textAnchor="middle">{yTitle}</text>}
           {diagonal && <line x1={x(xd[0])} y1={y(xd[0])} x2={x(xd[1])} y2={y(xd[1])} stroke="var(--hairline-strong)" strokeWidth={1} />}
@@ -76,10 +89,11 @@ export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260
               <text x={x(vline.x) + 6} y={10}>{vline.label}</text>
             </g>
           )}
-          {series.map((s) =>
+          {/* draw in reverse so the first (primary) series sits on top */}
+          {[...series].reverse().map((s) =>
             s.kind === "dots" ? (
               <g key={s.name}>
-                {s.points.length > 1 && (
+                {s.points.length > 1 && s.connect !== false && (
                   <path d={path(s.points) ?? ""} fill="none" stroke={s.color} strokeWidth={1} opacity={0.5} />
                 )}
                 {s.points.map((p, i) => (
@@ -106,7 +120,7 @@ export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260
       </svg>
       {hx != null && (
         <div className="tooltip" style={{ left: tipLeft > width - 190 ? tipLeft - 180 : tipLeft + 12, top: 8 }} aria-hidden="true">
-          <div className="tt-time">{xLabel(nearest(series[0], hx).x)}</div>
+          <div className="tt-time">{(xTip ?? xLabel)(nearest(series[0], hx).x)}</div>
           {series.map((s) => {
             const p = nearest(s, hx);
             return (

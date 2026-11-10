@@ -282,6 +282,21 @@ Corners are soft and consistent. Containers (cards and banners) use 18px. Small 
 ### Navigation (tabs)
 - A text tab row over a full-width hairline. Body size, weight 500, 44px minimum height. The selected tab uses Ink with a 2px Ink underline, and the others use Tertiary Ink. Arrow, Home and End keys move between tabs.
 
+### Section navigation
+- The top bar's first row holds the brand, three section links (Portfolio, Forecaster, Research) and the theme button. Links are 44px pills in Body weight 500 and Tertiary Ink; the current section uses Ink at 600 on the Segment Track fill (`aria-current="page"`), hover adds the Blue Wash.
+- The forecaster's controls sit on their own full-width second row, shown only in the Forecaster section. Inside it the text tab row (Forecast, Diagnostics, Track record) is unchanged.
+
+### Portfolio view
+- Same two-column grid as the forecast view: a fluid main column (live paper account, drawdown chart, growth chart, performance table with a Since-2007 / Since-2020 segmented control, crash table) and the 380px side column (This week's targets, then How far to trust this).
+- Charts follow the One Voice Rule: the LevelEdge book is the accent, 60/40 is a solid grey line, SPY is a dashed grey line. The primary series is drawn last so it sits on top.
+- The targets table reuses the Levels-panel row: symbol in Title weight with the ETF name below in Label, the trend state as words ("On"/"Off") with the 12-month return below, and a 72px accent bar with the weight in Title weight. Bars are drawn to 50% of the account, and the help line says so.
+- The not-connected live account is a teaching empty state (a numbered setup list), not a blank card.
+
+### Research view
+- One card per experiment, two columns (text left, numbers or chart right), stacking below 900px. Text sits in a 60ch column.
+- Each card carries a verdict line in Title weight with a leading icon (check, cross, or minus). The verdict is always words; the icon is Tertiary Ink except Adopted, which uses the accent.
+- The strategy-search scatter uses hollow grey dots for the other variants and one filled accent dot for the selected variant, unconnected.
+
 ### Levels panel
 - A table of level rows. Each row shows the level in Title weight with its percent move below in Label/Tertiary Ink, a 72x6px probability bar with an accent fill, the P value in Title weight, and a delta since the last run (an up or down arrow plus the point change, with an aria-label in words).
 - On a re-run, rows restyle in place without reflowing. Changed rows flash the Blue Wash once over 900ms, and bar widths ease over 250ms.

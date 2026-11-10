@@ -450,6 +450,11 @@ def api_research():
     if et:
         out["etf_trend"] = {"period": et["period"], "metrics": et["metrics"], "vol_engine": et["vol_engine"]["mean_qlike"],
                             "random_picker": et["random_picker"]}
+    var_csv = RESULTS / "etf_research" / "variants.csv"
+    if er and var_csv.exists():
+        vdf = pd.read_csv(var_csv)
+        out["etf_search_points"] = [{"variant": r.variant, "dev": float(r.dev_sharpe), "hold": float(r.hold_sharpe)}
+                                    for r in vdf.itertuples()]
     if er:
         out["etf_search"] = {k2: er[k2] for k2 in ("period", "trials", "selected", "deflated_sharpe_dev", "dev", "holdout",
                                                     "holdout_sharpe_vs", "rank_stability")}
