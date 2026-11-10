@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+**/__pycache__
+**/*.pyc
+web/node_modules
+web/dist
+.env
+benchmarks/results/*.csv
+benchmarks/results/run1_ungated
+*.log
+.DS_Store
+src/leveledge.egg-info

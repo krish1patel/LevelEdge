@@ -10,3 +10,20 @@ charts_yesterday/
 .DS_Store
 
 src/leveledge/__pycache__/
+# v2
+.venv/
+web/node_modules/
+web/dist/
+**/__pycache__/
+.pytest_cache/
+benchmarks/results/predictions.partial.csv
+benchmarks/results_run.log
+build/
+benchmarks/cache/
+benchmarks/results_kalshi_run.log
+benchmarks/results/kalshi/predictions.csv
+benchmarks/results_kalshi_*.log
+benchmarks/results/kalshi_horizon/predictions.csv
+benchmarks/results_alpha_*.log
+benchmarks/results/alpha_research_*/oos_forecasts.csv
+benchmarks/results/stock_factors/equity.csv

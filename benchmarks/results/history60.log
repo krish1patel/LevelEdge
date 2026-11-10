@@ -1,0 +1,60 @@
+Fetching data...
+Training history truncated to start 2026-08-14
+300 forecast cases x 8 strikes over 2026-10-13..2026-11-09
+  25/300 cases  (10s)
+  50/300 cases  (16s)
+  75/300 cases  (23s)
+  100/300 cases  (30s)
+  125/300 cases  (38s)
+  150/300 cases  (43s)
+  175/300 cases  (51s)
+  200/300 cases  (59s)
+  225/300 cases  (68s)
+  250/300 cases  (80s)
+  275/300 cases  (91s)
+  300/300 cases  (106s)
+
+=== Overall ===
+           log_loss   brier     auc     ece  brier_skill_vs_gauss_rw
+gauss_rw    0.4418  0.1438  0.8849  0.0699                   0.0000
+v2_base     0.4119  0.1347  0.8941  0.0466                   0.0638
+v2          0.4142  0.1352  0.8935  0.0483                   0.0603
+
+--- Brier by interval ---
+ brier     gauss_rw  v2_base      v2
+interval                           
+1h          0.1438   0.1347  0.1352
+
+--- Brier by ticker ---
+ brier    gauss_rw  v2_base      v2
+ticker                            
+BTC-USD    0.1147   0.1098  0.1094
+NVDA       0.1789   0.1707  0.1708
+QQQ        0.1439   0.1358  0.1371
+SPY        0.0984   0.0917  0.0934
+TSLA       0.1835   0.1655  0.1652
+
+--- Brier by strike_pct ---
+ brier       gauss_rw  v2_base      v2
+strike_pct                           
+-2.00         0.0667   0.0622  0.0626
+-1.00         0.1381   0.1329  0.1337
+-0.50         0.1965   0.1928  0.1947
+-0.25         0.2376   0.2396  0.2414
+ 0.25         0.2139   0.1993  0.1995
+ 0.50         0.1608   0.1385  0.1379
+ 1.00         0.0962   0.0780  0.0778
+ 2.00         0.0410   0.0341  0.0337
+
+--- Brier by decision ---
+ brier     gauss_rw  v2_base      v2
+decision                           
+10:00       0.2019    0.204  0.2049
+12:00       0.1318    0.119  0.1197
+14:00       0.0979    0.081  0.0809
+Brier(v2) - Brier(gauss_rw) = -0.0087  95% CI [-0.0117, -0.0055]
+Brier(v2) - Brier(v2_base) = +0.0005  95% CI [-0.0007, +0.0018]
+
+Seconds per case (8 strikes, 1 thread): {'sec_v1': 0.03, 'sec_v2': 0.68}
+
+Wrote benchmarks/results/history60/summary.json and predictions.csv (107s)

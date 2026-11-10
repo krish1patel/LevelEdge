@@ -1,0 +1,68 @@
+Fetching data...
+600 forecast cases x 8 strikes over 2026-10-13..2026-11-09
+Resuming: 175 cases already scored, 425 to go
+  25/425 cases  (35s)
+  50/425 cases  (66s)
+  75/425 cases  (90s)
+  100/425 cases  (103s)
+  125/425 cases  (121s)
+  150/425 cases  (156s)
+  175/425 cases  (186s)
+  200/425 cases  (204s)
+  225/425 cases  (217s)
+  250/425 cases  (239s)
+  275/425 cases  (268s)
+  300/425 cases  (303s)
+  325/425 cases  (323s)
+  350/425 cases  (348s)
+  375/425 cases  (385s)
+  400/425 cases  (425s)
+  425/425 cases  (468s)
+
+=== Overall ===
+           log_loss   brier     auc     ece  brier_skill_vs_v1
+v1          0.5796  0.1854  0.8054  0.0679             0.0000
+gauss_rw    0.4188  0.1355  0.9012  0.0777             0.2690
+v2_base     0.3844  0.1254  0.9093  0.0493             0.3238
+v2          0.3861  0.1259  0.9083  0.0487             0.3207
+
+--- Brier by interval ---
+ brier         v1  gauss_rw  v2_base      v2
+interval                                   
+15m       0.1953    0.1272   0.1158  0.1170
+1h        0.1754    0.1438   0.1349  0.1349
+
+--- Brier by ticker ---
+ brier        v1  gauss_rw  v2_base      v2
+ticker                                    
+BTC-USD  0.1735    0.1148   0.1100  0.1108
+NVDA     0.2523    0.1737   0.1659  0.1685
+QQQ      0.1812    0.1300   0.1228  0.1226
+SPY      0.1203    0.0884   0.0813  0.0818
+TSLA     0.1995    0.1706   0.1468  0.1459
+
+--- Brier by strike_pct ---
+ brier           v1  gauss_rw  v2_base      v2
+strike_pct                                   
+-2.00       0.1086    0.0538   0.0505  0.0513
+-1.00       0.1756    0.1223   0.1185  0.1191
+-0.50       0.2648    0.1894   0.1927  0.1928
+-0.25       0.3133    0.2326   0.2407  0.2406
+ 0.25       0.2533    0.2133   0.1941  0.1954
+ 0.50       0.2038    0.1540   0.1241  0.1257
+ 1.00       0.1174    0.0874   0.0625  0.0628
+ 2.00       0.0462    0.0313   0.0198  0.0197
+
+--- Brier by decision ---
+ brier         v1  gauss_rw  v2_base      v2
+decision                                   
+10:00     0.2442    0.1826   0.1824  0.1848
+12:00     0.1780    0.1296   0.1150  0.1146
+14:00     0.1340    0.0943   0.0786  0.0784
+Brier(v2) - Brier(v1) = -0.0595  95% CI [-0.0697, -0.0490]
+Brier(v2) - Brier(gauss_rw) = -0.0096  95% CI [-0.0137, -0.0057]
+Brier(v2) - Brier(v2_base) = +0.0006  95% CI [-0.0002, +0.0014]
+
+Seconds per case (8 strikes, 1 thread): {'sec_v1': 3.62, 'sec_v2': 2.26}
+
+Wrote /Users/home/LevelEdge/benchmarks/results/summary.json and predictions.csv (469s)

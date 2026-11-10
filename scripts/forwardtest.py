@@ -20,11 +20,12 @@ from datetime import datetime
 
 warnings.filterwarnings("ignore", message="Precision is ill-defined")
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
+os.environ.setdefault("LEVELEDGE_DISABLE_LOGGING", "1")  # this script logs to forwardtest_logs itself
 
 from dotenv import load_dotenv
 from supabase import create_client
 
-from leveledge import Predictor
+from leveledge import Predictor, forecast
 from leveledge.constants import ALLOWED_INTERVALS, US_EASTERN
 
 # ---------------------------------------------------------------------------
@@ -41,27 +42,12 @@ TABLE_NAME = "forwardtest_logs"
 # ---------------------------------------------------------------------------
 
 def log_prediction(sb, p: Predictor, prediction: float, run_time: datetime) -> None:
-    """Log a single prediction to forwardtest_logs matching the table schema exactly."""
+    """Log one prediction to forwardtest_logs (same columns as v1, plus model_type)."""
     try:
-        metrics = p.xgb_expected_model_metrics if hasattr(p, "xgb_expected_model_metrics") else (None, None, None)
-        sb.table(TABLE_NAME).insert({
-            "logged_at_utc":      run_time.isoformat(),
-            "ticker":             p.ticker_str,
-            "is_crypto":          p.isCrypto,
-            "interval":           p.interval,
-            "interval_minutes":   p.interval_min,
-            "target_datetime":    p.target_datetime.isoformat(),
-            "price_level":        p.price,
-            "current_price":      float(p.current_price),
-            "target_price_ratio": float(p.target_price_ratio),
-            "candles_ahead":      p.candles_ahead,
-            "prediction":         float(prediction),
-            "model_type":         "xgboost_classifier",
-            "model_auc":          float(metrics[0]) if metrics[0] is not None else None,
-            "model_ps":           float(metrics[1]) if metrics[1] is not None else None,
-            "model_pr":           float(metrics[2]) if metrics[2] is not None else None,
-            "outcome_price":      None,
-        }).execute()
+        record = p.log_record(prediction)
+        record["logged_at_utc"] = run_time.isoformat()
+        record["outcome_price"] = None
+        sb.table(TABLE_NAME).insert(record).execute()
     except Exception as e:
         print(f"    [warn] Supabase log failed ({p.ticker_str} {p.interval} ${p.price:.2f}): {e}")
 
@@ -70,47 +56,30 @@ def log_prediction(sb, p: Predictor, prediction: float, run_time: datetime) -> N
 # Core: run predictions for one ticker
 # ---------------------------------------------------------------------------
 
-def run_ticker(
-    ticker: str,
-    target_dt: datetime,
-    end_dt: datetime,
-    sb,
-    run_time: datetime,
-) -> None:
-    print(f"  [{ticker}] Resolving current price...")
-
-    # Resolve current price once via a throwaway Predictor
-    current_price: float | None = None
-    for probe_interval in INTERVALS:
-        try:
-            probe = Predictor(ticker, target_dt, probe_interval, 999.0, end_datetime=end_dt)
-            current_price = probe.current_price
-            break
-        except Exception:
-            continue
-
-    if current_price is None:
-        print(f"  [{ticker}] Could not resolve current price — skipping ticker")
-        return
-
-    price_levels = [round(current_price * (1 + pct / 100.0), 2) for pct in STRIKE_PCT]
-    print(f"  [{ticker}] Price: ${current_price:.2f} | Levels: {price_levels}")
-
-    total  = 0
-    errors = 0
-
+def run_ticker(ticker: str, target_dt: datetime, end_dt: datetime, sb, run_time: datetime) -> None:
+    """One model fit per interval; every strike is a query against that fit."""
+    total = errors = 0
     for interval in INTERVALS:
-        for price in price_levels:
+        try:
+            model = forecast(ticker, target_dt, interval)
+        except Exception as e:
+            print(f"    [{ticker}] {interval}: {e}")
+            errors += len(STRIKE_PCT)
+            continue
+        spot = model.current_price
+        levels = [round(spot * (1 + pct / 100.0), 2) for pct in STRIKE_PCT]
+        if interval == INTERVALS[0]:
+            print(f"  [{ticker}] Price: ${spot:.2f} | Levels: {levels}")
+        for price in levels:
             try:
-                p = Predictor(ticker, target_dt, interval, price, end_datetime=end_dt)
-                p.train_xgb()
+                p = Predictor(ticker, target_dt, interval, price)
+                p.train_xgb()            # cache hit: reuses the fit above
                 prediction = p.predict_xgb()
                 log_prediction(sb, p, prediction, run_time)
                 total += 1
             except Exception as e:
                 print(f"    [{ticker}] {interval} ${price:.2f}: {e}")
                 errors += 1
-
     print(f"  [{ticker}] Done — {total} predictions logged, {errors} errors")
 
 
@@ -129,13 +98,22 @@ def main() -> None:
     target_dt = datetime(today.year, today.month, today.day, 16, 0, tzinfo=US_EASTERN)
     end_dt    = now_et
 
+    from leveledge.sessions import nyse_schedule
+    sched = nyse_schedule(today, today)
+    if sched.empty:
+        print(f"{today} is not an NYSE trading day. Exiting.")
+        return
+    close = sched["market_close"].iloc[0]
+    if close < target_dt:
+        print(f"Early close today ({close:%H:%M} ET); targeting the close instead of 4 PM.")
+        target_dt = close.to_pydatetime()
     if end_dt >= target_dt:
-        print("Target time (4pm ET) has already passed for today. Exiting.")
+        print(f"Today's close ({target_dt:%H:%M} ET) has already passed. Exiting.")
         return
 
     print(f"\n{'='*60}")
     print(f"Forward Test — {now_et.strftime('%Y-%m-%d %H:%M ET')}")
-    print(f"Target: 4:00 PM ET | Tickers: {TICKERS}")
+    print(f"Target: {target_dt:%H:%M} ET | Tickers: {TICKERS}")
     print(f"Intervals: {INTERVALS}")
     print(f"Strikes: {STRIKE_PCT}%")
     print(f"{'='*60}\n")

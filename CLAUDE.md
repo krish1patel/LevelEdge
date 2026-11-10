@@ -1,83 +1,93 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
 ## What this project is
 
-LevelEdge is a Python library that predicts the probability of a stock/crypto price being above a given level at a future datetime. It fetches OHLCV data from yfinance, engineers technical features, and trains an XGBoost classifier using walk-forward cross-validation — then returns a probability from the final model trained on all available data.
+LevelEdge has three parts, all in one dashboard:
+
+- **Portfolio (default view):** a paper-traded book, 70% 60/40 (SPY/IEF) + 30% trend sleeve over 11 ETFs, rebalanced weekly in an Alpaca **paper** account (`leveledge.live`, `leveledge.broker`, `scripts/paper_trade.py`, `.github/workflows/paper_trade.yml`).
+- **Forecaster:** a **calibrated probability that a stock or crypto price closes above a level K at a target time T**, plus the full forecast distribution (`leveledge` v2 forecaster; live forward test via `scripts/forwardtest.py` → Supabase `forwardtest_logs`).
+- **Research:** the evidence log (`/api/research`, built from `benchmarks/results/*`).
+
+`app/api.py` + `web/` serve the JSON API and the React/Vite dashboard from one container (port 7860, HuggingFace Space).
+
+### Evidence that shaped the product (don't re-litigate without new data)
+
+- LevelEdge's probabilities **do not beat Kalshi's prices** after fees: taker (15–60 min, `kalshi_edge.py`), market-making (`kalshi_maker.py`) and morning-to-4 PM over 2024–2026 (`kalshi_horizon.py`) all failed. Don't build trading UI on Kalshi edge.
+- The trend sleeve beats random pickers but not 60/40 on Sharpe; its value is smaller drawdowns (`etf_trend.py`).
+- An 80-variant search failed its 2020+ holdout with reversed rankings (`etf_research.py`). The traded book uses the original pre-declared rules. Adding variants means re-running the holdout protocol, not picking a winner.
+- LevelEdge's `VolScaler` ties EWMA on daily ETF vol; EWMA is used in the portfolio.
 
 ## Setup
 
 ```bash
-pip install -e .
+uv venv -p 3.13 .venv && uv pip install -p .venv -r requirements.txt && uv pip install -p .venv -e ".[web,dev]"
+cd web && npm ci && npm run build      # frontend → web/dist
 ```
 
-Requires a `.env` file with `SUPABASE_URL` and `SUPABASE_KEY` for prediction logging (failures are silently swallowed so it's optional during development).
+`.env` (optional): `SUPABASE_URL`, `SUPABASE_KEY` (track record and forward-test logging), `POLYGON_API_KEY`, `ALPACA_API_KEY_ID` + `ALPACA_API_SECRET_KEY` (paper keys: live paper account on the Portfolio tab and the paper-trading job).
+Set `LEVELEDGE_DISABLE_LOGGING=1` to stop `Predictor.predict_xgb()` writing to Supabase (tests and benchmarks set this).
 
 ## Running things
 
-**Streamlit demo UI:**
 ```bash
-streamlit run examples/streamlit_batch_predictor.py
+.venv/bin/uvicorn app.api:app --reload --port 7860   # API + built dashboard at http://127.0.0.1:7860
+cd web && npm run dev                               # hot-reload UI at :5173, proxies /api to :7860
+.venv/bin/python -m pytest -q tests                 # offline tests (synthetic data, no network)
+.venv/bin/python benchmarks/compare.py              # v1-vs-v2 out-of-sample benchmark (~8 min, network)
+python scripts/forwardtest.py                       # live forward test (needs Supabase)
+python scripts/paper_trade.py --force               # paper rebalance plan (dry run; add --execute to submit)
+.venv/bin/python benchmarks/paper_portfolio.py      # backtest of the traded book -> results/paper_portfolio (dashboard data)
+.venv/bin/python benchmarks/etf_research.py         # 80-variant search with 2020+ holdout
+.venv/bin/python benchmarks/kalshi_edge.py          # model vs Kalshi prices (network; caches in benchmarks/cache/)
 ```
 
-**Forward test** (logs predictions for QQQ/SPY/NVDA/TSLA to Supabase):
-```bash
-python scripts/forwardtest.py
-```
-
-**Backfill outcome prices** (fills `outcome_price` in Supabase for expired predictions):
-```bash
-python scripts/update_outcomes.py
-```
-
-## Architecture
-
-All library code lives in `src/leveledge/`. The package exposes a single class:
+## Architecture (v2)
 
 ```python
-from leveledge import Predictor
-
-p = Predictor(ticker, target_datetime, interval, price)
-# target_datetime must be timezone-aware and in the future
-# interval: "1m", "2m", "5m", "15m", "30m", "1h", "90m", "1d"
-# price: the level to predict above/below
-
-p.train_xgb()        # walk-forward CV + final model on all data
-prob = p.predict_xgb()  # float 0–1
-
-# Optional regression model (predicts future_close/current_close ratio):
-p.train_regression()
-ratio = p.predict_regression()
+from leveledge import forecast
+m = forecast("SPY", target_datetime, "15m", as_of=None)   # one fit serves every level (cached)
+m.prob_above([600, 605, 610])   # monotone in level by construction
+m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 ```
 
-**`Predictor.__init__`** does heavy lifting immediately: fetches data, computes `candles_ahead`, and calls `prepare_features()` which runs all three feature-engineering methods in sequence.
+| Module | Responsibility |
+|---|---|
+| `sessions.py` | Bar end times, NYSE sessions (early closes included), dropping the in-progress bar, `compute_horizon()` → exact bars to the target and the bar close it resolves on |
+| `data.py` | yfinance fetch within per-interval history limits; `clean_bars()` (regular session only, completed bars only) applied to every source |
+| `features.py` | Stationary features only (returns, ratios, vol units). Never feed raw price levels. `tests/test_features.py` enforces no look-ahead and scale invariance |
+| `model.py` | `LevelForecaster`: `VolScaler` (diurnal profile + mean-reverting variance, fitted by likelihood) → z-scores → `EmpiricalBaseline` (kernel survival function + Student-t tail) → XGBoost boosted from the baseline margin with a monotone constraint on the level → non-negative, intercept-free stacker → **held-out-fold gate** (classifier weight 0 unless it beats the baseline on the last fold) |
+| `predictor.py` | `forecast()` with an LRU cache; `Predictor` = backward-compatible one-level API used by the scripts |
+| `portfolio.py` | ETF data, momentum signals, vol-targeted sizing, daily backtest with next-open fills and costs, metrics, block-bootstrap Sharpe CIs, deflated Sharpe |
+| `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_v1`), weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()` |
+| `broker.py` | Alpaca client locked to paper; `plan_orders()` never borrows and skips drift under the band |
+| `kalshi.py` / `edge.py` | Kalshi public market data (live and archived candles); after-fee edge and joint event-level Kelly sizing |
 
-**Feature pipeline** (all three methods mutate `self.data`):
-1. `_calculate_technical_indicators()` — SMAs, EMAs, RSI, MACD, Bollinger Bands, ATR, volume ratios, prev-day/prev-hour highs/lows
-2. `_calculate_candlestick_patterns()` — body/shadow ratios, Doji, Hammer, Shooting Star, Engulfing patterns
-3. `_calculate_residual_features()` — realized volatility, VWAP, z-scores, lagged log returns, OBV, candle streak
+Validation: expanding walk-forward, last 60% of rows in 6 folds, purge `h` bars plus embargo `h` bars. Metrics: log loss, Brier, AUC, reliability, 80%-range coverage, per-level Brier skill vs climatology.
 
-**Target variable:** binary — whether `future_close / current_close > price / current_close` (i.e., the relative move exceeds the requested level, not just the absolute price). This is set by `_create_target_variable()`.
+Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benchmarks/results/summary.json`; the pre-gate run is archived in `benchmarks/results/run1_ungated/`). Don't add model complexity without re-running it. Report Brier differences with the day-block bootstrap CI it prints.
 
-**`candles_ahead` calculation** differs for stocks vs crypto:
-- Stocks: uses `pandas-market-calendars` (NYSE) to count only market hours, with pre/post market awareness
-- Crypto (detected by `-` in ticker string, e.g. `BTC-USD`): simple 24/7 calculation
+## Invariants (don't break)
 
-**Walk-forward splits** in `train_xgb`: uses 4 windows of `len(data)/4` train + 100 test rows, stepping by `len(data)/4`. Skips splits with only one class in train or test.
+- Never use `scale_pos_weight` or class reweighting: it destroys calibration (v1's main defect).
+- Never fit anything (vol profile, baseline, stacker) on rows that overlap a test fold's labels.
+- The stacker has no intercept (an intercept learns the CV window's drift).
+- P(above) must be non-increasing in the level.
+- Times are US/Eastern; bars are indexed by start time; stocks use regular-session bars only.
+- Paper trading only: never remove the `LEVELEDGE_ALLOW_LIVE_TRADING` guard or let `plan_orders` spend more than cash plus sale proceeds.
+- The traded book's rules are pre-declared; changing them needs `paper_portfolio.py` and the holdout protocol re-run, and a new `STRATEGY_ID`.
+- Stock forecasts are not compared with markets before 09:45 ET (the model has no bar from the session yet).
+- Forward-test rows carry `model_type` (`leveledge_v2_stacked`, v1 rows are `xgboost_classifier`) so the dashboard can compare versions.
 
-**Prediction logging** (`_log_prediction`): fires on every `predict_xgb()` call, writing to Supabase `logs` or `backtest_logs` table. Errors are caught and suppressed.
+## Frontend
 
-**Backtest mode**: pass `end_datetime` to `Predictor.__init__` to simulate a prediction as of a past time. yfinance data fetch is limited to a 59-day window ending at `end_datetime`.
+`web/src/`: `App.tsx` (shell with Portfolio / Forecaster / Research sections; hash routes `#research`, `#forecast`, `#diagnostics`, `#track`, default portfolio; `?ticker=` links open the forecaster), `components/Portfolio.tsx`, `components/Research.tsx`, `components/FanChart.tsx` (signature chart, x-axis in trading bars), `LevelsPanel`, `TrustPanel`, `Diagnostics`, `TrackRecord`, `XYChart`. Hand-built SVG with d3-scale/d3-shape. Tokens live in `styles.css`. Design context: `PRODUCT.md`, `DESIGN.md`, `.impeccable/surfaces/`.
 
-## Key files
+## Deployment
 
-| File | Purpose |
-|------|---------|
-| `src/leveledge/predictor.py` | Core `Predictor` class — everything |
-| `src/leveledge/constants.py` | `ALLOWED_INTERVALS`, `US_EASTERN` timezone |
-| `scripts/forwardtest.py` | Batch forward-test runner (meant to be cron'd) |
-| `scripts/update_outcomes.py` | Fills `outcome_price` in Supabase post-expiry |
-| `examples/streamlit_batch_predictor.py` | Interactive Streamlit UI |
-| `examples/testing/` | One-off analysis scripts (backtests, calibration, threshold sweep) |
-| `examples/archive/` | Older scripts, not actively maintained |
+`Dockerfile` (multi-stage: Node builds `web/dist`, Python serves it). `.github/workflows/sync_to_hf.yml` pushes `main` to the HuggingFace Space, so **every push to main deploys**. Add `SUPABASE_URL` and `SUPABASE_KEY` as Space secrets for the track record.
+
+## Legacy
+
+`examples/streamlit_batch_predictor.py` (old UI) and `examples/` scripts still run on the compatible `Predictor` API. `benchmarks/legacy_v1.py` is a frozen copy of v1, used only for benchmarking.

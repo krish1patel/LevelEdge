@@ -5,15 +5,19 @@ on:
     - cron: '0 * * * *'  # every hour
   workflow_dispatch:  # allows manual trigger
 
+concurrency:
+  group: update-outcomes
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt && pip install --no-deps .
       - run: python scripts/update_outcomes.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

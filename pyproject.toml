@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "leveledge"
-version = "0.1.0"
-description = "Stock/crypto predictor based on price levels"
+version = "2.0.0"
+description = "Calibrated probabilities that a stock or crypto price closes above a level at a target time"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
 { name = "Krish Patel" }
 ]
@@ -21,7 +21,12 @@ dependencies = [
   "python-dotenv",
   "supabase",
   "polygon-api-client",
+  "scipy",
 ]
+
+[project.optional-dependencies]
+web = ["fastapi", "uvicorn[standard]"]
+dev = ["pytest", "httpx"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
