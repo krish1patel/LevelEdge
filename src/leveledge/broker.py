@@ -103,7 +103,7 @@ class AlpacaBroker:
 
 def plan_orders(targets: dict[str, float], equity: float, cash: float, positions: dict[str, dict],
                 prices: dict[str, float], fractionable: dict[str, bool], band: float = 0.01,
-                min_notional: float = 5.0, max_gross: float = 1.0) -> list[Order]:
+                min_notional: float = 1.0, max_gross: float = 1.0) -> list[Order]:
     """Orders that move the account toward ``targets`` (weights of equity).
 
     positions : symbol -> {"market_value": $, "qty": shares}
@@ -155,4 +155,22 @@ def plan_orders(targets: dict[str, float], equity: float, cash: float, positions
     return sells + planned_buys
 
 
-__all__ = ["AlpacaBroker", "Order", "plan_orders", "credentials", "LiveTradingRefused", "PAPER_URL"]
+def slippage_bp(side: str, fill: float, reference: float) -> float:
+    """Execution cost of a fill against a reference price, in basis points.
+
+    Positive means the fill was worse than the reference (paid more on a buy,
+    received less on a sell); negative means it was better.
+    """
+    if not reference or reference <= 0:
+        return float("nan")
+    sign = 1.0 if side == "buy" else -1.0
+    return sign * (fill - reference) / reference * 1e4
+
+
+def margin_interest(borrowed: float, days: float, tbill_rate: float, spread: float = 0.02) -> float:
+    """Estimated margin interest in dollars: borrowed x (T-bill + spread) x days / 365."""
+    return max(0.0, borrowed) * (tbill_rate + spread) * max(0.0, days) / 365.0
+
+
+__all__ = ["AlpacaBroker", "Order", "plan_orders", "credentials", "LiveTradingRefused", "PAPER_URL",
+           "slippage_bp", "margin_interest"]
