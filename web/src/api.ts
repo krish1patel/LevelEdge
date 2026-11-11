@@ -181,6 +181,8 @@ export interface TargetAsset {
   return_12m: number;
   vol_annual: number;
   last_close: number;
+  flip_price: number;   // price where the trend signal flips at the latest close
+  flip_move: number;    // move from the last close needed to reach it
 }
 
 export interface Targets {

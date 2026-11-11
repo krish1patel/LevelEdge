@@ -95,3 +95,17 @@ def test_margin_interest_estimate():
     from leveledge.broker import margin_interest
     assert margin_interest(36_500, 10, 0.04, 0.02) == pytest.approx(60.0)
     assert margin_interest(-5, 10, 0.04) == 0.0
+
+
+def test_trend_flip_price_matches_the_signal():
+    import numpy as np
+    from leveledge import portfolio as P
+    idx = pd.bdate_range("2024-01-01", periods=300)
+    closes = pd.DataFrame({"A": np.linspace(100, 110, 300)}, index=idx)
+    cash = pd.Series(0.0001, index=idx)
+    flip = live.trend_flip_prices(closes, cash, 252)["A"]
+    sig = P.momentum_signal(closes, cash, 252)["A"].iloc[-1]
+    assert sig == 1.0 and closes["A"].iloc[-1] > flip                # on, and price is above the flip level
+    bumped = closes.copy()
+    bumped.iloc[-1, 0] = flip * 0.999                                  # just below the flip price
+    assert P.momentum_signal(bumped, cash, 252)["A"].iloc[-1] == 0.0

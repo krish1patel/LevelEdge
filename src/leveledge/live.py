@@ -135,6 +135,19 @@ def tracking_since(start: str, cache_dir: str | None = None, now: datetime | Non
     return (1 + df).cumprod()
 
 
+def trend_flip_prices(closes: pd.DataFrame, cash: pd.Series, lookback: int) -> pd.Series:
+    """Price at which each ETF's trend signal flips at the latest close.
+
+    The signal is on while the trailing return beats cash:
+    P / P_ago - 1 > sum of daily cash returns over the window, so the flip is
+    P_ago * (1 + that sum). Above it the trend sleeve holds the ETF; below, it sells.
+    The reference price rolls forward a day at a time, so the level moves slowly.
+    """
+    p_ago = closes.iloc[-1 - lookback]
+    cash_sum = float(cash.iloc[-lookback:].sum())
+    return p_ago * (1 + cash_sum)
+
+
 def current_targets(cache_dir: str | None = None, now: datetime | None = None) -> dict:
     """Target weights from the latest completed close, with the reasoning behind them."""
     cfg = config()
@@ -147,6 +160,7 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
     trend = P.target_weights(signal.loc[d], vol.loc[d], corr[d], cfg)
     book = book_from_trend(trend)
     lookback_ret = closes.iloc[-1] / closes.iloc[-1 - cfg.lookback] - 1
+    flip = trend_flip_prices(closes, cash, cfg.lookback)
     return {
         "strategy": STRATEGY_ID,
         "as_of_close": d.strftime("%Y-%m-%d"),
@@ -161,7 +175,9 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
              "trend_weight": round(LEVERAGE * TREND_SHARE * float(trend[s]), 5),
              "trend_on": bool(signal.loc[d, s] == 1), "return_12m": round(float(lookback_ret[s]), 4),
              "vol_annual": round(float(vol.loc[d, s] * np.sqrt(P.TRADING_DAYS)), 4),
-             "last_close": round(float(closes.loc[d, s]), 4)}
+             "last_close": round(float(closes.loc[d, s]), 4),
+             "flip_price": round(float(flip[s]), 4),
+             "flip_move": round(float(flip[s] / closes.loc[d, s] - 1), 4)}
             for s in cfg.universe],
         "sleeve_gross": round(float(trend.sum()), 4),
         "next_rebalance": next_rebalance_date(now).strftime("%Y-%m-%d"),
@@ -170,4 +186,4 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
 
 __all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "BAND", "LIVE_START",
            "SHADOW_ID", "SHADOW_START", "shadow_decisions", "tracking_since", "book_from_trend", "book_decisions",
-           "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets"]
+           "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets", "trend_flip_prices"]

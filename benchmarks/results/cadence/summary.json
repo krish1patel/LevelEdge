@@ -1,0 +1,156 @@
+{
+ "weekly_band2": {
+  "full": {
+   "start": "2007-02-09",
+   "end": "2026-11-09",
+   "years": 19.72,
+   "cagr": 0.0937,
+   "vol": 0.1426,
+   "sharpe": 0.591,
+   "sortino": 0.765,
+   "max_drawdown": -0.351,
+   "calmar": 0.267,
+   "worst_month": -0.1205,
+   "pct_positive_months": 0.634,
+   "total_return": 4.844
+  },
+  "dev": {
+   "start": "2007-02-09",
+   "end": "2019-12-31",
+   "years": 12.88,
+   "cagr": 0.0926,
+   "vol": 0.1332,
+   "sharpe": 0.668,
+   "sortino": 0.873,
+   "max_drawdown": -0.351,
+   "calmar": 0.264,
+   "worst_month": -0.1205,
+   "pct_positive_months": 0.639,
+   "total_return": 2.1284
+  },
+  "holdout": {
+   "start": "2020-01-02",
+   "end": "2026-11-09",
+   "years": 6.84,
+   "cagr": 0.0957,
+   "vol": 0.1589,
+   "sharpe": 0.475,
+   "sortino": 0.613,
+   "max_drawdown": -0.2697,
+   "calmar": 0.355,
+   "worst_month": -0.0875,
+   "pct_positive_months": 0.627,
+   "total_return": 0.8681
+  },
+  "orders_per_year": 65.2,
+  "cost_bp_per_year": 14.3
+ },
+ "daily_band2": {
+  "full": {
+   "start": "2007-02-09",
+   "end": "2026-11-09",
+   "years": 19.72,
+   "cagr": 0.0921,
+   "vol": 0.1416,
+   "sharpe": 0.584,
+   "sortino": 0.758,
+   "max_drawdown": -0.3463,
+   "calmar": 0.266,
+   "worst_month": -0.125,
+   "pct_positive_months": 0.643,
+   "total_return": 4.6785
+  },
+  "dev": {
+   "start": "2007-02-09",
+   "end": "2019-12-31",
+   "years": 12.88,
+   "cagr": 0.0901,
+   "vol": 0.1327,
+   "sharpe": 0.654,
+   "sortino": 0.852,
+   "max_drawdown": -0.3463,
+   "calmar": 0.26,
+   "worst_month": -0.125,
+   "pct_positive_months": 0.658,
+   "total_return": 2.0398
+  },
+  "holdout": {
+   "start": "2020-01-02",
+   "end": "2026-11-09",
+   "years": 6.84,
+   "cagr": 0.0957,
+   "vol": 0.1571,
+   "sharpe": 0.479,
+   "sortino": 0.625,
+   "max_drawdown": -0.2639,
+   "calmar": 0.363,
+   "worst_month": -0.0866,
+   "pct_positive_months": 0.614,
+   "total_return": 0.8681
+  },
+  "orders_per_year": 123.5,
+  "cost_bp_per_year": 27.9,
+  "adopt": false,
+  "sharpe_diff_full": {
+   "diff": -0.007,
+   "ci95": [
+    -0.027,
+    0.021
+   ]
+  }
+ },
+ "daily_band3": {
+  "full": {
+   "start": "2007-02-09",
+   "end": "2026-11-09",
+   "years": 19.72,
+   "cagr": 0.093,
+   "vol": 0.1417,
+   "sharpe": 0.59,
+   "sortino": 0.766,
+   "max_drawdown": -0.351,
+   "calmar": 0.265,
+   "worst_month": -0.1237,
+   "pct_positive_months": 0.643,
+   "total_return": 4.7719
+  },
+  "dev": {
+   "start": "2007-02-09",
+   "end": "2019-12-31",
+   "years": 12.88,
+   "cagr": 0.0907,
+   "vol": 0.1327,
+   "sharpe": 0.657,
+   "sortino": 0.857,
+   "max_drawdown": -0.351,
+   "calmar": 0.258,
+   "worst_month": -0.1237,
+   "pct_positive_months": 0.658,
+   "total_return": 2.0591
+  },
+  "holdout": {
+   "start": "2020-01-02",
+   "end": "2026-11-09",
+   "years": 6.84,
+   "cagr": 0.0973,
+   "vol": 0.1572,
+   "sharpe": 0.488,
+   "sortino": 0.637,
+   "max_drawdown": -0.2672,
+   "calmar": 0.364,
+   "worst_month": -0.0863,
+   "pct_positive_months": 0.614,
+   "total_return": 0.8868
+  },
+  "orders_per_year": 89.3,
+  "cost_bp_per_year": 24.7,
+  "adopt": false,
+  "sharpe_diff_full": {
+   "diff": -0.001,
+   "ci95": [
+    -0.023,
+    0.028
+   ]
+  }
+ }
+}

@@ -11,8 +11,10 @@ export const fmtPct = (p: number, digits = 0) => {
   return `${v.toFixed(digits)}%`;
 };
 
-export const fmtSigned = (v: number, digits = 2, suffix = "%") =>
-  `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}${suffix}`;
+export const fmtSigned = (v: number, digits = 2, suffix = "%") => {
+  const r = Math.abs(v) < 0.5 * 10 ** -digits ? 0 : v;   // values that round to zero get no sign
+  return `${r > 0 ? "+" : r < 0 ? "−" : ""}${Math.abs(r).toFixed(digits)}${suffix}`;
+};
 
 export const fmtNum = (v: number | null | undefined, digits = 3) =>
   v == null || Number.isNaN(v) ? "—" : `${v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}`;

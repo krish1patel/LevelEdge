@@ -174,7 +174,11 @@ def main() -> int:
             lines.append(f"| {p['symbol']} | {mv / equity:.1%} | {'' if tgt is None else f'{tgt:.1%}'} | {money(mv)} | {money(float(p['unrealized_pl']))} |")
         lines.append("")
     t = live.current_targets()
-    lines += [f"Next rebalance: {t['next_rebalance']} after the close. Strategy `{live.STRATEGY_ID}`, paper account."]
+    near = sorted(t["assets"], key=lambda a: abs(a["flip_move"]))[:4]
+    lines += ["### Nearest trend flips", "", "| ETF | Trend | Flips at | Move needed |", "|---|---|---|---|"]
+    lines += [f"| {a['symbol']} | {'on: sells below' if a['trend_on'] else 'off: buys above'} | ${a['flip_price']:,.2f} | {pct(a['flip_move'], 1)} |"
+              for a in near]
+    lines += ["", f"Next rebalance: {t['next_rebalance']} after the close. Strategy `{live.STRATEGY_ID}`, paper account."]
     print("\n".join(lines))
     return 0
 
