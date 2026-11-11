@@ -1,0 +1,185 @@
+{
+ "period": [
+  "2007-02-09",
+  "2026-11-09"
+ ],
+ "share_of_weeks_in_shy": 0.405,
+ "full": {
+  "current": {
+   "start": "2007-02-09",
+   "end": "2026-11-09",
+   "years": 19.72,
+   "cagr": 0.0901,
+   "vol": 0.1431,
+   "sharpe": 0.567,
+   "sortino": 0.729,
+   "max_drawdown": -0.3516,
+   "calmar": 0.256,
+   "worst_month": -0.1162,
+   "pct_positive_months": 0.647,
+   "total_return": 4.4823
+  },
+  "bond_filtered": {
+   "start": "2007-02-09",
+   "end": "2026-11-09",
+   "years": 19.72,
+   "cagr": 0.089,
+   "vol": 0.142,
+   "sharpe": 0.564,
+   "sortino": 0.718,
+   "max_drawdown": -0.3516,
+   "calmar": 0.253,
+   "worst_month": -0.1162,
+   "pct_positive_months": 0.643,
+   "total_return": 4.3763
+  },
+  "sixty_forty": {
+   "start": "2007-02-09",
+   "end": "2026-11-09",
+   "years": 19.72,
+   "cagr": 0.08,
+   "vol": 0.11,
+   "sharpe": 0.615,
+   "sortino": 0.775,
+   "max_drawdown": -0.326,
+   "calmar": 0.245,
+   "worst_month": -0.1026,
+   "pct_positive_months": 0.655,
+   "total_return": 3.563
+  }
+ },
+ "dev": {
+  "current": {
+   "start": "2007-02-09",
+   "end": "2019-12-31",
+   "years": 12.88,
+   "cagr": 0.0906,
+   "vol": 0.1332,
+   "sharpe": 0.655,
+   "sortino": 0.856,
+   "max_drawdown": -0.3516,
+   "calmar": 0.258,
+   "worst_month": -0.1162,
+   "pct_positive_months": 0.658,
+   "total_return": 2.0562
+  },
+  "bond_filtered": {
+   "start": "2007-02-09",
+   "end": "2019-12-31",
+   "years": 12.88,
+   "cagr": 0.0873,
+   "vol": 0.1338,
+   "sharpe": 0.63,
+   "sortino": 0.82,
+   "max_drawdown": -0.3516,
+   "calmar": 0.248,
+   "worst_month": -0.1162,
+   "pct_positive_months": 0.658,
+   "total_return": 1.9396
+  },
+  "sixty_forty": {
+   "start": "2007-02-09",
+   "end": "2019-12-31",
+   "years": 12.88,
+   "cagr": 0.0752,
+   "vol": 0.1041,
+   "sharpe": 0.668,
+   "sortino": 0.833,
+   "max_drawdown": -0.326,
+   "calmar": 0.231,
+   "worst_month": -0.1026,
+   "pct_positive_months": 0.665,
+   "total_return": 1.5459
+  }
+ },
+ "holdout": {
+  "current": {
+   "start": "2020-01-02",
+   "end": "2026-11-09",
+   "years": 6.84,
+   "cagr": 0.0892,
+   "vol": 0.1602,
+   "sharpe": 0.436,
+   "sortino": 0.554,
+   "max_drawdown": -0.2689,
+   "calmar": 0.332,
+   "worst_month": -0.0891,
+   "pct_positive_months": 0.627,
+   "total_return": 0.7938
+  },
+  "bond_filtered": {
+   "start": "2020-01-02",
+   "end": "2026-11-09",
+   "years": 6.84,
+   "cagr": 0.0923,
+   "vol": 0.1564,
+   "sharpe": 0.461,
+   "sortino": 0.576,
+   "max_drawdown": -0.2464,
+   "calmar": 0.375,
+   "worst_month": -0.0891,
+   "pct_positive_months": 0.614,
+   "total_return": 0.8289
+  },
+  "sixty_forty": {
+   "start": "2020-01-02",
+   "end": "2026-11-09",
+   "years": 6.84,
+   "cagr": 0.0891,
+   "vol": 0.1204,
+   "sharpe": 0.532,
+   "sortino": 0.687,
+   "max_drawdown": -0.2129,
+   "calmar": 0.418,
+   "worst_month": -0.0744,
+   "pct_positive_months": 0.639,
+   "total_return": 0.7923
+  }
+ },
+ "sharpe_diff_dev": {
+  "diff": -0.025,
+  "ci95": [
+   -0.061,
+   0.015
+  ]
+ },
+ "sharpe_diff_holdout": {
+  "diff": 0.025,
+  "ci95": [
+   -0.072,
+   0.139
+  ]
+ },
+ "crises": [
+  {
+   "label": "2008 crash",
+   "current": -0.3408,
+   "bond_filtered": -0.34,
+   "sixty_forty": -0.3229
+  },
+  {
+   "label": "2013 taper tantrum",
+   "current": -0.0367,
+   "bond_filtered": -0.0136,
+   "sixty_forty": -0.0096
+  },
+  {
+   "label": "2020 Covid crash",
+   "current": -0.2437,
+   "bond_filtered": -0.2437,
+   "sixty_forty": -0.1866
+  },
+  {
+   "label": "2022 rate shock",
+   "current": -0.2629,
+   "bond_filtered": -0.2215,
+   "sixty_forty": -0.2079
+  }
+ ],
+ "rule": {
+  "dev_sharpe_better": false,
+  "drawdown_not_deeper": true,
+  "holdout_sharpe_not_lower": true
+ },
+ "adopt": false
+}

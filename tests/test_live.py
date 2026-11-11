@@ -82,3 +82,16 @@ def test_plan_whole_shares_when_not_fractionable():
     orders = plan_orders({"DBC": 0.2}, equity=10_000, cash=10_000, positions={}, prices={"DBC": 23.0},
                          fractionable={"DBC": False})
     assert orders[0].qty == 86.0 and orders[0].notional is None
+
+
+def test_slippage_sign_convention():
+    from leveledge.broker import slippage_bp
+    assert slippage_bp("buy", 100.10, 100.0) == pytest.approx(10.0)     # paid up: a cost
+    assert slippage_bp("sell", 99.90, 100.0) == pytest.approx(10.0)     # sold low: a cost
+    assert slippage_bp("buy", 99.95, 100.0) == pytest.approx(-5.0)      # better than the open
+
+
+def test_margin_interest_estimate():
+    from leveledge.broker import margin_interest
+    assert margin_interest(36_500, 10, 0.04, 0.02) == pytest.approx(60.0)
+    assert margin_interest(-5, 10, 0.04) == 0.0
