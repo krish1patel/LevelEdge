@@ -27,3 +27,4 @@ benchmarks/results/kalshi_horizon/predictions.csv
 benchmarks/results_alpha_*.log
 benchmarks/results/alpha_research_*/oos_forecasts.csv
 benchmarks/results/stock_factors/equity.csv
+benchmarks/results_intraday.log
