@@ -26,11 +26,16 @@ from leveledge.sessions import nyse_schedule
 CORE = {"SPY": 0.6, "IEF": 0.4}
 CORE_SHARE = 0.7
 TREND_SHARE = 0.3
-# Chosen from the reward/risk frontier (benchmarks/construction_research.py):
-# 2007-2026 backtest 9.0%/yr, max drawdown -35%, with borrowing at T-bill + 2%.
-LEVERAGE = 1.5
-MAX_GROSS = 1.6            # hard ceiling for order planning (drift above 1.5x is trimmed back)
-STRATEGY_ID = "core6040_trend30_x150_v2"
+# No borrowing: the book is mirrored in a real retail account (Fidelity), whose margin rate
+# (10.8-12.1% in Nov 2026, about T-bill + 7.5%) makes leverage a loss. 2007-2026, 5 bp costs:
+#   1.5x at T-bill + 2% (the old assumption)   9.0%/yr, worst fall -35%, Sharpe 0.57 (2020+ 0.44)
+#   1.5x at Fidelity's rate                    6.6%/yr, worst fall -37%, Sharpe 0.41 (2020+ 0.30)
+#   1.0x, no borrowing (the original rules)    7.3%/yr, worst fall -24%, Sharpe 0.63 (2020+ 0.49)
+# The 1.5x book was core6040_trend30_x150_v2 (paper fills 2026-11-10 to 2026-11-13).
+LEVERAGE = 1.0
+MAX_GROSS = 1.0            # never spend more than cash plus sale proceeds
+WHOLE_SHARES = True        # whole-share orders only, so every trade can be copied exactly in any brokerage
+STRATEGY_ID = "core6040_trend30_cash_v3"
 
 
 def config() -> P.StrategyConfig:
@@ -91,14 +96,14 @@ def next_rebalance_date(now: datetime | None = None) -> pd.Timestamp:
 # (benchmarks/literature_research.py: 419 -> 64 orders a year, 21 -> 14 bp/yr of costs,
 # 0.45%/yr tracking error against weekly full rebalancing).
 BAND = 0.02
-LIVE_START = "2026-11-10"          # first paper fills
+LIVE_START = "2026-11-16"          # first fills of the unlevered book (the 1.5x book traded from 2026-11-10)
 
 # Shadow book: the same design with the Keller & Keuning DAA-G12 sleeve in place of
 # the trend sleeve. It won the pre-declared sleeve selection but is not proven
 # (holdout Sharpe +0.06, CI -0.11 to +0.21), so it is tracked from public prices
 # rather than traded. Switch only on months of forward evidence.
-SHADOW_ID = "core6040_daa30_x150_shadow"
-SHADOW_START = "2026-11-10"
+SHADOW_ID = "core6040_daa30_cash_shadow"
+SHADOW_START = "2026-11-16"
 
 
 def shadow_decisions(closes: pd.DataFrame) -> pd.DataFrame:
@@ -113,7 +118,7 @@ def shadow_decisions(closes: pd.DataFrame) -> pd.DataFrame:
 # IEF core weights move to T-bills while their 12-month return trails T-bills). It passed its
 # pre-declared test in benchmarks/hedge_research.py (worst fall -35% -> -21%, about 0.9
 # points a year less return); tracked from public prices until the user decides to trade it.
-TREND_FILTER_ID = "core6040_trend30_x150_tf_shadow"
+TREND_FILTER_ID = "core6040_trend30_cash_tf_shadow"
 
 
 def trend_filter_decisions(opens, closes, cash, cfg: P.StrategyConfig | None = None) -> pd.DataFrame:
@@ -203,6 +208,6 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
     }
 
 
-__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "BAND", "LIVE_START",
+__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "WHOLE_SHARES", "STRATEGY_ID", "BAND", "LIVE_START",
            "SHADOW_ID", "SHADOW_START", "shadow_decisions", "TREND_FILTER_ID", "trend_filter_decisions", "tracking_since", "book_from_trend", "book_decisions",
            "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets", "trend_flip_prices"]

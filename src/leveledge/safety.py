@@ -9,6 +9,8 @@ would otherwise trade silently on bad inputs:
     prices_agree     the yfinance close matches Alpaca's price for every held ETF (within 3%)
     order_sizes      no single order above 90% of equity; total traded below 2x equity
     gross_ok         planned holdings stay within the book's gross ceiling
+    no_borrowing     a no-borrowing book never buys on margin: cash after the orders is not
+                     negative (or, while repaying old margin, no buys and the debt shrinks)
     not_duplicate    this decision's orders were not already sent (re-run protection)
 """
 from __future__ import annotations
@@ -42,7 +44,7 @@ def last_completed_session(now: datetime) -> pd.Timestamp:
 
 def pretrade_checks(targets: dict, account: dict, is_paper: bool, positions: dict, alpaca_prices: dict,
                     orders: list, equity: float, max_gross: float, recent_client_ids: list[str],
-                    client_prefix: str, now: datetime) -> list[Check]:
+                    client_prefix: str, now: datetime, cash: float | None = None) -> list[Check]:
     out: list[Check] = []
 
     blocked = [k for k in ("trading_blocked", "account_blocked", "trade_suspended_by_user") if account.get(k)]
@@ -80,6 +82,13 @@ def pretrade_checks(targets: dict, account: dict, is_paper: bool, positions: dic
         after[o.symbol] = after.get(o.symbol, 0.0) + (n if o.side == "buy" else -n)
     gross = sum(max(v, 0.0) for v in after.values()) / equity if equity > 0 else 0.0
     out.append(Check("gross_ok", gross <= max_gross + 1e-6, f"holdings after orders {gross:.2f}x equity (ceiling {max_gross:.2f}x)"))
+
+    if max_gross <= 1.0 and cash is not None:
+        buys = sum(n for o, n in zip(orders, notional) if o.side == "buy")
+        cash_after = cash + sum(n for o, n in zip(orders, notional) if o.side == "sell") - buys
+        ok = cash_after >= 0 or (buys == 0 and cash_after > cash)
+        out.append(Check("no_borrowing", ok, f"cash after orders ${cash_after:,.0f} (now ${cash:,.0f})"
+                         + ("" if cash_after >= 0 else "; repaying margin, no buys" if ok else "; orders would borrow")))
 
     dup = [c for c in recent_client_ids if c.startswith(client_prefix)]
     out.append(Check("not_duplicate", not dup, "no orders yet for this decision" if not dup else f"{len(dup)} orders already sent for this decision"))

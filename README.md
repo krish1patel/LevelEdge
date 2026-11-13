@@ -36,6 +36,7 @@ Every idea had to beat a simple alternative on data it hadn't seen, after costs.
 | Warning signals that sell the 60/40 core: 12-month trend, 10-month average, VIX > 30, yield-curve inversion, drawdown stop, volatility scaling | **Only the 12-month trend filter passes**, narrowly: worst fall −35% → −21%, about 0.9 points a year less return. The others sell too late or too early. |
 | Monthly SPY puts and collars on the core (priced from the VIX) | **Fail.** The premium eats most of the protection; the trend filter protects more for less. |
 | Forecasting how far the S&P 500 may move (VIX, HAR, GJR-GARCH and their average) | **Works.** 3–6% lower CRPS than past returns at 1 week and 1 month, in 2000–2019 and in 2020+; 80% ranges held 81–84% of outcomes. Shown on the Portfolio tab. |
+| Holding the book at 1.5x on margin, financed at a retail broker's rate (Fidelity, about T-bill + 7.5%) | **Loses.** 6.6%/yr with a −37% worst fall, against 7.3% and −24% unlevered. Borrowing at T-bill + 2% had made 1.5x look like 9.0%. The book holds no margin. |
 | Timing falls: hidden Markov model, statistical jump model, trend, VIX, turbulence index, absorption ratio | **Fail.** Best AUC about 0.65 for a 5% monthly drop; regime switching inside the book lost to the trend filter after 2020. |
 
 The paper book: 2007–2026 backtest 7.3%/yr, Sharpe 0.63, worst fall −24% (60/40: 8.0%, 0.62, −33%). Its goal is smaller crashes, not more return. Details: `benchmarks/results/*/summary.json`.
@@ -150,7 +151,16 @@ python scripts/paper_trade.py --force          # dry run: plan against the real 
 python scripts/paper_trade.py --force --execute  # submit to the paper account now
 ```
 
-Safety: `leveledge.broker` refuses any non-paper Alpaca endpoint unless `LEVELEDGE_ALLOW_LIVE_TRADING=1`, keeps holdings within 1.6x equity, and skips drift under the 2-point band. Before any order, `leveledge.safety` checks that the account is an active paper account, the prices come from the last completed session, no ETF moved more than 15% in a day, yfinance and Alpaca agree on prices within 3%, no order exceeds 90% of equity, holdings stay under the ceiling, and this decision's orders were not already sent. Any failure halts the run and posts an alert to the "Paper book weekly report" issue.
+Safety: `leveledge.broker` refuses any non-paper Alpaca endpoint unless `LEVELEDGE_ALLOW_LIVE_TRADING=1`, never borrows (holdings at most 1.0x equity; a leftover margin balance is repaid first), trades whole shares only, and skips drift under the 2-point band. Before any order, `leveledge.safety` checks that the account is an active paper account, the prices come from the last completed session, no ETF moved more than 15% in a day, yfinance and Alpaca agree on prices within 3%, no order exceeds 90% of equity, holdings stay under the ceiling, no order buys on margin, and this decision's orders were not already sent. Any failure halts the run and posts an alert to the "Paper book weekly report" issue.
+
+Copying the book in a real account: the paper account trades exactly what a Fidelity cash or margin account can (whole shares, no margin, market orders that fill at the open). Its orders fit only an account of the same size and holdings, so plan your own from your Fidelity positions:
+
+```bash
+python scripts/mirror_ticket.py --positions Portfolio_Positions_Nov-13-2026.csv   # Positions -> Download in Fidelity
+python scripts/mirror_ticket.py --cash 25000                                       # a new account holding only cash
+```
+
+It prints sells then buys in whole shares, never spending more than the cash plus sale proceeds. The weekly report also estimates the dividends a real account receives and Alpaca's paper account does not credit.
 
 Forward log: `.github/workflows/forward_log.yml` runs `scripts/log_forward.py` after every weekday close and commits that day's market outlook and the book's targets to the `forward-log` branch (`outlook.jsonl`). Each forecast is public before its outcome exists; the dashboard scores the log against S&P 500 closes. The weekly report also tracks two untraded shadow books from public prices: DAA in place of the trend sleeve, and the book with the 12-month trend filter on its core.
 

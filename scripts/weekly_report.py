@@ -61,6 +61,20 @@ def tbill_rate() -> float:
         return 0.04
 
 
+def dividends_missed(positions: list[dict], since: pd.Timestamp) -> float:
+    """Dividends a real account would have received on today's share counts since ``since``."""
+    try:
+        import yfinance as yf
+        total = 0.0
+        for p in positions:
+            d = yf.Ticker(p["symbol"]).dividends
+            d.index = pd.DatetimeIndex(d.index).tz_localize(None)
+            total += float(p["qty"]) * float(d[d.index > since].sum())
+        return total
+    except Exception:  # noqa: BLE001 - an estimate; the report must still go out
+        return 0.0
+
+
 def execution_section(b: AlpacaBroker, days: int = 8) -> list[str]:
     """Slippage of recent fills against that day's official open."""
     import yfinance as yf
@@ -129,14 +143,19 @@ def main() -> int:
               f"| Below peak | {pct(equity / peak - 1)} |",
               f"| Cash (negative = margin) | {money(float(acct['cash']))} |"]
 
-    # the paper account charges no margin interest; a real one would
+    # the paper account charges no margin interest; a real one would (Fidelity: about T-bill + 7.5%)
     borrowed = max(0.0, -float(acct["cash"]))
     days = max(1, (curve.index[-1] - curve.index[0]).days)
     tbill = tbill_rate()
-    interest = margin_interest(borrowed, days, tbill, 0.02)
+    interest = margin_interest(borrowed, days, tbill, 0.075)
     if borrowed > 0:
-        lines += [f"| Est. margin interest so far (T-bill {tbill:.2%} + 2%, not charged on paper) | −{money(interest)} |",
+        lines += [f"| Est. margin interest so far (T-bill {tbill:.2%} + 7.5%, about Fidelity's rate; not charged on paper) | −{money(interest)} |",
                   f"| Since start, net of that interest | {pct((equity - interest) / start_eq - 1)} |"]
+    # Alpaca's paper account does not credit dividends; a real account does
+    divs = dividends_missed(b.positions(), curve.index[0])
+    if divs > 0:
+        lines += [f"| Dividends on current holdings since start (paid in a real account, not on paper) | +{money(divs)} |",
+                  f"| Since start, with those dividends | {pct((equity + divs) / start_eq - 1)} |"]
     lines.append("")
     lines += execution_section(b)
 
@@ -147,8 +166,12 @@ def main() -> int:
     if rec and rec.get("orders"):
         lines += [f"### Trades this run ({rec.get('action', '')})", "", "| Order | Size | Reason |", "|---|---|---|"]
         for o in rec["orders"]:
-            size = money(o["notional"]) if o.get("notional") is not None else f"{o.get('qty')} sh"
+            size = money(o["notional"]) if o.get("notional") is not None else f"{float(o.get('qty') or 0):g} sh"
             lines.append(f"| {o['side'].title()} {o['symbol']} | {size} | {o.get('reason', '')} |")
+        lines += ["", "To copy these in Fidelity: they fit an account this size with these holdings. For your own account, "
+                  "download its positions (Portfolio → Positions → Download) and run "
+                  "`python scripts/mirror_ticket.py --positions <file>`; it plans whole-share orders from your actual holdings. "
+                  "Enter sells first, then buys, before Monday's open."]
         errs = [s for s in rec.get("submitted", []) if "error" in s]
         if errs:
             lines += ["", f"**{len(errs)} order(s) failed:** " + "; ".join(f"{e['symbol']}: {e['error']}" for e in errs)]
@@ -185,7 +208,7 @@ def main() -> int:
     lines += ["### Nearest trend flips", "", "| ETF | Trend | Flips at | Move needed |", "|---|---|---|---|"]
     lines += [f"| {a['symbol']} | {'on: sells below' if a['trend_on'] else 'off: buys above'} | ${a['flip_price']:,.2f} | {pct(a['flip_move'], 1)} |"
               for a in near]
-    lines += ["", f"Next rebalance: {t['next_rebalance']} after the close. Strategy `{live.STRATEGY_ID}`, paper account."]
+    lines += ["", f"Next rebalance: {t['next_rebalance']} after the close. Strategy `{live.STRATEGY_ID}` (no margin, whole shares), paper account."]
     print("\n".join(lines))
     return 0
 

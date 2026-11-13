@@ -75,3 +75,12 @@ def test_forward_scoring_counts_band_hits():
 def test_target_dates_skip_weekends_and_holidays():
     d = outlook.target_dates("2026-11-20", (5,))      # Thanksgiving week: Nov 26 closed
     assert d[5] == "2026-11-30"
+
+
+def test_buying_on_margin_halts_a_no_borrowing_book():
+    buy = [Order("SPY", "buy", None, 4.0, "drift")]                   # $3,000 with $1,000 cash
+    assert not _run(orders=buy, max_gross=1.0, cash=1_000.0)["no_borrowing"].ok
+    assert _run(orders=buy, max_gross=1.0, cash=5_000.0)["no_borrowing"].ok
+    # repaying old margin with sells only passes even if a little debt is left
+    sell = [Order("SPY", "sell", None, 20.0, "trim")]
+    assert _run(orders=sell, max_gross=1.0, cash=-20_000.0)["no_borrowing"].ok

@@ -4,7 +4,7 @@ One step of the LevelEdge paper-trading loop (run after the close on weekdays).
 
 1. Compute target weights from the latest completed close (leveledge.live).
 2. Only on the last trading day of the week (or with --force): read the
-   Alpaca paper account, plan orders (no borrowing, 1% no-trade band), and
+   Alpaca paper account, plan whole-share orders (no borrowing, 2% no-trade band), and
    submit them with --execute. Day market orders placed after the close fill
    at the next open, matching the backtest.
 3. Print a JSON record of what was decided and why.
@@ -56,7 +56,8 @@ def main() -> int:
     creds = credentials()
     prices = {a["symbol"]: a["last_close"] for a in t["assets"]}
     if not creds:
-        orders = plan_orders(t["weights"], 100_000.0, 100_000.0, {}, prices, {}, band=args.band, max_gross=live.MAX_GROSS)
+        orders = plan_orders(t["weights"], 100_000.0, 100_000.0, {}, prices, {s: not live.WHOLE_SHARES for s in prices},
+                             band=args.band, max_gross=live.MAX_GROSS)
         record.update(action="plan only: no Alpaca keys (hypothetical $100,000 account)",
                       orders=[o.as_dict() for o in orders])
         print(json.dumps(record, indent=1))
@@ -69,7 +70,9 @@ def main() -> int:
     positions = {p["symbol"]: {"market_value": float(p["market_value"]), "qty": float(p["qty"])}
                  for p in raw_positions}
     alpaca_prices = {p["symbol"]: float(p["current_price"]) for p in raw_positions if p.get("current_price")}
-    fractionable = {s: bool(broker.asset(s).get("fractionable", False)) for s in t["weights"]}
+    # whole shares only, so the same trades can be copied in a brokerage account (live.WHOLE_SHARES)
+    fractionable = ({s: False for s in t["weights"]} if live.WHOLE_SHARES
+                    else {s: bool(broker.asset(s).get("fractionable", False)) for s in t["weights"]})
     if float(acct.get("multiplier", 1)) < live.LEVERAGE:
         record.update(action=f"refused: the account's margin multiplier ({acct.get('multiplier')}) is below the book's {live.LEVERAGE}x")
         print(json.dumps(record, indent=1))
@@ -81,7 +84,7 @@ def main() -> int:
     prefix = f"{live.STRATEGY_ID}-{t['as_of_close']}-"
     checks = safety.pretrade_checks(t, acct, broker.is_paper, positions, alpaca_prices, orders, equity, live.MAX_GROSS,
                                     [str(o.get("client_order_id", "")) for o in broker.orders(status="all", limit=200)],
-                                    prefix, datetime.now(tz=US_EASTERN))
+                                    prefix, datetime.now(tz=US_EASTERN), cash=cash)
     record["safety"] = safety.summarize(checks)
     if not record["safety"]["passed"]:
         record["action"] = "halted: safety check failed (" + ", ".join(record["safety"]["failed"]) + "); no orders sent"

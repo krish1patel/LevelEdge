@@ -113,6 +113,9 @@ def plan_orders(targets: dict[str, float], equity: float, cash: float, positions
     """
     if equity <= 0:
         return []
+    # a no-borrowing book that still owes margin trims every overweight position, band or not,
+    # rounding share sells up, until the debt is repaid
+    repay = max_gross <= 1.0 and cash < 0
     sells, buys = [], []
     symbols = sorted(set(targets) | set(positions))
     for s in symbols:
@@ -123,14 +126,14 @@ def plan_orders(targets: dict[str, float], equity: float, cash: float, positions
         if tgt == 0 and cur > 0:
             sells.append(Order(s, "sell", None, float(pos.get("qty", 0.0)), "exit: target is zero"))
             continue
-        if abs(diff) < band * equity or abs(diff) < min_notional:
+        if (abs(diff) < band * equity and not (repay and diff < 0)) or abs(diff) < min_notional:
             continue
         px = prices.get(s)
         if diff < 0:
             if fractionable.get(s, True):
                 sells.append(Order(s, "sell", round(-diff, 2), None, f"trim to {tgt / equity:.1%}"))
             elif px:
-                q = math.floor(-diff / px)
+                q = min(math.ceil(-diff / px) if repay else math.floor(-diff / px), math.floor(float(pos.get("qty", 0.0))))
                 if q > 0:
                     sells.append(Order(s, "sell", None, float(q), f"trim to {tgt / equity:.1%}"))
         else:
