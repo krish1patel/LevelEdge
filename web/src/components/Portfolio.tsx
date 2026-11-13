@@ -3,6 +3,7 @@ import { AlertCircle, Info, ShieldCheck } from "lucide-react";
 import { getPortfolio, type LivePaper, type PortfolioBacktest, type PortfolioResponse, type SeriesKey, type Targets } from "../api";
 import { fmtIsoDay, fmtMoney, fmtNum, fmtRate, fmtSignedPct } from "../format";
 import { XYChart, type Series } from "./XYChart";
+import { OutlookCard } from "./Outlook";
 
 const NAMES: Record<SeriesKey, string> = {
   book: "LevelEdge book",
@@ -72,6 +73,7 @@ export function Portfolio() {
         <div className="side main-col">
           <LiveAccount live={live} />
           {t && <TriggersCard t={t} live={live} />}
+          <OutlookCard live={live} />
           {bt ? <BacktestCards bt={bt} /> : data ? (
             <section className="card"><p className="help">Run <code>python benchmarks/paper_portfolio.py</code> to generate the backtest.</p></section>
           ) : (

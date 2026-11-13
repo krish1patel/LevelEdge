@@ -18,6 +18,7 @@ LevelEdge has three parts, all in one dashboard:
 - The trend sleeve beats random pickers but not 60/40 on Sharpe; its value is smaller drawdowns (`etf_trend.py`).
 - An 80-variant search failed its 2020+ holdout with reversed rankings (`etf_research.py`). The traded book uses the original pre-declared rules. Adding variants means re-running the holdout protocol, not picking a winner.
 - LevelEdge's `VolScaler` ties EWMA on daily ETF vol; EWMA is used in the portfolio.
+- Volatility (move size) is forecastable; the timing of falls is not. HMM, jump models, VIX, turbulence and absorption ratio all fail to predict 5% monthly drops out of sample (`regime_research.py`). Puts and collars on the core cost more than they protect (`put_hedge_research.py`). Only the 12-month trend filter on the core passed its pre-declared test (`hedge_research.py`); it is not adopted until the user decides.
 
 ## Setup
 
@@ -63,6 +64,8 @@ m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 | `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_v1`), weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()` |
 | `broker.py` | Alpaca client locked to paper; `plan_orders()` never borrows and skips drift under the band |
 | `kalshi.py` / `edge.py` | Kalshi public market data (live and archived candles); after-fee edge and joint event-level Kelly sizing |
+| `regime.py` | GJR-GARCH-t with filtered historical simulation, HAR, two-state HMM, statistical jump model, turbulence, absorption ratio, CRPS (numpy/scipy only) |
+| `outlook.py` | Live S&P 500 outlook for `/api/outlook`: average of VIX, HAR and GJR distributions; 1-day to 3-month fan, odds, the book's range via its beta |
 
 Validation: expanding walk-forward, last 60% of rows in 6 folds, purge `h` bars plus embargo `h` bars. Metrics: log loss, Brier, AUC, reliability, 80%-range coverage, per-level Brier skill vs climatology.
 

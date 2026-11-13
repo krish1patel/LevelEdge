@@ -422,6 +422,30 @@ def api_portfolio():
                    "backtest": backtest, "live": _cached("live", 300, _live_paper)})
 
 
+def _outlook() -> dict:
+    from leveledge import live, outlook
+
+    try:
+        weights = _cached("targets", 1800, live.current_targets)["weights"]
+    except Exception:  # noqa: BLE001
+        weights = None
+    out = outlook.market_outlook(book_weights=weights)
+    study = _read_json(RESULTS / "regime" / "summary.json")
+    if study:
+        a = study["A_distribution"]
+        out["record"] = {str(h): {per: {k: a[str(h)][per]["combo"][k] for k in ("cover80", "cover95", "crps_skill_vs_hist")}
+                                  | {"n": a[str(h)][per]["n"]} for per in ("dev", "holdout")} for h in (5, 21, 63)}
+    return out
+
+
+@app.get("/api/outlook")
+def api_outlook():
+    try:
+        return _clean({"status": "ok", **_cached("outlook", 1800, _outlook)})
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": f"Couldn't compute the market outlook: {e}"}
+
+
 @app.get("/api/research")
 def api_research():
     """What was tested and what failed, from the saved benchmark results."""

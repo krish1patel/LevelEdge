@@ -219,7 +219,7 @@ button, input, select { font: inherit; color: inherit; letter-spacing: inherit; 
 @keyframes flash { from { background: var(--accent-wash); } to { background: transparent; } }
 .add-level { display: flex; gap: var(--s2); margin-top: var(--s3); }
 .add-level .input { flex: 1; }
-.help { font-size: var(--t-cap); color: var(--ink-3); margin: var(--s2) 0 0; }
+.help { font-size: var(--t-cap); color: var(--ink-3); margin: var(--s2) 0 0; max-width: 37em; }
 .err { font-size: var(--t-cap); color: var(--bad); margin: var(--s2) 0 0; }
 
 /* ---------- trust ---------- */
@@ -280,7 +280,7 @@ button, input, select { font: inherit; color: inherit; letter-spacing: inherit; 
 .bar-row .track { height: 8px; background: var(--grid); border-radius: 4px; }
 .bar-row .track i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
 .bar-row .name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.footnote { font-size: var(--t-cap); color: var(--ink-3); margin: var(--s3) 0 0; max-width: 760px; }
+.footnote { font-size: var(--t-cap); color: var(--ink-3); margin: var(--s3) 0 0; max-width: 37em; }
 .disclosure { margin-top: var(--s2); }
 .disclosure summary { cursor: pointer; font-size: var(--t-cap); color: var(--ink-3); list-style: none; display: inline-flex; gap: 6px; align-items: center; }
 .disclosure summary::-webkit-details-marker { display: none; }
@@ -360,3 +360,4 @@ h1, h2, h3 { text-wrap: balance; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
+.outlook-table td { white-space: nowrap; }

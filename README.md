@@ -33,6 +33,10 @@ Every idea had to beat a simple alternative on data it hadn't seen, after costs.
 | 12-month trend following across 11 ETFs | **Real signal** (beats 99% of random pickers) but no better return per unit of risk than 60/40; much smaller drawdowns. Kept as a sleeve. |
 | Best of 80 trend variants chosen on 2007–2019 | **Failed the 2020–2026 holdout.** Dev and holdout rankings were negatively correlated (−0.73). |
 | LevelEdge's volatility model vs EWMA on daily ETF data | **Tie**; EWMA is used. |
+| Warning signals that sell the 60/40 core: 12-month trend, 10-month average, VIX > 30, yield-curve inversion, drawdown stop, volatility scaling | **Only the 12-month trend filter passes**, narrowly: worst fall −35% → −21%, about 0.9 points a year less return. The others sell too late or too early. |
+| Monthly SPY puts and collars on the core (priced from the VIX) | **Fail.** The premium eats most of the protection; the trend filter protects more for less. |
+| Forecasting how far the S&P 500 may move (VIX, HAR, GJR-GARCH and their average) | **Works.** 3–6% lower CRPS than past returns at 1 week and 1 month, in 2000–2019 and in 2020+; 80% ranges held 81–84% of outcomes. Shown on the Portfolio tab. |
+| Timing falls: hidden Markov model, statistical jump model, trend, VIX, turbulence index, absorption ratio | **Fail.** Best AUC about 0.65 for a 5% monthly drop; regime switching inside the book lost to the trend filter after 2020. |
 
 The paper book: 2007–2026 backtest 7.3%/yr, Sharpe 0.63, worst fall −24% (60/40: 8.0%, 0.62, −33%). Its goal is smaller crashes, not more return. Details: `benchmarks/results/*/summary.json`.
 
