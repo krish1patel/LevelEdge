@@ -89,6 +89,7 @@ function OutlookBody({ o, equity }: { o: Ok; equity: number | null }) {
           </tbody>
         </table>
       </div>
+      <ForwardLine o={o} />
       <p className="help">
         This forecasts how big the moves may be, not which way they go. It averages three volatility models
         (VIX-implied, HAR on daily ranges, GJR-GARCH with simulated paths). Tested on every Friday since 2000 using only data
@@ -100,6 +101,27 @@ function OutlookBody({ o, equity }: { o: Ok; equity: number | null }) {
         {o.book ? ` Account ranges assume the book moves about ${o.book.beta.toFixed(2)}× the S&P 500, as today's holdings did over the past year.` : ""}
       </p>
     </>
+  );
+}
+
+/** The live record: forecasts committed to a public git branch before their outcomes, then scored. */
+function ForwardLine({ o }: { o: Ok }) {
+  const f = o.forward;
+  if (!f) return null;
+  if (f.status !== "ok") {
+    return <p className="help">Live record: the daily forecast log starts after the next close; each forecast is committed publicly before its outcome is known.</p>;
+  }
+  const matured = Object.values(f.horizons).filter((h) => h.n > 0);
+  return (
+    <p className="help">
+      <strong>Live record.</strong>{" "}
+      {matured.length
+        ? matured.map((h) => `${h.label}: the 80% range held ${Math.round((h.cover80 ?? 0) * h.n)} of ${h.n}`).join("; ") + "."
+        : `${f.logged} forecast${f.logged === 1 ? "" : "s"} logged since ${f.first ? fmtIsoDay(f.first) : "the first close"}; none has resolved yet.`}
+      {f.next_result ? ` Next result on ${fmtIsoDay(f.next_result)}.` : ""}{" "}
+      Each day's forecast is committed to a <a href={f.view_url} target="_blank" rel="noreferrer">public log</a> before the outcome exists.
+      {matured.some((h) => h.n < 30) ? " Under 30 results is too few to judge." : ""}
+    </p>
   );
 }
 

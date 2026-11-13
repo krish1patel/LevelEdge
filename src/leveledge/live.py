@@ -109,6 +109,22 @@ def shadow_decisions(closes: pd.DataFrame) -> pd.DataFrame:
     return LEVERAGE * (CORE_SHARE * core.values + TREND_SHARE * sleeve)
 
 
+# Second shadow: the traded book with the 12-month trend filter on the 60/40 core (SPY and
+# IEF core weights move to T-bills while their 12-month return trails T-bills). It passed its
+# pre-declared test in benchmarks/hedge_research.py (worst fall -35% -> -21%, about 0.9
+# points a year less return); tracked from public prices until the user decides to trade it.
+TREND_FILTER_ID = "core6040_trend30_x150_tf_shadow"
+
+
+def trend_filter_decisions(opens, closes, cash, cfg: P.StrategyConfig | None = None) -> pd.DataFrame:
+    cfg = cfg or config()
+    _, trend = book_decisions(opens, closes, cash, cfg)
+    sig = P.momentum_signal(closes[list(CORE)], cash, cfg.lookback).reindex(trend.index)
+    keep = sig.reindex(columns=trend.columns).fillna(1.0)
+    core = pd.Series(CORE, dtype=float).reindex(trend.columns).fillna(0.0)
+    return LEVERAGE * (CORE_SHARE * keep * core.values + TREND_SHARE * trend)
+
+
 def tracking_since(start: str, cache_dir: str | None = None, now: datetime | None = None) -> pd.DataFrame:
     """Growth of $1 from ``start`` for the live book's rules, the shadow book, 60/40 and SPY.
 
@@ -125,6 +141,8 @@ def tracking_since(start: str, cache_dir: str | None = None, now: datetime | Non
     series = {
         "book_rules": P.backtest(opens, closes, cash, book.reindex(columns=closes.columns).fillna(0.0), 5.0)["ret"],
         "shadow_daa": P.backtest(opens, closes, cash, shadow_decisions(closes), 5.0)["ret"],
+        "shadow_trend_filter": P.backtest(opens, closes, cash, trend_filter_decisions(opens[tu], closes[tu], cash)
+                                          .reindex(columns=closes.columns).fillna(0.0), 5.0)["ret"],
         "sixty_forty": P.buy_and_hold(closes, {"SPY": 0.6, "IEF": 0.4}, cash, "monthly")["ret"],
         "spy_buy_hold": P.buy_and_hold(closes, {"SPY": 1.0}, cash, None)["ret"],
     }
@@ -176,6 +194,7 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
              "trend_on": bool(signal.loc[d, s] == 1), "return_12m": round(float(lookback_ret[s]), 4),
              "vol_annual": round(float(vol.loc[d, s] * np.sqrt(P.TRADING_DAYS)), 4),
              "last_close": round(float(closes.loc[d, s]), 4),
+             "ret_1d": round(float(closes[s].iloc[-1] / closes[s].iloc[-2] - 1), 5),
              "flip_price": round(float(flip[s]), 4),
              "flip_move": round(float(flip[s] / closes.loc[d, s] - 1), 4)}
             for s in cfg.universe],
@@ -185,5 +204,5 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
 
 
 __all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "BAND", "LIVE_START",
-           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "tracking_since", "book_from_trend", "book_decisions",
+           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "TREND_FILTER_ID", "trend_filter_decisions", "tracking_since", "book_from_trend", "book_decisions",
            "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets", "trend_flip_prices"]

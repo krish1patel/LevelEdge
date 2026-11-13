@@ -36,7 +36,8 @@ from leveledge.constants import US_EASTERN  # noqa: E402
 
 
 def pct(x: float, d: int = 2) -> str:
-    return f"{'+' if x > 0 else '−' if x < 0 else ''}{abs(x) * 100:.{d}f}%"
+    r = round(x * 100, d)                      # no sign on values that round to zero
+    return f"{'+' if r > 0 else '−' if r < 0 else ''}{abs(r):.{d}f}%"
 
 
 def money(x: float) -> str:
@@ -139,6 +140,10 @@ def main() -> int:
     lines.append("")
     lines += execution_section(b)
 
+    if rec and rec.get("safety"):
+        sf = rec["safety"]
+        lines += [f"Safety checks before trading: {'all ' + str(len(sf['checks'])) + ' passed' if sf['passed'] else 'FAILED: ' + ', '.join(sf['failed'])}"
+                  f" ({'; '.join(c['detail'] for c in sf['checks'] if c['name'] in ('data_fresh', 'order_sizes'))}).", ""]
     if rec and rec.get("orders"):
         lines += [f"### Trades this run ({rec.get('action', '')})", "", "| Order | Size | Reason |", "|---|---|---|"]
         for o in rec["orders"]:
@@ -157,10 +162,12 @@ def main() -> int:
         if len(tr) >= 2 and len(curve) >= 2:
             acct_ret = equity / start_eq - 1
             rows = [("Paper account (actual, now)", acct_ret), (f"Book rules (model, to the {tr.index[-1]:%b %d} close)", tr["book_rules"].iloc[-1] - 1),
-                    ("Shadow DAA book", tr["shadow_daa"].iloc[-1] - 1), ("60/40", tr["sixty_forty"].iloc[-1] - 1),
+                    ("Shadow DAA book", tr["shadow_daa"].iloc[-1] - 1),
+                    ("Shadow: book + trend filter on the core", tr["shadow_trend_filter"].iloc[-1] - 1),
+                    ("60/40", tr["sixty_forty"].iloc[-1] - 1),
                     ("SPY", tr["spy_buy_hold"].iloc[-1] - 1)]
             lines += [f"### Since {curve.index[0]:%Y-%m-%d}", "", "| | Return |", "|---|---|"] + [f"| {n} | {pct(r)} |" for n, r in rows]
-            lines += ["", "Actual vs model shows execution slippage; the shadow book is the untraded DAA candidate.", ""]
+            lines += ["", "Actual vs model shows execution slippage; the shadow books are untraded candidates rebuilt from public prices.", ""]
     except Exception as e:  # noqa: BLE001 - the report must still go out
         lines += [f"_Benchmark comparison unavailable: {e}_", ""]
 

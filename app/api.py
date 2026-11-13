@@ -422,6 +422,42 @@ def api_portfolio():
                    "backtest": backtest, "live": _cached("live", 300, _live_paper)})
 
 
+FORWARD_LOG_URL = os.environ.get(
+    "FORWARD_LOG_URL", "https://raw.githubusercontent.com/krish1patel/LevelEdge/forward-log/outlook.jsonl")
+
+
+def _forward_record() -> dict:
+    """Score the public forward log (committed daily before outcomes exist) against S&P 500 closes."""
+    import urllib.request
+
+    from leveledge import outlook
+
+    try:
+        with urllib.request.urlopen(FORWARD_LOG_URL, timeout=10) as r:
+            entries = [json.loads(x) for x in r.read().decode().splitlines() if x.strip()]
+    except Exception as e:  # noqa: BLE001
+        return {"status": "unavailable", "message": f"Forward log not readable yet ({e.__class__.__name__}).", "url": FORWARD_LOG_URL}
+    if not entries:
+        return {"status": "empty", "url": FORWARD_LOG_URL}
+    import yfinance as yf
+    h = yf.Ticker("^GSPC").history(start=entries[0]["as_of_close"], interval="1d", auto_adjust=False)
+    closes = pd.Series(h["Close"].to_numpy(), index=pd.DatetimeIndex(h.index).tz_localize(None).normalize())
+    closes = closes[closes.index < pd.Timestamp(datetime.now(tz=US_EASTERN).date())] if not _session_closed() else closes
+    return {"status": "ok", "url": FORWARD_LOG_URL, "view_url": _github_view(FORWARD_LOG_URL), **outlook.score_forward(entries, closes)}
+
+
+def _github_view(raw: str) -> str:
+    m = re.match(r"https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/(.+)", raw)
+    return f"https://github.com/{m[1]}/{m[2]}/commits/{m[3]}/{m[4]}" if m else raw
+
+
+def _session_closed() -> bool:
+    from leveledge.safety import last_completed_session
+
+    now = datetime.now(tz=US_EASTERN)
+    return last_completed_session(now) == pd.Timestamp(now.date())
+
+
 def _outlook() -> dict:
     from leveledge import live, outlook
 
@@ -430,6 +466,7 @@ def _outlook() -> dict:
     except Exception:  # noqa: BLE001
         weights = None
     out = outlook.market_outlook(book_weights=weights)
+    out["forward"] = _forward_record()
     study = _read_json(RESULTS / "regime" / "summary.json")
     if study:
         a = study["A_distribution"]

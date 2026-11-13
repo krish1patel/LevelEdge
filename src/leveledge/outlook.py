@@ -143,3 +143,59 @@ def _book_view(weights: dict, g: pd.DataFrame, dense: dict, now: datetime) -> di
         res[lab] = {f"q{int(round(l * 1000)):03d}": float(np.quantile(b, l)) for l in SHOW}
         res[lab]["p_down5"] = float((b <= -0.05).mean())
     return {"beta": beta, "resid_vol_annual": resid_sd * np.sqrt(P.TRADING_DAYS), "horizons": res}
+
+
+# ---------------------------------------------------------------------------
+# live forward record
+# ---------------------------------------------------------------------------
+BANDS = {"cover50": ("q250", "q750"), "cover80": ("q100", "q900"), "cover90": ("q050", "q950"), "cover95": ("q025", "q975")}
+
+
+def target_dates(as_of: str, horizons=tuple(LABELS)) -> dict:
+    """The NYSE session that closes h trading days after ``as_of``."""
+    from .sessions import nyse_schedule
+
+    d = pd.Timestamp(as_of)
+    sched = nyse_schedule(d + timedelta(days=1), d + timedelta(days=int(max(horizons) * 1.6) + 10))
+    days = [pd.Timestamp(x).normalize() for x in sched.index]
+    return {h: days[h - 1].strftime("%Y-%m-%d") for h in horizons}
+
+
+def forward_entry(o: dict, targets: dict | None, now: datetime) -> dict:
+    tds = target_dates(o["as_of_close"])
+    e = {"logged_at": now.isoformat(), "as_of_close": o["as_of_close"], "index": "^GSPC", "spot": o["spot"],
+         "method": o["method"], "risk": o["risk"],
+         "horizons": [{"h": h["h"], "target_date": tds[h["h"]], "ret": h["ret"], "p_up": h["p_up"], "p_down5": h["p_down5"]}
+                      for h in o["horizons"]]}
+    if targets:
+        e["book"] = {"strategy": targets["strategy"], "as_of_close": targets["as_of_close"], "weights": targets["weights"]}
+    return e
+
+
+def score_forward(entries: list[dict], closes: pd.Series) -> dict:
+    """Score every matured forecast in the log against realized index closes."""
+    closes = closes.copy()
+    closes.index = pd.DatetimeIndex(closes.index).normalize()
+    rows, pending = [], []
+    for e in entries:
+        for h in e["horizons"]:
+            td = pd.Timestamp(h["target_date"])
+            if td not in closes.index:
+                pending.append(h["target_date"])
+                continue
+            y = float(closes[td] / e["spot"] - 1)
+            q = h["ret"]
+            row = {"h": h["h"], "as_of": e["as_of_close"], "target_date": h["target_date"], "ret": y,
+                   "brier_up": (float(y > 0) - h["p_up"]) ** 2}
+            for k, (lo, hi) in BANDS.items():
+                row[k] = bool(q[lo] < y < q[hi])
+            rows.append(row)
+    out = {"logged": len(entries), "first": entries[0]["as_of_close"] if entries else None,
+           "next_result": min(pending) if pending else None, "horizons": {}}
+    df = pd.DataFrame(rows)
+    for h, lab in LABELS.items():
+        d = df[df.h == h] if len(df) else df
+        out["horizons"][str(h)] = {"label": lab, "n": int(len(d)),
+                                   **({k: float(d[k].mean()) for k in BANDS} | {"brier_up": float(d["brier_up"].mean())} if len(d) else {})}
+    out["recent"] = df.sort_values("target_date").tail(10).to_dict("records") if len(df) else []
+    return out

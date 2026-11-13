@@ -63,6 +63,10 @@ jobs:
             echo
             echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo
+            if [ -s paper_trade.json ]; then
+              python -c "import json; r=json.load(open('paper_trade.json')); print('Outcome: ' + r.get('action', 'unknown')); [print(f\"- {c['name']}: {c['detail']}\") for c in r.get('safety', {}).get('checks', []) if not c['ok']]" || true
+              echo
+            fi
             echo "No further trades happen until this is fixed; the next scheduled run tries again."
           } > alert.md
           bash scripts/post_report.sh alert.md

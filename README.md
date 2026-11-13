@@ -150,7 +150,9 @@ python scripts/paper_trade.py --force          # dry run: plan against the real 
 python scripts/paper_trade.py --force --execute  # submit to the paper account now
 ```
 
-Safety: `leveledge.broker` refuses any non-paper Alpaca endpoint unless `LEVELEDGE_ALLOW_LIVE_TRADING=1`, never spends more than its cash (the paper account's margin is never used), and skips drift under 1% of equity.
+Safety: `leveledge.broker` refuses any non-paper Alpaca endpoint unless `LEVELEDGE_ALLOW_LIVE_TRADING=1`, keeps holdings within 1.6x equity, and skips drift under the 2-point band. Before any order, `leveledge.safety` checks that the account is an active paper account, the prices come from the last completed session, no ETF moved more than 15% in a day, yfinance and Alpaca agree on prices within 3%, no order exceeds 90% of equity, holdings stay under the ceiling, and this decision's orders were not already sent. Any failure halts the run and posts an alert to the "Paper book weekly report" issue.
+
+Forward log: `.github/workflows/forward_log.yml` runs `scripts/log_forward.py` after every weekday close and commits that day's market outlook and the book's targets to the `forward-log` branch (`outlook.jsonl`). Each forecast is public before its outcome exists; the dashboard scores the log against S&P 500 closes. The weekly report also tracks two untraded shadow books from public prices: DAA in place of the trend sleeve, and the book with the 12-month trend filter on its core.
 
 ## Forward test
 

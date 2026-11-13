@@ -307,6 +307,19 @@ export type Outlook =
       history: { date: string; close: number }[];
       book?: { beta: number; resid_vol_annual: number; horizons: Record<string, Quantiles & { p_down5: number }> } | null;
       record?: Record<string, Record<"dev" | "holdout", { cover80: number; cover95: number; crps_skill_vs_hist: number; n: number }>>;
+      forward?: ForwardRecord;
+    };
+
+export type ForwardRecord =
+  | { status: "unavailable" | "empty"; message?: string; url: string }
+  | {
+      status: "ok";
+      url: string;
+      view_url: string;
+      logged: number;
+      first: string | null;
+      next_result: string | null;
+      horizons: Record<string, { label: string; n: number; cover50?: number; cover80?: number; cover90?: number; cover95?: number; brier_up?: number }>;
     };
 
 export const getOutlook = () => call<Outlook>("/api/outlook");

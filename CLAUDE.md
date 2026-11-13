@@ -65,6 +65,7 @@ m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 | `broker.py` | Alpaca client locked to paper; `plan_orders()` never borrows and skips drift under the band |
 | `kalshi.py` / `edge.py` | Kalshi public market data (live and archived candles); after-fee edge and joint event-level Kelly sizing |
 | `regime.py` | GJR-GARCH-t with filtered historical simulation, HAR, two-state HMM, statistical jump model, turbulence, absorption ratio, CRPS (numpy/scipy only) |
+| `safety.py` | Pre-trade checks run by `scripts/paper_trade.py` before any order (account, data freshness, plausible moves, price cross-check, order sizes, gross, duplicate runs) |
 | `outlook.py` | Live S&P 500 outlook for `/api/outlook`: average of VIX, HAR and GJR distributions; 1-day to 3-month fan, odds, the book's range via its beta |
 
 Validation: expanding walk-forward, last 60% of rows in 6 folds, purge `h` bars plus embargo `h` bars. Metrics: log loss, Brier, AUC, reliability, 80%-range coverage, per-level Brier skill vs climatology.
@@ -79,6 +80,7 @@ Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benc
 - P(above) must be non-increasing in the level.
 - Times are US/Eastern; bars are indexed by start time; stocks use regular-session bars only.
 - Paper trading only: never remove the `LEVELEDGE_ALLOW_LIVE_TRADING` guard or let `plan_orders` spend more than cash plus sale proceeds.
+- Never bypass or loosen `leveledge.safety.pretrade_checks` to get a run through; a halted run is the system working. The forward log (`forward-log` branch) is append-only: never rewrite or delete its history.
 - The traded book's rules are pre-declared; changing them needs `paper_portfolio.py` and the holdout protocol re-run, and a new `STRATEGY_ID`.
 - Stock forecasts are not compared with markets before 09:45 ET (the model has no bar from the session yet).
 - Forward-test rows carry `model_type` (`leveledge_v2_stacked`, v1 rows are `xgboost_classifier`) so the dashboard can compare versions.
