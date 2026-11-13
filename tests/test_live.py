@@ -147,3 +147,18 @@ def test_fidelity_file_with_two_accounts_needs_a_choice():
     with pytest.raises(ValueError):
         mirror.parse_fidelity_positions(txt)
     assert mirror.parse_fidelity_positions(txt, "Roth IRA")[0]["SPY"]["qty"] == 2.0
+
+
+def test_greedy_shadow_holds_the_fund_only_above_the_200_day_average():
+    import numpy as np
+    import pandas as pd
+    from leveledge import live
+    idx = pd.bdate_range("2024-01-01", periods=400)
+    up = np.linspace(100, 200, 300)
+    down = np.linspace(200, 120, 100)
+    c = pd.DataFrame({"SPY": np.r_[up, down], "SSO": np.r_[up, down] ** 2 / 100}, index=idx)
+    d = live.greedy_decisions(c, "SSO", "SPY")
+    assert d.index.isin(idx).all() and list(d.columns) == ["SSO"]
+    assert d.loc[:idx[198]].eq(0).all().all()                 # no 200-day average yet: stay out
+    assert d.loc[idx[250]:idx[299]].eq(1).all().all()          # rising: hold the fund
+    assert d.iloc[-1, 0] == 0                                  # fell through the average: out
