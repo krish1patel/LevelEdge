@@ -130,8 +130,28 @@ def trend_filter_decisions(opens, closes, cash, cfg: P.StrategyConfig | None = N
     return LEVERAGE * (CORE_SHARE * keep * core.values + TREND_SHARE * trend)
 
 
+# Greedy shadows (benchmarks/aggressive_research.py, aggressive_longrun.py): a leveraged ETF
+# held while its index closes above the 200-day average, T-bills otherwise; checked on the
+# weekly rebalance day, traded at the next open. Priced from the real funds. Untraded: with
+# the 200-day rule their worst historical falls were -59% (2x S&P), -75% (2x Nasdaq-100) and
+# -90% (3x Nasdaq-100), against -24% for the book.
+GREEDY_SHADOWS = {
+    "shadow_sso_sma200": ("SSO", "SPY"),
+    "shadow_qld_sma200": ("QLD", "QQQ"),
+    "shadow_tqqq_sma200": ("TQQQ", "QQQ"),
+}
+
+
+def greedy_decisions(closes: pd.DataFrame, fund: str, underlying: str) -> pd.DataFrame:
+    """Weekly weights: 1.0 in ``fund`` while ``underlying`` closes above its 200-day average."""
+    c = closes[underlying]
+    on = (c > c.rolling(200).mean()) & c.rolling(200).mean().notna()
+    dates = P.rebalance_dates(closes.index, "weekly")
+    return pd.DataFrame({fund: on.reindex(dates).astype(float)}, index=dates)
+
+
 def tracking_since(start: str, cache_dir: str | None = None, now: datetime | None = None) -> pd.DataFrame:
-    """Growth of $1 from ``start`` for the live book's rules, the shadow book, 60/40 and SPY.
+    """Growth of $1 from ``start`` for the live book's rules, the shadow books, 60/40 and SPY.
 
     Rebuilt from public prices and the published rules every time, so the shadow
     record cannot be adjusted after the fact.
@@ -151,6 +171,14 @@ def tracking_since(start: str, cache_dir: str | None = None, now: datetime | Non
         "sixty_forty": P.buy_and_hold(closes, {"SPY": 0.6, "IEF": 0.4}, cash, "monthly")["ret"],
         "spy_buy_hold": P.buy_and_hold(closes, {"SPY": 1.0}, cash, None)["ret"],
     }
+    # greedy shadows on their own panel: TQQQ only trades from 2010, and missing early prices would
+    # poison the other backtests
+    gsyms = sorted({x for pair in GREEDY_SHADOWS.values() for x in pair})
+    gp = completed_daily(P.load_prices(gsyms, start="2010-03-01", cache_dir=cache_dir), now)
+    go, gc, gcash = P.panel(gp, gsyms)
+    for name, (fund, und) in GREEDY_SHADOWS.items():
+        dec = greedy_decisions(gc, fund, und).reindex(columns=gc.columns).fillna(0.0)
+        series[name] = P.backtest(go, gc, gcash, dec, 5.0)["ret"]
     df = pd.DataFrame(series).loc[pd.Timestamp(start):].fillna(0.0)
     if df.empty:
         return df
@@ -209,5 +237,5 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
 
 
 __all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "WHOLE_SHARES", "STRATEGY_ID", "BAND", "LIVE_START",
-           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "TREND_FILTER_ID", "trend_filter_decisions", "tracking_since", "book_from_trend", "book_decisions",
+           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "TREND_FILTER_ID", "trend_filter_decisions", "GREEDY_SHADOWS", "greedy_decisions", "tracking_since", "book_from_trend", "book_decisions",
            "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets", "trend_flip_prices"]

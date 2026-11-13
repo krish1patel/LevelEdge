@@ -165,7 +165,7 @@ python scripts/mirror_ticket.py --cash 25000                                    
 
 It prints sells then buys in whole shares, never spending more than the cash plus sale proceeds. The weekly report also estimates the dividends a real account receives and Alpaca's paper account does not credit.
 
-Forward log: `.github/workflows/forward_log.yml` runs `scripts/log_forward.py` after every weekday close and commits that day's market outlook and the book's targets to the `forward-log` branch (`outlook.jsonl`). Each forecast is public before its outcome exists; the dashboard scores the log against S&P 500 closes. The weekly report also tracks two untraded shadow books from public prices: DAA in place of the trend sleeve, and the book with the 12-month trend filter on its core.
+Forward log: `.github/workflows/forward_log.yml` runs `scripts/log_forward.py` after every weekday close and commits that day's market outlook and the book's targets to the `forward-log` branch (`outlook.jsonl`). Each forecast is public before its outcome exists; the dashboard scores the log against S&P 500 closes. The weekly report also tracks untraded shadow books from public prices: DAA in place of the trend sleeve, the book with the 12-month trend filter on its core, and three greedy books (SSO, QLD or TQQQ while the S&P 500 or Nasdaq-100 is above its 200-day average, T-bills otherwise).
 
 ## Forward test
 

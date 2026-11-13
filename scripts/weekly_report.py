@@ -31,6 +31,7 @@ except ImportError:
 import pandas as pd  # noqa: E402
 
 from leveledge import live  # noqa: E402
+from leveledge import portfolio as P  # noqa: E402
 from leveledge.broker import AlpacaBroker, credentials, margin_interest, slippage_bp  # noqa: E402
 from leveledge.constants import US_EASTERN  # noqa: E402
 
@@ -73,6 +74,13 @@ def dividends_missed(positions: list[dict], since: pd.Timestamp) -> float:
         return total
     except Exception:  # noqa: BLE001 - an estimate; the report must still go out
         return 0.0
+
+
+def _greedy_panel(name: str):
+    fund, und = live.GREEDY_SHADOWS[name]
+    gp = live.completed_daily(P.load_prices([fund, und], start="2024-01-01"))
+    _, gc, _ = P.panel(gp, [fund, und])
+    return gc, fund, und
 
 
 def execution_section(b: AlpacaBroker, days: int = 8) -> list[str]:
@@ -187,10 +195,16 @@ def main() -> int:
             rows = [("Paper account (actual, now)", acct_ret), (f"Book rules (model, to the {tr.index[-1]:%b %d} close)", tr["book_rules"].iloc[-1] - 1),
                     ("Shadow DAA book", tr["shadow_daa"].iloc[-1] - 1),
                     ("Shadow: book + trend filter on the core", tr["shadow_trend_filter"].iloc[-1] - 1),
+                    ("Greedy shadow: 2x S&P (SSO), 200-day rule", tr["shadow_sso_sma200"].iloc[-1] - 1),
+                    ("Greedy shadow: 2x Nasdaq-100 (QLD), 200-day rule", tr["shadow_qld_sma200"].iloc[-1] - 1),
+                    ("Greedy shadow: 3x Nasdaq-100 (TQQQ), 200-day rule", tr["shadow_tqqq_sma200"].iloc[-1] - 1),
                     ("60/40", tr["sixty_forty"].iloc[-1] - 1),
                     ("SPY", tr["spy_buy_hold"].iloc[-1] - 1)]
             lines += [f"### Since {curve.index[0]:%Y-%m-%d}", "", "| | Return |", "|---|---|"] + [f"| {n} | {pct(r)} |" for n, r in rows]
-            lines += ["", "Actual vs model shows execution slippage; the shadow books are untraded candidates rebuilt from public prices.", ""]
+            held = {n: "in" if live.greedy_decisions(*_greedy_panel(n)).iloc[-1, 0] == 1 else "out (T-bills)" for n in live.GREEDY_SHADOWS}
+            lines += ["", "Actual vs model shows execution slippage; the shadow books are untraded candidates rebuilt from public prices. "
+                      "Greedy shadows now: " + ", ".join(f"{live.GREEDY_SHADOWS[n][0]} {v}" for n, v in held.items())
+                      + ". Their worst historical falls: −59% (SSO), −75% (QLD), −90% (TQQQ).", ""]
     except Exception as e:  # noqa: BLE001 - the report must still go out
         lines += [f"_Benchmark comparison unavailable: {e}_", ""]
 
