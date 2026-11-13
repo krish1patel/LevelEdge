@@ -1,0 +1,70 @@
+# .github/workflows/forward_log.yml
+# After each weekday close, append the market outlook (and the book's targets) to
+# outlook.jsonl on the `forward-log` branch. Each forecast is committed before its
+# outcome exists, so the dashboard's live record can be checked by anyone against
+# the branch history. This branch never deploys (only main syncs to the Space).
+name: Forward Log
+
+on:
+  schedule:
+    - cron: '0 22 * * 1-5'    # 5:00 PM EST / 6:00 PM EDT, after the close all year
+  workflow_dispatch:
+
+concurrency:
+  group: forward-log
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install --no-deps .
+      - name: Check out the log branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin forward-log >/dev/null; then
+            git fetch origin forward-log
+            git worktree add log origin/forward-log
+            git -C log checkout -B forward-log
+          else
+            git worktree add --detach log
+            git -C log checkout --orphan forward-log
+            git -C log rm -rfq .
+            printf '# LevelEdge forward log\n\nOne JSON line per close in outlook.jsonl, committed by the Forward Log workflow before outcomes are known.\n' > log/README.md
+          fi
+      - name: Log today's outlook
+        run: python scripts/log_forward.py --log log/outlook.jsonl
+      - name: Commit and push
+        run: |
+          cd log
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -qm "Forward log: $(tail -n1 outlook.jsonl | python -c 'import json,sys; print(json.loads(sys.stdin.read())["as_of_close"])') close"
+            git push origin forward-log
+          fi
+      - name: Alert on failure
+        if: failure()
+        run: |
+          printf '## Forward log run failed\n\nRun: %s/%s/actions/runs/%s\n\nToday'"'"'s forecast was not logged; the live record skips this close.\n' \
+            "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}" > alert.md
+          bash scripts/post_report.sh alert.md

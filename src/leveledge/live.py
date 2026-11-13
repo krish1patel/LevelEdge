@@ -26,11 +26,16 @@ from leveledge.sessions import nyse_schedule
 CORE = {"SPY": 0.6, "IEF": 0.4}
 CORE_SHARE = 0.7
 TREND_SHARE = 0.3
-# Chosen from the reward/risk frontier (benchmarks/construction_research.py):
-# 2007-2026 backtest 9.0%/yr, max drawdown -35%, with borrowing at T-bill + 2%.
-LEVERAGE = 1.5
-MAX_GROSS = 1.6            # hard ceiling for order planning (drift above 1.5x is trimmed back)
-STRATEGY_ID = "core6040_trend30_x150_v2"
+# No borrowing: the book is mirrored in a real retail account (Fidelity), whose margin rate
+# (10.8-12.1% in Nov 2026, about T-bill + 7.5%) makes leverage a loss. 2007-2026, 5 bp costs:
+#   1.5x at T-bill + 2% (the old assumption)   9.0%/yr, worst fall -35%, Sharpe 0.57 (2020+ 0.44)
+#   1.5x at Fidelity's rate                    6.6%/yr, worst fall -37%, Sharpe 0.41 (2020+ 0.30)
+#   1.0x, no borrowing (the original rules)    7.3%/yr, worst fall -24%, Sharpe 0.63 (2020+ 0.49)
+# The 1.5x book was core6040_trend30_x150_v2 (paper fills 2026-11-10 to 2026-11-13).
+LEVERAGE = 1.0
+MAX_GROSS = 1.0            # never spend more than cash plus sale proceeds
+WHOLE_SHARES = True        # whole-share orders only, so every trade can be copied exactly in any brokerage
+STRATEGY_ID = "core6040_trend30_cash_v3"
 
 
 def config() -> P.StrategyConfig:
@@ -91,14 +96,14 @@ def next_rebalance_date(now: datetime | None = None) -> pd.Timestamp:
 # (benchmarks/literature_research.py: 419 -> 64 orders a year, 21 -> 14 bp/yr of costs,
 # 0.45%/yr tracking error against weekly full rebalancing).
 BAND = 0.02
-LIVE_START = "2026-11-10"          # first paper fills
+LIVE_START = "2026-11-16"          # first fills of the unlevered book (the 1.5x book traded from 2026-11-10)
 
 # Shadow book: the same design with the Keller & Keuning DAA-G12 sleeve in place of
 # the trend sleeve. It won the pre-declared sleeve selection but is not proven
 # (holdout Sharpe +0.06, CI -0.11 to +0.21), so it is tracked from public prices
 # rather than traded. Switch only on months of forward evidence.
-SHADOW_ID = "core6040_daa30_x150_shadow"
-SHADOW_START = "2026-11-10"
+SHADOW_ID = "core6040_daa30_cash_shadow"
+SHADOW_START = "2026-11-16"
 
 
 def shadow_decisions(closes: pd.DataFrame) -> pd.DataFrame:
@@ -107,6 +112,22 @@ def shadow_decisions(closes: pd.DataFrame) -> pd.DataFrame:
     core = pd.Series(CORE, dtype=float).reindex(closes.columns).fillna(0.0)
     sleeve = S.daa_g12(closes).reindex(columns=closes.columns).fillna(0.0)
     return LEVERAGE * (CORE_SHARE * core.values + TREND_SHARE * sleeve)
+
+
+# Second shadow: the traded book with the 12-month trend filter on the 60/40 core (SPY and
+# IEF core weights move to T-bills while their 12-month return trails T-bills). It passed its
+# pre-declared test in benchmarks/hedge_research.py (worst fall -35% -> -21%, about 0.9
+# points a year less return); tracked from public prices until the user decides to trade it.
+TREND_FILTER_ID = "core6040_trend30_cash_tf_shadow"
+
+
+def trend_filter_decisions(opens, closes, cash, cfg: P.StrategyConfig | None = None) -> pd.DataFrame:
+    cfg = cfg or config()
+    _, trend = book_decisions(opens, closes, cash, cfg)
+    sig = P.momentum_signal(closes[list(CORE)], cash, cfg.lookback).reindex(trend.index)
+    keep = sig.reindex(columns=trend.columns).fillna(1.0)
+    core = pd.Series(CORE, dtype=float).reindex(trend.columns).fillna(0.0)
+    return LEVERAGE * (CORE_SHARE * keep * core.values + TREND_SHARE * trend)
 
 
 def tracking_since(start: str, cache_dir: str | None = None, now: datetime | None = None) -> pd.DataFrame:
@@ -125,6 +146,8 @@ def tracking_since(start: str, cache_dir: str | None = None, now: datetime | Non
     series = {
         "book_rules": P.backtest(opens, closes, cash, book.reindex(columns=closes.columns).fillna(0.0), 5.0)["ret"],
         "shadow_daa": P.backtest(opens, closes, cash, shadow_decisions(closes), 5.0)["ret"],
+        "shadow_trend_filter": P.backtest(opens, closes, cash, trend_filter_decisions(opens[tu], closes[tu], cash)
+                                          .reindex(columns=closes.columns).fillna(0.0), 5.0)["ret"],
         "sixty_forty": P.buy_and_hold(closes, {"SPY": 0.6, "IEF": 0.4}, cash, "monthly")["ret"],
         "spy_buy_hold": P.buy_and_hold(closes, {"SPY": 1.0}, cash, None)["ret"],
     }
@@ -133,6 +156,19 @@ def tracking_since(start: str, cache_dir: str | None = None, now: datetime | Non
         return df
     df.iloc[0] = 0.0                                   # growth starts at the start date's close
     return (1 + df).cumprod()
+
+
+def trend_flip_prices(closes: pd.DataFrame, cash: pd.Series, lookback: int) -> pd.Series:
+    """Price at which each ETF's trend signal flips at the latest close.
+
+    The signal is on while the trailing return beats cash:
+    P / P_ago - 1 > sum of daily cash returns over the window, so the flip is
+    P_ago * (1 + that sum). Above it the trend sleeve holds the ETF; below, it sells.
+    The reference price rolls forward a day at a time, so the level moves slowly.
+    """
+    p_ago = closes.iloc[-1 - lookback]
+    cash_sum = float(cash.iloc[-lookback:].sum())
+    return p_ago * (1 + cash_sum)
 
 
 def current_targets(cache_dir: str | None = None, now: datetime | None = None) -> dict:
@@ -147,6 +183,7 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
     trend = P.target_weights(signal.loc[d], vol.loc[d], corr[d], cfg)
     book = book_from_trend(trend)
     lookback_ret = closes.iloc[-1] / closes.iloc[-1 - cfg.lookback] - 1
+    flip = trend_flip_prices(closes, cash, cfg.lookback)
     return {
         "strategy": STRATEGY_ID,
         "as_of_close": d.strftime("%Y-%m-%d"),
@@ -161,13 +198,16 @@ def current_targets(cache_dir: str | None = None, now: datetime | None = None) -
              "trend_weight": round(LEVERAGE * TREND_SHARE * float(trend[s]), 5),
              "trend_on": bool(signal.loc[d, s] == 1), "return_12m": round(float(lookback_ret[s]), 4),
              "vol_annual": round(float(vol.loc[d, s] * np.sqrt(P.TRADING_DAYS)), 4),
-             "last_close": round(float(closes.loc[d, s]), 4)}
+             "last_close": round(float(closes.loc[d, s]), 4),
+             "ret_1d": round(float(closes[s].iloc[-1] / closes[s].iloc[-2] - 1), 5),
+             "flip_price": round(float(flip[s]), 4),
+             "flip_move": round(float(flip[s] / closes.loc[d, s] - 1), 4)}
             for s in cfg.universe],
         "sleeve_gross": round(float(trend.sum()), 4),
         "next_rebalance": next_rebalance_date(now).strftime("%Y-%m-%d"),
     }
 
 
-__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "STRATEGY_ID", "BAND", "LIVE_START",
-           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "tracking_since", "book_from_trend", "book_decisions",
-           "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets"]
+__all__ = ["CORE", "CORE_SHARE", "TREND_SHARE", "LEVERAGE", "MAX_GROSS", "WHOLE_SHARES", "STRATEGY_ID", "BAND", "LIVE_START",
+           "SHADOW_ID", "SHADOW_START", "shadow_decisions", "TREND_FILTER_ID", "trend_filter_decisions", "tracking_since", "book_from_trend", "book_decisions",
+           "completed_daily", "is_rebalance_day", "next_rebalance_date", "current_targets", "trend_flip_prices"]

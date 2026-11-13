@@ -181,6 +181,8 @@ export interface TargetAsset {
   return_12m: number;
   vol_annual: number;
   last_close: number;
+  flip_price: number;   // price where the trend signal flips at the latest close
+  flip_move: number;    // move from the last close needed to reach it
 }
 
 export interface Targets {
@@ -274,3 +276,50 @@ export interface ModelStudy {
 }
 
 export const getResearch = () => call<ResearchResponse>("/api/research");
+
+// ---------------------------------------------------------------------------
+// market outlook
+// ---------------------------------------------------------------------------
+export type Quantiles = Record<"q025" | "q050" | "q100" | "q250" | "q500" | "q750" | "q900" | "q950" | "q975", number>;
+
+export interface OutlookHorizon {
+  h: number;
+  label: string;
+  ret: Quantiles;          // simple returns
+  p_down5: number;
+  p_down10: number;
+  p_up5: number;
+  p_up: number;
+}
+
+export type Outlook =
+  | { status: "error"; message: string }
+  | {
+      status: "ok";
+      as_of_close: string;
+      index: string;
+      spot: number;
+      method: string;
+      risk: { vol_forecast_annual: number; vol_percentile: number; label: "calm" | "normal" | "elevated" | "stressed"; vix: number };
+      state: { trend_12m_excess: number; above_sma10: boolean; drawdown_from_high: number };
+      horizons: OutlookHorizon[];
+      fan: ({ step: number } & Quantiles)[];      // index levels
+      history: { date: string; close: number }[];
+      book?: { beta: number; resid_vol_annual: number; horizons: Record<string, Quantiles & { p_down5: number }> } | null;
+      record?: Record<string, Record<"dev" | "holdout", { cover80: number; cover95: number; crps_skill_vs_hist: number; n: number }>>;
+      forward?: ForwardRecord;
+    };
+
+export type ForwardRecord =
+  | { status: "unavailable" | "empty"; message?: string; url: string }
+  | {
+      status: "ok";
+      url: string;
+      view_url: string;
+      logged: number;
+      first: string | null;
+      next_result: string | null;
+      horizons: Record<string, { label: string; n: number; cover50?: number; cover80?: number; cover90?: number; cover95?: number; brier_up?: number }>;
+    };
+
+export const getOutlook = () => call<Outlook>("/api/outlook");

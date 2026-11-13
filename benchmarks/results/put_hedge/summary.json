@@ -1,0 +1,353 @@
+{
+ "period": [
+  "2007-02-28",
+  "2026-11-09"
+ ],
+ "hedge_frac": 0.6299999999999999,
+ "variants": {
+  "current": {
+   "full": {
+    "start": "2007-02-28",
+    "end": "2026-11-09",
+    "years": 19.67,
+    "cagr": 0.095,
+    "vol": 0.1425,
+    "sharpe": 0.601,
+    "sortino": 0.779,
+    "max_drawdown": -0.351,
+    "calmar": 0.271,
+    "worst_month": -0.1205,
+    "pct_positive_months": 0.639,
+    "total_return": 4.9654
+   },
+   "dev": {
+    "start": "2007-02-28",
+    "end": "2019-12-31",
+    "years": 12.83,
+    "cagr": 0.0947,
+    "vol": 0.133,
+    "sharpe": 0.685,
+    "sortino": 0.899,
+    "max_drawdown": -0.351,
+    "calmar": 0.27,
+    "worst_month": -0.1205,
+    "pct_positive_months": 0.645,
+    "total_return": 2.1934
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0957,
+    "vol": 0.1589,
+    "sharpe": 0.475,
+    "sortino": 0.613,
+    "max_drawdown": -0.2697,
+    "calmar": 0.355,
+    "worst_month": -0.0875,
+    "pct_positive_months": 0.627,
+    "total_return": 0.8681
+   },
+   "losing_years": 4,
+   "worst_year": -0.2277,
+   "cvar95_month": -0.0779,
+   "crises": {
+    "2008 crisis": -0.3403,
+    "2009 rebound": 0.4047,
+    "2018 Q4": -0.1587,
+    "COVID crash": -0.2365,
+    "2020 rebound": 0.4858,
+    "2022 bear": -0.2633,
+    "2023-24 rally": 0.363
+   }
+  },
+  "core_tsmom12 (reference)": {
+   "full": {
+    "start": "2007-02-28",
+    "end": "2026-11-09",
+    "years": 19.67,
+    "cagr": 0.0864,
+    "vol": 0.1166,
+    "sharpe": 0.638,
+    "sortino": 0.78,
+    "max_drawdown": -0.2052,
+    "calmar": 0.421,
+    "worst_month": -0.0788,
+    "pct_positive_months": 0.626,
+    "total_return": 4.102
+   },
+   "dev": {
+    "start": "2007-02-28",
+    "end": "2019-12-31",
+    "years": 12.83,
+    "cagr": 0.0832,
+    "vol": 0.1082,
+    "sharpe": 0.717,
+    "sortino": 0.932,
+    "max_drawdown": -0.1243,
+    "calmar": 0.67,
+    "worst_month": -0.0788,
+    "pct_positive_months": 0.632,
+    "total_return": 1.7905
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0923,
+    "vol": 0.1309,
+    "sharpe": 0.522,
+    "sortino": 0.599,
+    "max_drawdown": -0.2052,
+    "calmar": 0.45,
+    "worst_month": -0.0705,
+    "pct_positive_months": 0.614,
+    "total_return": 0.8284
+   },
+   "losing_years": 4,
+   "worst_year": -0.1232,
+   "cvar95_month": -0.0591,
+   "crises": {
+    "2008 crisis": 0.0114,
+    "2009 rebound": 0.0551,
+    "2018 Q4": -0.1167,
+    "COVID crash": -0.1457,
+    "2020 rebound": 0.2472,
+    "2022 bear": -0.1283,
+    "2023-24 rally": 0.3272
+   }
+  },
+  "put5": {
+   "full": {
+    "start": "2007-02-28",
+    "end": "2026-11-09",
+    "years": 19.67,
+    "cagr": 0.0698,
+    "vol": 0.1071,
+    "sharpe": 0.541,
+    "sortino": 0.775,
+    "max_drawdown": -0.2947,
+    "calmar": 0.237,
+    "worst_month": -0.0787,
+    "pct_positive_months": 0.601,
+    "total_return": 2.7732
+   },
+   "dev": {
+    "start": "2007-02-28",
+    "end": "2019-12-31",
+    "years": 12.83,
+    "cagr": 0.0707,
+    "vol": 0.0976,
+    "sharpe": 0.665,
+    "sortino": 0.974,
+    "max_drawdown": -0.2947,
+    "calmar": 0.24,
+    "worst_month": -0.0787,
+    "pct_positive_months": 0.6,
+    "total_return": 1.4037
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0682,
+    "vol": 0.1231,
+    "sharpe": 0.366,
+    "sortino": 0.521,
+    "max_drawdown": -0.2595,
+    "calmar": 0.263,
+    "worst_month": -0.0696,
+    "pct_positive_months": 0.602,
+    "total_return": 0.5697
+   },
+   "losing_years": 4,
+   "worst_year": -0.2245,
+   "cvar95_month": -0.0622,
+   "crises": {
+    "2008 crisis": -0.2836,
+    "2009 rebound": 0.2427,
+    "2018 Q4": -0.099,
+    "COVID crash": -0.1247,
+    "2020 rebound": 0.2558,
+    "2022 bear": -0.2515,
+    "2023-24 rally": 0.3081
+   },
+   "net_premium_per_year": 0.0469,
+   "adopt": false,
+   "sharpe_diff_full": {
+    "diff": -0.06,
+    "ci95": [
+     -0.194,
+     0.09
+    ]
+   },
+   "sensitivity": {
+    "-2% vol": {
+     "cagr": 0.0802,
+     "sharpe": 0.625,
+     "max_drawdown": -0.2817
+    },
+    "+2% vol": {
+     "cagr": 0.0583,
+     "sharpe": 0.444,
+     "max_drawdown": -0.3079
+    }
+   }
+  },
+  "put10": {
+   "full": {
+    "start": "2007-02-28",
+    "end": "2026-11-09",
+    "years": 19.67,
+    "cagr": 0.0777,
+    "vol": 0.1209,
+    "sharpe": 0.553,
+    "sortino": 0.768,
+    "max_drawdown": -0.359,
+    "calmar": 0.216,
+    "worst_month": -0.0924,
+    "pct_positive_months": 0.609,
+    "total_return": 3.3581
+   },
+   "dev": {
+    "start": "2007-02-28",
+    "end": "2019-12-31",
+    "years": 12.83,
+    "cagr": 0.0779,
+    "vol": 0.1105,
+    "sharpe": 0.659,
+    "sortino": 0.935,
+    "max_drawdown": -0.359,
+    "calmar": 0.217,
+    "worst_month": -0.0924,
+    "pct_positive_months": 0.6,
+    "total_return": 1.6178
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0774,
+    "vol": 0.1384,
+    "sharpe": 0.402,
+    "sortino": 0.556,
+    "max_drawdown": -0.2903,
+    "calmar": 0.267,
+    "worst_month": -0.0886,
+    "pct_positive_months": 0.627,
+    "total_return": 0.6648
+   },
+   "losing_years": 4,
+   "worst_year": -0.2534,
+   "cvar95_month": -0.0758,
+   "crises": {
+    "2008 crisis": -0.3485,
+    "2009 rebound": 0.3164,
+    "2018 Q4": -0.1326,
+    "COVID crash": -0.1624,
+    "2020 rebound": 0.3093,
+    "2022 bear": -0.2833,
+    "2023-24 rally": 0.3477
+   },
+   "net_premium_per_year": 0.0196,
+   "adopt": false,
+   "sharpe_diff_full": {
+    "diff": -0.048,
+    "ci95": [
+     -0.134,
+     0.054
+    ]
+   },
+   "sensitivity": {
+    "-2% vol": {
+     "cagr": 0.0823,
+     "sharpe": 0.585,
+     "max_drawdown": -0.3519
+    },
+    "+2% vol": {
+     "cagr": 0.0721,
+     "sharpe": 0.513,
+     "max_drawdown": -0.3666
+    }
+   }
+  },
+  "collar5": {
+   "full": {
+    "start": "2007-02-28",
+    "end": "2026-11-09",
+    "years": 19.67,
+    "cagr": 0.0802,
+    "vol": 0.0972,
+    "sharpe": 0.685,
+    "sortino": 0.942,
+    "max_drawdown": -0.2402,
+    "calmar": 0.334,
+    "worst_month": -0.0693,
+    "pct_positive_months": 0.605,
+    "total_return": 3.5584
+   },
+   "dev": {
+    "start": "2007-02-28",
+    "end": "2019-12-31",
+    "years": 12.83,
+    "cagr": 0.0864,
+    "vol": 0.0888,
+    "sharpe": 0.884,
+    "sortino": 1.253,
+    "max_drawdown": -0.1828,
+    "calmar": 0.472,
+    "worst_month": -0.0675,
+    "pct_positive_months": 0.6,
+    "total_return": 1.895
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0687,
+    "vol": 0.1114,
+    "sharpe": 0.396,
+    "sortino": 0.538,
+    "max_drawdown": -0.2402,
+    "calmar": 0.286,
+    "worst_month": -0.0693,
+    "pct_positive_months": 0.614,
+    "total_return": 0.5746
+   },
+   "losing_years": 4,
+   "worst_year": -0.2126,
+   "cvar95_month": -0.0586,
+   "crises": {
+    "2008 crisis": -0.1679,
+    "2009 rebound": 0.2355,
+    "2018 Q4": -0.0951,
+    "COVID crash": -0.1088,
+    "2020 rebound": 0.2269,
+    "2022 bear": -0.2337,
+    "2023-24 rally": 0.2814
+   },
+   "net_premium_per_year": 0.0115,
+   "adopt": false,
+   "sharpe_diff_full": {
+    "diff": 0.083,
+    "ci95": [
+     -0.071,
+     0.262
+    ]
+   },
+   "sensitivity": {
+    "-2% vol": {
+     "cagr": 0.0823,
+     "sharpe": 0.693,
+     "max_drawdown": -0.2402
+    },
+    "+2% vol": {
+     "cagr": 0.0784,
+     "sharpe": 0.679,
+     "max_drawdown": -0.2402
+    }
+   }
+  }
+ },
+ "adopted": []
+}

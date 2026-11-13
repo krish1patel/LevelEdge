@@ -3,6 +3,7 @@ import { AlertCircle, Info, ShieldCheck } from "lucide-react";
 import { getPortfolio, type LivePaper, type PortfolioBacktest, type PortfolioResponse, type SeriesKey, type Targets } from "../api";
 import { fmtIsoDay, fmtMoney, fmtNum, fmtRate, fmtSignedPct } from "../format";
 import { XYChart, type Series } from "./XYChart";
+import { OutlookCard } from "./Outlook";
 
 const NAMES: Record<SeriesKey, string> = {
   book: "LevelEdge book",
@@ -71,6 +72,8 @@ export function Portfolio() {
       <div className="grid-main">
         <div className="side main-col">
           <LiveAccount live={live} />
+          {t && <TriggersCard t={t} live={live} />}
+          <OutlookCard live={live} />
           {bt ? <BacktestCards bt={bt} /> : data ? (
             <section className="card"><p className="help">Run <code>python benchmarks/paper_portfolio.py</code> to generate the backtest.</p></section>
           ) : (
@@ -298,6 +301,63 @@ function BacktestCards({ bt }: { bt: PortfolioBacktest }) {
 }
 
 // ---------------------------------------------------------------------------
+const BAND = 0.02;   // live.BAND: an ETF trades only when it is more than 2 points off target
+
+function TriggersCard({ t, live }: { t: Targets; live: LivePaper | undefined }) {
+  const held = live?.status === "ok" ? Object.fromEntries(live.positions.map((p) => [p.symbol, p.weight])) : null;
+  const rows = [...t.assets]
+    .map((a) => {
+      const now = held ? held[a.symbol] ?? 0 : null;
+      const drift = now == null ? null : now - a.weight;
+      return { ...a, now, drift, trades: drift != null && Math.abs(drift) > BAND };
+    })
+    .sort((x, y) => Math.abs(x.flip_move) - Math.abs(y.flip_move));
+  const pending = rows.filter((r) => r.trades);
+  return (
+    <section className="card" aria-labelledby="trig-h">
+      <div className="card-head">
+        <div>
+          <h2 id="trig-h">What would make it trade</h2>
+          <p className="card-sub">
+            Checked on {fmtIsoDay(t.next_rebalance)} after the close; orders fill at the next open. Nearest trend flips first.
+          </p>
+        </div>
+      </div>
+      <div className="table-scroll">
+        <table className="table">
+          <thead>
+            <tr>
+              <th scope="col">ETF</th>
+              {held && <th scope="col" className="r">Holding</th>}
+              <th scope="col" className="r">Target</th>
+              {held && <th scope="col" className="r">Drift</th>}
+              <th scope="col">Trend</th>
+              <th scope="col" className="r">Trend flips at</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.symbol} data-emph={r.trades ? "true" : undefined}>
+                <th scope="row" className="row-h">{r.symbol}</th>
+                {held && <td className="r num">{fmtRate(r.now ?? 0, 1)}</td>}
+                <td className="r num">{fmtRate(r.weight, 1)}</td>
+                {held && <td className="r num">{r.drift == null ? "—" : `${fmtSignedPct(r.drift, 1)}${r.trades ? " · trades" : ""}`}</td>}
+                <td>{r.trend_on ? "On: sells below" : "Off: buys above"}</td>
+                <td className="r num">${r.flip_price.toFixed(2)} <span className="move">{fmtSignedPct(r.flip_move, 1)} from {r.last_close.toFixed(2)}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="help">
+        {held ? (pending.length ? `${pending.length} ETF${pending.length > 1 ? "s are" : " is"} past the ${(BAND * 100).toFixed(0)}-point band and would trade at the next rebalance. ` : `Every ETF is within the ${(BAND * 100).toFixed(0)}-point band, so nothing would trade if the rebalance were today. `) : ""}
+        A trend flip moves only the trend sleeve's share of an ETF; SPY and IEF also carry the fixed 60/40 core. Flip prices are the price 12 months ago plus T-bill interest since, so they drift slowly day to day.
+        Checking these triggers daily instead of weekly doubled trading costs for no gain in the backtest, so the book acts once a week.
+      </p>
+    </section>
+  );
+}
+
 function TargetsCard({ t, loading }: { t: Targets | null; loading: boolean }) {
   return (
     <section className="card" aria-labelledby="tgt-h">

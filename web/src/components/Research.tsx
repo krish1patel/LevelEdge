@@ -208,12 +208,12 @@ function ConstructionCard({ c }: { c: NonNullable<ResearchResponse["construction
 function FrontierCard({ c }: { c: NonNullable<ResearchResponse["construction"]> }) {
   const book = c.frontier.filter((f) => f.family === "current_book_levered");
   return (
-    <Experiment id="fr" title="How much return each unit of risk buys" verdict="neutral" verdictText="Leverage adds return at a steep risk cost; 1.5× was chosen"
+    <Experiment id="fr" title="How much return each unit of risk buys" verdict="neutral" verdictText="Leverage adds return only if borrowing is cheap; at a retail margin rate it loses, so the book holds none"
       question="Holding the book at more than 100% gross, financed by margin, how do return and the worst fall scale?"
       method="The unlevered book's own weights scaled by a fixed multiple, borrowing at T-bills + 2%, 2007 onward. SPY alone: about 10.7% a year with a −55% worst fall.">
       <PerfTable cols={["Gross", "Return", "Worst fall", "Worst year", "Sharpe"]}
         rows={book.map((f) => ({ label: `${f.knob}×`, emph: f.knob === 1.5, cells: [rate(f.cagr), rate(f.max_drawdown, 0), rate(f.worst_year, 0), sh(f.sharpe)] }))} />
-      <p className="help">At 2× the book nearly matches SPY's return with a shallower worst fall, but borrowing costs pull Sharpe down as leverage rises.</p>
+      <p className="help">At 2× the book nearly matches SPY's return with a shallower worst fall, but borrowing costs pull Sharpe down as leverage rises. These curves assume borrowing at T-bills + 2%. A retail account pays far more (Fidelity charged about 11.6% in November 2026, roughly T-bills + 7.5%), and at that rate 1.5× returned 6.6% a year with a −37% worst fall, against 7.3% and −24% with no borrowing. The traded book holds no margin.</p>
     </Experiment>
   );
 }
@@ -253,7 +253,7 @@ function LiteratureCard({ l }: { l: NonNullable<ResearchResponse["literature"]> 
   return (
     <Experiment id="lit" title="Published strategies as the book's sleeve" verdict="neutral"
       verdictText="Defensive Asset Allocation leads but isn't proven: tracked as a shadow book"
-      question="Do strategies from published papers, implemented exactly as specified, beat the current trend sleeve inside the 1.5× book?"
+      question="Do strategies from published papers, implemented exactly as specified, beat the current trend sleeve inside the book?"
       method={`${l.period[0]} onward, borrowing at T-bills + 2%, 5 bp costs. Selected on Sharpe before 2020, then 2020 onward read once (fresh for all of them). Corrected for ${l.deflated.trials} strategies tried, there is a ${rate(l.deflated.deflated_sharpe_prob, 0)} chance the winner is not luck; 95% is the usual bar.`}>
       <PerfTable cols={["Sleeve", "Return", "Sharpe before 2020", "Sharpe from 2020"]}
         rows={books.map(([k, n]) => ({ label: n, emph: k === l.selected, cells: [rate(l.full[k].cagr), sh(l.dev[k].sharpe), sh(l.holdout[k].sharpe)] }))} />

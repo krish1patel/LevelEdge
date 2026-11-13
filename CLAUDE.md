@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 LevelEdge has three parts, all in one dashboard:
 
-- **Portfolio (default view):** a paper-traded book, 70% 60/40 (SPY/IEF) + 30% trend sleeve over 11 ETFs, rebalanced weekly in an Alpaca **paper** account (`leveledge.live`, `leveledge.broker`, `scripts/paper_trade.py`, `.github/workflows/paper_trade.yml`).
+- **Portfolio (default view):** a paper-traded book, 70% 60/40 (SPY/IEF) + 30% trend sleeve over 11 ETFs, rebalanced weekly in an Alpaca **paper** account (`leveledge.live`, `leveledge.broker`, `scripts/paper_trade.py`, `.github/workflows/paper_trade.yml`). No margin and whole shares only, because the user copies the trades by hand in a real Fidelity account (`scripts/mirror_ticket.py` plans their orders from a Fidelity positions export).
 - **Forecaster:** a **calibrated probability that a stock or crypto price closes above a level K at a target time T**, plus the full forecast distribution (`leveledge` v2 forecaster; live forward test via `scripts/forwardtest.py` → Supabase `forwardtest_logs`).
 - **Research:** the evidence log (`/api/research`, built from `benchmarks/results/*`).
 
@@ -16,8 +16,12 @@ LevelEdge has three parts, all in one dashboard:
 
 - LevelEdge's probabilities **do not beat Kalshi's prices** after fees: taker (15–60 min, `kalshi_edge.py`), market-making (`kalshi_maker.py`) and morning-to-4 PM over 2024–2026 (`kalshi_horizon.py`) all failed. Don't build trading UI on Kalshi edge.
 - The trend sleeve beats random pickers but not 60/40 on Sharpe; its value is smaller drawdowns (`etf_trend.py`).
+- Leveraged ETFs are the only cheap leverage in a cash account (`aggressive_research.py`, `aggressive_longrun.py`): held without a sell rule, 2x/3x funds lost 91-100% in past crashes; with the 200-day-average rule they survived but with -59% (2x S&P) to -90% (3x Nasdaq-100) worst falls. The Nasdaq-100's 2007-2026 run flatters any QQQ choice; judge on the 1985+ record.
+- Buying the dip fails (`dip_research.py`): after a 20% monthly fall an S&P 500 member beat the average member bought the same day only 49% of the time over the next 3 months (P(up) 63% vs 74%); no dip rule on stocks or ETFs passed both periods. A broader 36-ETF trend sleeve did not beat the 11-ETF one.
+- Leverage loses at retail margin rates. At Fidelity's ~11.6% (T-bill + ~7.5%, Nov 2026) the 1.5x book earned 6.6%/yr with a -37% worst fall vs 7.3% and -24% unlevered (2007-2026); the T-bill + 2% assumption had made 1.5x look like 9.0%. The book is unlevered (`core6040_trend30_cash_v3`, from 2026-11-16).
 - An 80-variant search failed its 2020+ holdout with reversed rankings (`etf_research.py`). The traded book uses the original pre-declared rules. Adding variants means re-running the holdout protocol, not picking a winner.
 - LevelEdge's `VolScaler` ties EWMA on daily ETF vol; EWMA is used in the portfolio.
+- Volatility (move size) is forecastable; the timing of falls is not. HMM, jump models, VIX, turbulence and absorption ratio all fail to predict 5% monthly drops out of sample (`regime_research.py`). Puts and collars on the core cost more than they protect (`put_hedge_research.py`). Only the 12-month trend filter on the core passed its pre-declared test (`hedge_research.py`); it is not adopted until the user decides.
 
 ## Setup
 
@@ -38,6 +42,7 @@ cd web && npm run dev                               # hot-reload UI at :5173, pr
 .venv/bin/python benchmarks/compare.py              # v1-vs-v2 out-of-sample benchmark (~8 min, network)
 python scripts/forwardtest.py                       # live forward test (needs Supabase)
 python scripts/paper_trade.py --force               # paper rebalance plan (dry run; add --execute to submit)
+python scripts/mirror_ticket.py --positions <Fidelity positions CSV>   # whole-share orders to copy the book in Fidelity
 .venv/bin/python benchmarks/paper_portfolio.py      # backtest of the traded book -> results/paper_portfolio (dashboard data)
 .venv/bin/python benchmarks/etf_research.py         # 80-variant search with 2020+ holdout
 .venv/bin/python benchmarks/kalshi_edge.py          # model vs Kalshi prices (network; caches in benchmarks/cache/)
@@ -63,6 +68,10 @@ m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 | `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_v1`), weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()` |
 | `broker.py` | Alpaca client locked to paper; `plan_orders()` never borrows and skips drift under the band |
 | `kalshi.py` / `edge.py` | Kalshi public market data (live and archived candles); after-fee edge and joint event-level Kelly sizing |
+| `regime.py` | GJR-GARCH-t with filtered historical simulation, HAR, two-state HMM, statistical jump model, turbulence, absorption ratio, CRPS (numpy/scipy only) |
+| `safety.py` | Pre-trade checks run by `scripts/paper_trade.py` before any order (account, data freshness, plausible moves, price cross-check, order sizes, gross, no borrowing, duplicate runs) |
+| `mirror.py` | Fidelity positions CSV parser and the whole-share, no-margin ticket for copying the book in a real account |
+| `outlook.py` | Live S&P 500 outlook for `/api/outlook`: average of VIX, HAR and GJR distributions; 1-day to 3-month fan, odds, the book's range via its beta |
 
 Validation: expanding walk-forward, last 60% of rows in 6 folds, purge `h` bars plus embargo `h` bars. Metrics: log loss, Brier, AUC, reliability, 80%-range coverage, per-level Brier skill vs climatology.
 
@@ -76,6 +85,8 @@ Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benc
 - P(above) must be non-increasing in the level.
 - Times are US/Eastern; bars are indexed by start time; stocks use regular-session bars only.
 - Paper trading only: never remove the `LEVELEDGE_ALLOW_LIVE_TRADING` guard or let `plan_orders` spend more than cash plus sale proceeds.
+- The user mirrors every paper trade in a real Fidelity account: keep `MAX_GROSS = 1.0`, `WHOLE_SHARES = True` and the `no_borrowing` check, and price any backtest that borrows at a retail margin rate, not T-bill + 2%.
+- Never bypass or loosen `leveledge.safety.pretrade_checks` to get a run through; a halted run is the system working. The forward log (`forward-log` branch) is append-only: never rewrite or delete its history.
 - The traded book's rules are pre-declared; changing them needs `paper_portfolio.py` and the holdout protocol re-run, and a new `STRATEGY_ID`.
 - Stock forecasts are not compared with markets before 09:45 ET (the model has no bar from the session yet).
 - Forward-test rows carry `model_type` (`leveledge_v2_stacked`, v1 rows are `xgboost_classifier`) so the dashboard can compare versions.

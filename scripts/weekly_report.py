@@ -36,7 +36,8 @@ from leveledge.constants import US_EASTERN  # noqa: E402
 
 
 def pct(x: float, d: int = 2) -> str:
-    return f"{'+' if x > 0 else '−' if x < 0 else ''}{abs(x) * 100:.{d}f}%"
+    r = round(x * 100, d)                      # no sign on values that round to zero
+    return f"{'+' if r > 0 else '−' if r < 0 else ''}{abs(r):.{d}f}%"
 
 
 def money(x: float) -> str:
@@ -58,6 +59,20 @@ def tbill_rate() -> float:
         return float(h["Close"].dropna().iloc[-1]) / 100
     except Exception:  # noqa: BLE001
         return 0.04
+
+
+def dividends_missed(positions: list[dict], since: pd.Timestamp) -> float:
+    """Dividends a real account would have received on today's share counts since ``since``."""
+    try:
+        import yfinance as yf
+        total = 0.0
+        for p in positions:
+            d = yf.Ticker(p["symbol"]).dividends
+            d.index = pd.DatetimeIndex(d.index).tz_localize(None)
+            total += float(p["qty"]) * float(d[d.index > since].sum())
+        return total
+    except Exception:  # noqa: BLE001 - an estimate; the report must still go out
+        return 0.0
 
 
 def execution_section(b: AlpacaBroker, days: int = 8) -> list[str]:
@@ -128,22 +143,35 @@ def main() -> int:
               f"| Below peak | {pct(equity / peak - 1)} |",
               f"| Cash (negative = margin) | {money(float(acct['cash']))} |"]
 
-    # the paper account charges no margin interest; a real one would
+    # the paper account charges no margin interest; a real one would (Fidelity: about T-bill + 7.5%)
     borrowed = max(0.0, -float(acct["cash"]))
     days = max(1, (curve.index[-1] - curve.index[0]).days)
     tbill = tbill_rate()
-    interest = margin_interest(borrowed, days, tbill, 0.02)
+    interest = margin_interest(borrowed, days, tbill, 0.075)
     if borrowed > 0:
-        lines += [f"| Est. margin interest so far (T-bill {tbill:.2%} + 2%, not charged on paper) | −{money(interest)} |",
+        lines += [f"| Est. margin interest so far (T-bill {tbill:.2%} + 7.5%, about Fidelity's rate; not charged on paper) | −{money(interest)} |",
                   f"| Since start, net of that interest | {pct((equity - interest) / start_eq - 1)} |"]
+    # Alpaca's paper account does not credit dividends; a real account does
+    divs = dividends_missed(b.positions(), curve.index[0])
+    if divs > 0:
+        lines += [f"| Dividends on current holdings since start (paid in a real account, not on paper) | +{money(divs)} |",
+                  f"| Since start, with those dividends | {pct((equity + divs) / start_eq - 1)} |"]
     lines.append("")
     lines += execution_section(b)
 
+    if rec and rec.get("safety"):
+        sf = rec["safety"]
+        lines += [f"Safety checks before trading: {'all ' + str(len(sf['checks'])) + ' passed' if sf['passed'] else 'FAILED: ' + ', '.join(sf['failed'])}"
+                  f" ({'; '.join(c['detail'] for c in sf['checks'] if c['name'] in ('data_fresh', 'order_sizes'))}).", ""]
     if rec and rec.get("orders"):
         lines += [f"### Trades this run ({rec.get('action', '')})", "", "| Order | Size | Reason |", "|---|---|---|"]
         for o in rec["orders"]:
-            size = money(o["notional"]) if o.get("notional") is not None else f"{o.get('qty')} sh"
+            size = money(o["notional"]) if o.get("notional") is not None else f"{float(o.get('qty') or 0):g} sh"
             lines.append(f"| {o['side'].title()} {o['symbol']} | {size} | {o.get('reason', '')} |")
+        lines += ["", "To copy these in Fidelity: they fit an account this size with these holdings. For your own account, "
+                  "download its positions (Portfolio → Positions → Download) and run "
+                  "`python scripts/mirror_ticket.py --positions <file>`; it plans whole-share orders from your actual holdings. "
+                  "Enter sells first, then buys, before Monday's open."]
         errs = [s for s in rec.get("submitted", []) if "error" in s]
         if errs:
             lines += ["", f"**{len(errs)} order(s) failed:** " + "; ".join(f"{e['symbol']}: {e['error']}" for e in errs)]
@@ -157,10 +185,12 @@ def main() -> int:
         if len(tr) >= 2 and len(curve) >= 2:
             acct_ret = equity / start_eq - 1
             rows = [("Paper account (actual, now)", acct_ret), (f"Book rules (model, to the {tr.index[-1]:%b %d} close)", tr["book_rules"].iloc[-1] - 1),
-                    ("Shadow DAA book", tr["shadow_daa"].iloc[-1] - 1), ("60/40", tr["sixty_forty"].iloc[-1] - 1),
+                    ("Shadow DAA book", tr["shadow_daa"].iloc[-1] - 1),
+                    ("Shadow: book + trend filter on the core", tr["shadow_trend_filter"].iloc[-1] - 1),
+                    ("60/40", tr["sixty_forty"].iloc[-1] - 1),
                     ("SPY", tr["spy_buy_hold"].iloc[-1] - 1)]
             lines += [f"### Since {curve.index[0]:%Y-%m-%d}", "", "| | Return |", "|---|---|"] + [f"| {n} | {pct(r)} |" for n, r in rows]
-            lines += ["", "Actual vs model shows execution slippage; the shadow book is the untraded DAA candidate.", ""]
+            lines += ["", "Actual vs model shows execution slippage; the shadow books are untraded candidates rebuilt from public prices.", ""]
     except Exception as e:  # noqa: BLE001 - the report must still go out
         lines += [f"_Benchmark comparison unavailable: {e}_", ""]
 
@@ -174,7 +204,11 @@ def main() -> int:
             lines.append(f"| {p['symbol']} | {mv / equity:.1%} | {'' if tgt is None else f'{tgt:.1%}'} | {money(mv)} | {money(float(p['unrealized_pl']))} |")
         lines.append("")
     t = live.current_targets()
-    lines += [f"Next rebalance: {t['next_rebalance']} after the close. Strategy `{live.STRATEGY_ID}`, paper account."]
+    near = sorted(t["assets"], key=lambda a: abs(a["flip_move"]))[:4]
+    lines += ["### Nearest trend flips", "", "| ETF | Trend | Flips at | Move needed |", "|---|---|---|---|"]
+    lines += [f"| {a['symbol']} | {'on: sells below' if a['trend_on'] else 'off: buys above'} | ${a['flip_price']:,.2f} | {pct(a['flip_move'], 1)} |"
+              for a in near]
+    lines += ["", f"Next rebalance: {t['next_rebalance']} after the close. Strategy `{live.STRATEGY_ID}` (no margin, whole shares), paper account."]
     print("\n".join(lines))
     return 0
 

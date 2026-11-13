@@ -95,3 +95,55 @@ def test_margin_interest_estimate():
     from leveledge.broker import margin_interest
     assert margin_interest(36_500, 10, 0.04, 0.02) == pytest.approx(60.0)
     assert margin_interest(-5, 10, 0.04) == 0.0
+
+
+def test_trend_flip_price_matches_the_signal():
+    import numpy as np
+    from leveledge import portfolio as P
+    idx = pd.bdate_range("2024-01-01", periods=300)
+    closes = pd.DataFrame({"A": np.linspace(100, 110, 300)}, index=idx)
+    cash = pd.Series(0.0001, index=idx)
+    flip = live.trend_flip_prices(closes, cash, 252)["A"]
+    sig = P.momentum_signal(closes, cash, 252)["A"].iloc[-1]
+    assert sig == 1.0 and closes["A"].iloc[-1] > flip                # on, and price is above the flip level
+    bumped = closes.copy()
+    bumped.iloc[-1, 0] = flip * 0.999                                  # just below the flip price
+    assert P.momentum_signal(bumped, cash, 252)["A"].iloc[-1] == 0.0
+
+
+def test_plan_repays_margin_with_whole_share_sells():
+    # 1.3x invested, cash -30k; a no-borrowing book trims every overweight ETF, even inside the band
+    pos = {"SPY": {"market_value": 78_000, "qty": 104}, "IEF": {"market_value": 52_000, "qty": 520},
+           "QQQ": {"market_value": 1_800, "qty": 3}}
+    orders = plan_orders({"SPY": 0.588, "IEF": 0.4, "QQQ": 0.012}, equity=100_000, cash=-31_800, positions=pos,
+                         prices={"SPY": 750, "IEF": 100, "QQQ": 600}, fractionable={"SPY": False, "IEF": False, "QQQ": False},
+                         band=0.02, max_gross=1.0)
+    assert all(o.side == "sell" and float(o.qty).is_integer() for o in orders)
+    assert {o.symbol for o in orders} == {"SPY", "IEF", "QQQ"}       # QQQ's $600 drift is inside the band
+    proceeds = sum(o.qty * {"SPY": 750, "IEF": 100, "QQQ": 600}[o.symbol] for o in orders)
+    assert proceeds >= 31_800
+
+
+def test_fidelity_positions_and_ticket():
+    from leveledge import mirror
+    csv_text = ("﻿Account Number,Account Name,Symbol,Description,Quantity,Last Price,Last Price Change,Current Value,Type\n"
+                "Z1,Individual,SPAXX**,MONEY MARKET,,,,$5000.00,Cash\n"
+                "Z1,Individual,SPY,SPDR S&P500,10,$750.00,,\"$7,500.00\",Cash\n"
+                "Z1,Individual,Pending Activity,,,,,-$100.00,\n\n"
+                "\"The data and information in this spreadsheet is provided to you solely for your use\"\n")
+    pos, cash = mirror.parse_fidelity_positions(csv_text)
+    assert pos == {"SPY": {"qty": 10.0, "market_value": 7500.0}} and cash == 4900.0
+    orders, summ = mirror.ticket({"SPY": 0.6, "IEF": 0.4}, {"SPY": 750.0, "IEF": 100.0}, pos, cash, band=0.02)
+    assert all(float(o.qty).is_integer() for o in orders)
+    assert summ["cash_after"] >= 0
+    assert abs(summ["weights_after"]["IEF"] - 0.4) < 0.02         # whole shares and a 0.5% cash buffer
+
+
+def test_fidelity_file_with_two_accounts_needs_a_choice():
+    import pytest
+    from leveledge import mirror
+    txt = ("Account Number,Account Name,Symbol,Quantity,Current Value\n"
+           "Z1,Individual,SPY,1,$750\nZ2,Roth IRA,SPY,2,$1500\n")
+    with pytest.raises(ValueError):
+        mirror.parse_fidelity_positions(txt)
+    assert mirror.parse_fidelity_positions(txt, "Roth IRA")[0]["SPY"]["qty"] == 2.0
