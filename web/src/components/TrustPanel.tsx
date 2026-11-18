@@ -3,9 +3,9 @@ import type { ForecastResponse } from "../api";
 import { fmtPct } from "../format";
 
 const VERDICT = {
-  model_adds_skill: { icon: SlidersHorizontal, title: "Pattern adjustment on" },
-  baseline: { icon: CircleDot, title: "Volatility baseline only" },
-  unvalidated: { icon: CircleHelp, title: "Not validated" },
+  model_adds_skill: { icon: SlidersHorizontal, title: "Pattern model is adjusting the forecast", plain: "In testing, the pattern-recognition model beat the simpler volatility model on data it hadn't seen, so it gets a say." },
+  baseline: { icon: CircleDot, title: "Using the simpler volatility model alone", plain: "The pattern-recognition model didn't beat the simpler volatility model in testing, so it gets no say. That is the safer choice, and the usual one." },
+  unvalidated: { icon: CircleHelp, title: "Not enough history to test", plain: "There wasn't enough past data to test this forecast, so treat it with extra caution." },
 } as const;
 
 export function TrustPanel({ data }: { data: ForecastResponse }) {
@@ -20,25 +20,25 @@ export function TrustPanel({ data }: { data: ForecastResponse }) {
     : null;
 
   const covWarn = cov == null ? null
-    : cov < 0.72 ? `Recent 80% ranges held only ${fmtPct(cov)} of the time, so real outcomes may land outside the range more often than it suggests.`
-    : cov > 0.88 ? `Recent 80% ranges held ${fmtPct(cov)} of the time, so the range is probably wider than it needs to be.`
+    : cov < 0.72 ? `Recent 8-in-10 ranges held only ${fmtPct(cov)} of the time, so real outcomes may land outside the range more often than it suggests.`
+    : cov > 0.88 ? `Recent 8-in-10 ranges held ${fmtPct(cov)} of the time, so the range is probably wider than it needs to be.`
     : null;
 
   return (
     <section className="card" aria-labelledby="trust-h">
       <div className="card-head">
-        <h2 id="trust-h">How far to trust this</h2>
+        <h2 id="trust-h">How far to trust this forecast</h2>
       </div>
       <dl className="kv">
-        <dt>80% range held, out of sample</dt>
+        <dt>How often its 8-in-10 ranges held in testing</dt>
         <dd className="num">{covNote}</dd>
-        <dt>Weight on pattern model</dt>
+        <dt>Pattern model's share of the forecast</dt>
         <dd className="num">{fmtPct(trust.xgb_weight)}</dd>
-        <dt>Validated on</dt>
-        <dd className="num">{diagnostics.rows.toLocaleString()} bars</dd>
+        <dt>Tested on</dt>
+        <dd className="num">{diagnostics.rows.toLocaleString()} past price bars</dd>
         {best && (
           <>
-            <dt>Best level skill vs base rate</dt>
+            <dt>Best gain over a naive guess</dt>
             <dd className="num">{(best.backtest!.brier_skill! * 100).toFixed(0)}% at {best.input}</dd>
           </>
         )}
@@ -48,11 +48,11 @@ export function TrustPanel({ data }: { data: ForecastResponse }) {
       )}
       <div className="trust-head">
         <Icon size={20} aria-hidden="true" color="var(--ink-3)" />
-        <p><strong>{v.title}</strong>{trust.detail}</p>
+        <p><strong>{v.title}</strong>{v.plain}</p>
       </div>
       <p className="help">
-        Out-of-sample means walk-forward tests on held-out bars the model never trained on. A calibrated 80% range
-        should hold about 80% of the time.
+        Every number here comes from testing the model on past prices it never saw while learning. An honest 8-in-10 range
+        should hold about 80% of the time; much less means the forecast is overconfident.
       </p>
     </section>
   );

@@ -9,9 +9,11 @@ import { Diagnostics } from "./components/Diagnostics";
 import { TrackRecord } from "./components/TrackRecord";
 import { Portfolio } from "./components/Portfolio";
 import { Research } from "./components/Research";
+import { TickerPicker, describeTicker } from "./components/TickerPicker";
+import { Term } from "./components/Term";
 
 const INTERVALS = ["1m", "2m", "5m", "15m", "30m", "1h", "90m", "1d"];
-const SUGGESTED = ["SPY", "QQQ", "NVDA", "TSLA", "AAPL", "MSFT", "IWM", "BTC-USD", "ETH-USD"];
+const INTERVAL_LABEL: Record<string, string> = { "1m": "1-minute", "2m": "2-minute", "5m": "5-minute", "15m": "15-minute", "30m": "30-minute", "1h": "1-hour", "90m": "90-minute", "1d": "Daily" };
 type Preset = "close" | "next" | "hour" | "custom";
 type Tab = "forecast" | "diagnostics" | "track";
 type Section = "portfolio" | "forecaster" | "research";
@@ -104,8 +106,8 @@ export default function App() {
     store.set("le.theme", theme);
   }, [theme]);
 
-  const run = useCallback(async (lv: string[] = levels) => {
-    const sym = ticker.trim().toUpperCase();
+  const run = useCallback(async (lv: string[] = levels, symOverride?: string) => {
+    const sym = (symOverride ?? ticker).trim().toUpperCase();
     if (!sym) { setError("Enter a ticker, for example SPY or BTC-USD."); return; }
     const target = targetFor(preset, custom, isCryptoTicker(sym));
     abort.current?.abort();
@@ -173,14 +175,12 @@ export default function App() {
             {theme === "system" ? <Monitor size={16} /> : theme === "light" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           {section === "forecaster" && <form className="controls" onSubmit={(e) => { e.preventDefault(); run(); }} aria-label="Forecast settings">
-            <label className="field">
-              <span>Ticker</span>
-              <input className="input ticker-input" value={ticker} list="tickers" autoComplete="off" spellCheck={false}
-                     onChange={(e) => setTicker(e.target.value.toUpperCase())} aria-label="Ticker" />
-              <datalist id="tickers">{SUGGESTED.map((t) => <option key={t} value={t} />)}</datalist>
-            </label>
             <div className="field">
-              <span id="target-l">Target</span>
+              <span>Stock or fund</span>
+              <TickerPicker value={ticker} onPick={(sym) => { setTicker(sym); run(levels, sym); }} />
+            </div>
+            <div className="field">
+              <span id="target-l">Forecast for</span>
               <div className="segmented" role="group" aria-labelledby="target-l">
                 {([["close", closeLabel(0, ticker)], ["next", closeLabel(1, ticker)], ["hour", "In 1 hour"], ["custom", "Custom"]] as const).map(([k, l]) => (
                   <button key={k} type="button" aria-pressed={preset === k} onClick={() => setPreset(k)}>{l}</button>
@@ -194,20 +194,20 @@ export default function App() {
               </label>
             )}
             <label className="field">
-              <span>Bars</span>
-              <select className="select" value={interval} onChange={(e) => setIntervalV(e.target.value)} aria-label="Bar interval">
-                {INTERVALS.map((i) => <option key={i} value={i}>{i}</option>)}
+              <span>Detail</span>
+              <select className="select" value={interval} onChange={(e) => setIntervalV(e.target.value)} aria-label="Bar size: how finely price history is sliced">
+                {INTERVALS.map((i) => <option key={i} value={i}>{INTERVAL_LABEL[i]} bars</option>)}
               </select>
             </label>
             {backtest && (
               <label className="field">
-                <span>As of (ET)</span>
+                <span>Made as of (ET)</span>
                 <input type="datetime-local" className="input dt-input num" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
               </label>
             )}
             <button type="button" className="btn btn-ghost" aria-pressed={backtest} onClick={() => setBacktest((b) => !b)}
-                    title="Forecast as of a past time">
-              <History size={16} aria-hidden="true" />{backtest ? "Backtest on" : "Backtest"}
+                    title="Replay a forecast as if it were made at a past time, to check it against what happened">
+              <History size={16} aria-hidden="true" />{backtest ? "Past date: on" : "Past date"}
             </button>
             <button className="btn btn-primary" type="submit" disabled={busy}>
               {busy ? <Loader2 size={16} className="spin" aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
@@ -229,16 +229,26 @@ export default function App() {
         )}
 
         {meta && q ? (
-          <section className="summary" aria-live="polite">
-            <h1><span className="sym">{meta.ticker}</span><span className="spot num">{fmtPrice(meta.spot)}</span></h1>
-            <dl className="facts">
-              <div><dt>Last bar closed</dt><dd>{fmtDayTime(meta.anchor_time)}</dd></div>
-              <div><dt>Resolves</dt><dd>{fmtDayTime(meta.effective_target)}</dd></div>
-              <div><dt>Horizon</dt><dd className="num">{horizonPhrase(meta.horizon_bars, meta.interval)}</dd></div>
-              <div><dt>80% range</dt><dd className="num">{fmtPrice(q.q10)} to {fmtPrice(q.q90)}</dd></div>
-              <div><dt>Typical move (1σ)</dt><dd className="num">{fmtSigned(meta.sigma_pct, 2).replace("+", "±")}</dd></div>
-            </dl>
-            {meta.is_backtest && <span className="badge"><History size={14} aria-hidden="true" />Backtest as of {fmtDayTime(meta.as_of)}</span>}
+          <section className="fc-summary" aria-live="polite">
+            <div className="summary">
+              <h1><span className="sym">{meta.ticker}</span><span className="spot num">{fmtPrice(meta.spot)}</span></h1>
+              <dl className="facts">
+                <div><dt>Price as of</dt><dd>{fmtDayTime(meta.anchor_time)}</dd></div>
+                <div><dt>Forecast for</dt><dd>{fmtDayTime(meta.effective_target)}</dd></div>
+                <div><dt>Looks ahead</dt><dd className="num">{horizonPhrase(meta.horizon_bars, meta.interval)}</dd></div>
+                <div><dt>A typical move over that time</dt><dd className="num">{fmtSigned(meta.sigma_pct, 2).replace("+", "±")}</dd></div>
+              </dl>
+              {meta.is_backtest && <span className="badge"><History size={14} aria-hidden="true" />Replayed as of {fmtDayTime(meta.as_of)}</span>}
+            </div>
+            <p className="readout">
+              {describeTicker(meta.ticker) ? `${meta.ticker} (${describeTicker(meta.ticker)})` : meta.ticker} last traded at <b>{fmtPrice(meta.spot)}</b>.
+              {" "}By {fmtDayTime(meta.effective_target)}, LevelEdge expects it to end between <b>{fmtPrice(q.q10)}</b> and <b>{fmtPrice(q.q90)}</b>{" "}
+              <Term k="range80">8 times out of 10</Term>.
+              {data && data.levels.length > 0 && (() => {
+                const near = data.levels.reduce((a, b) => (Math.abs(b.p_above - 0.5) < Math.abs(a.p_above - 0.5) ? b : a));
+                return <> The chance it closes above <b>{fmtPrice(near.level)}</b> is <b>{Math.round(near.p_above * 100)}%</b>; every price you've entered is listed with its chance.</>;
+              })()}
+            </p>
           </section>
         ) : (
           <div className="summary"><div className="skeleton" style={{ width: 420, maxWidth: "100%", height: 40 }} /></div>
@@ -277,8 +287,8 @@ export default function App() {
             <section className="card" aria-labelledby="fan-h">
               <div className="card-head">
                 <div>
-                  <h2 id="fan-h">Where the price can be</h2>
-                  <p className="card-sub">Each band is the forecast range by that bar, scaled from the target forecast. Time runs in trading bars, so closed-market hours take no space.</p>
+                  <h2 id="fan-h" className="takeaway">{meta ? `Where ${meta.ticker} could be by ${fmtDayTime(meta.effective_target)}` : "Where the price could be"}</h2>
+                  <p className="card-sub">The dark line is the price so far. The blue bands show where it's likely to go: the darker band holds half of the outcomes, the lighter one 8 in 10. Hover to read any point. Hours when the market is closed are skipped.</p>
                 </div>
               </div>
               {data ? <FanChart data={data} /> : <div className="skeleton skeleton-chart" aria-label="Loading forecast" />}
@@ -302,7 +312,7 @@ export default function App() {
 
       <footer className="site-foot">
         <span>{section === "forecaster"
-          ? "Probabilities, not trade advice. Regular-session bars from Yahoo Finance; forecasts resolve on the last bar close at or before your target."
+          ? "Probabilities, not trading advice. Prices from Yahoo Finance during regular market hours; a forecast is settled on the last price at or before its target time."
           : "Research and paper trading only, not investment advice. Prices from Yahoo Finance, Kalshi and Alpaca."}</span>
         <span>{section === "forecaster" && meta ? `Fitted in ${meta.elapsed_s.toFixed(1)} s · ` : ""}LevelEdge v2</span>
       </footer>

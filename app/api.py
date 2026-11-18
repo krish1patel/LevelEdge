@@ -600,6 +600,38 @@ def api_research():
     if er:
         out["etf_search"] = {k2: er[k2] for k2 in ("period", "trials", "selected", "deflated_sharpe_dev", "dev", "holdout",
                                                     "holdout_sharpe_vs", "rank_stability")}
+
+    def brief(m: dict) -> dict:
+        return {k: m.get(k) for k in ("cagr", "sharpe", "max_drawdown", "vol")}
+
+    hg = _read_json(RESULTS / "hedge" / "summary.json")
+    if hg:
+        out["hedge"] = {"adopted": hg["adopted"], "variants": {k: {p: brief(v[p]) for p in ("full", "dev", "holdout")}
+                                                               for k, v in hg["variants"].items()}}
+    ph = _read_json(RESULTS / "put_hedge" / "summary.json")
+    if ph:
+        out["put_hedge"] = {"variants": {k: {"full": brief(v["full"]), "premium": v.get("net_premium_per_year")}
+                                         for k, v in ph["variants"].items()}}
+    rg = _read_json(RESULTS / "regime" / "summary.json")
+    if rg:
+        bz = rg["B_danger_zone"]
+        out["regime"] = {"range_holdout": {h: rg["A_distribution"][h]["holdout"].get("combo") for h in ("5", "21")},
+                         "danger_auc": {k: {"dev": bz["dev"][k].get("auc"), "holdout": bz["holdout"][k].get("auc")}
+                                        for k in ("vix", "har", "hmm", "jump_model", "turbulence", "trend12_off") if k in bz["dev"]},
+                         "base_rate": bz["holdout"].get("base_rate")}
+    dp = _read_json(RESULTS / "dip" / "summary.json")
+    if dp:
+        st = dp["stocks"]
+        out["dip"] = {"fell_20_1m": st["fell_20_1m"]["all"], "any_member": st["any_member_any_day"],
+                      "strategy": {p: {"dips": brief(v["dips"]), "spy": brief(v["spy"])} for p, v in dp["strategy_spy_plus_dips"].items()}}
+    ag = _read_json(RESULTS / "aggressive" / "longrun.json")
+    if ag:
+        out["leveraged"] = {k: {"cagr": v["cagr"], "max_dd": v["max_dd"], "windows": v.get("windows", {})} for k, v in ag.items()
+                            if k.split("_")[0] in ("GSPCx1", "GSPCx2", "GSPCx3", "NDXx1", "NDXx2", "NDXx3")}
+    it = _read_json(RESULTS / "intraday" / "summary.json")
+    if it:
+        out["intraday"] = {"period": it["period"], "orb_1bp": brief(it["orb"]["1bp"]["full"]), "intramom_1bp": brief(it["intramom"]["1bp"]["full"]),
+                           "qqq": brief(it["qqq_buy_hold"]["full"])}
     return _clean(out)
 
 

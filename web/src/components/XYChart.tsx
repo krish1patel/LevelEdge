@@ -28,6 +28,7 @@ interface Props {
   xTicks?: number[];           // explicit tick positions (e.g. year starts on an index axis)
   xTip?: (v: number) => string; // tooltip heading, when it should be more precise than the tick label
   hline?: number;              // horizontal reference line (e.g. zero)
+  endLabels?: boolean;         // name each line at its right end instead of a legend
 }
 
 /** Keep at most ``max`` ticks, evenly spaced through the list. */
@@ -38,11 +39,11 @@ function thin(ticks: number[], max: number) {
 }
 
 export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260, diagonal, vline, summary, xTitle, yTitle,
-                          xTicks, xTip, hline }: Props) {
+                          xTicks, xTip, hline, endLabels }: Props) {
   const [ref, width] = useWidth<HTMLDivElement>(480);
   const svgRef = useRef<SVGSVGElement>(null);
   const [hx, setHx] = useState<number | null>(null);
-  const m = { top: 12, right: 16, bottom: xTitle ? 44 : 30, left: yTitle ? 60 : 48 };
+  const m = { top: 12, right: endLabels ? 118 : 16, bottom: xTitle ? 44 : 30, left: yTitle ? 60 : 48 };
   const iw = Math.max(10, width - m.left - m.right);
   const ih = height - m.top - m.bottom;
   const all = series.flatMap((s) => s.points);
@@ -115,6 +116,12 @@ export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260
               })}
             </g>
           )}
+          {endLabels && endLabelLayout(series, y, ih).map((l) => (
+            <g key={l.name}>
+              <line x1={iw + 6} x2={iw + 18} y1={l.y} y2={l.y} stroke={l.color} strokeWidth={2} strokeDasharray={l.dashed ? "4 3" : undefined} />
+              <text x={iw + 22} y={l.y} dy="0.32em" className="end-label">{l.name}</text>
+            </g>
+          ))}
           <rect width={iw} height={ih} fill="transparent" />
         </g>
       </svg>
@@ -132,7 +139,7 @@ export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260
           })}
         </div>
       )}
-      {series.length > 1 && (
+      {series.length > 1 && !endLabels && (
         <figcaption className="legend">
           {series.map((s) => (
             <span key={s.name}>
@@ -145,4 +152,15 @@ export function XYChart({ series, xLabel, yLabel, xDomain, yDomain, height = 260
       )}
     </figure>
   );
+}
+
+/** Place each series' name beside its last point, nudged apart so labels never overlap. */
+function endLabelLayout(series: Series[], y: (v: number) => number, ih: number) {
+  const gap = 16;
+  const ls = series.filter((s) => s.points.length).map((s) => ({ name: s.name, color: s.color, dashed: s.dashed, y: y(s.points[s.points.length - 1].y) }))
+    .sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ls.length; i++) if (ls[i].y - ls[i - 1].y < gap) ls[i].y = ls[i - 1].y + gap;
+  const over = ls.length ? ls[ls.length - 1].y - (ih - 4) : 0;
+  if (over > 0) ls.forEach((l) => { l.y -= over; });
+  return ls;
 }

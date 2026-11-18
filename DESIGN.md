@@ -320,6 +320,20 @@ Corners are soft and consistent. Containers (cards and banners) use 18px. Small 
 ### Motion
 - All transitions use the shared ease (cubic-bezier(0.25, 0.1, 0.25, 1)), mostly at 200ms (120ms for press and tooltip). Under reduced motion, every animation and transition collapses to 1ms.
 
+## Plain-language layer
+
+The dashboard is read by people with no finance background. Every screen teaches itself.
+
+- **Takeaway headlines.** A chart or table's card title states its conclusion, computed from live data ("In all 3 crashes since 2007, the portfolio fell less than the S&P 500"), using `h2.takeaway` (1.25rem, 600, balanced, at most 34em). The card subtitle says what is plotted and how to read it, and a `.source` line names the data.
+- **Key points.** Each section opens with two sentences on what it is, then a key-points card: a bold number with one sentence of context. No hero-metric tiles.
+- **Glossary terms.** Any jargon word is wrapped in `<Term k="...">` (`components/Term.tsx`). It gets a dotted underline and a definition on hover, keyboard focus or tap, from `glossary.ts`. One definition per term, used everywhere.
+- **Plain labels.** Write "Chance it closes above", not P(above); "8 times out of 10", not 80% CI; "Worst fall", not max drawdown. Technical names survive only inside "How it was tested" disclosures.
+- **Direct labels.** Multi-series line charts name each line at its right end (`XYChart endLabels`), with a key line in the series' colour and the text in Secondary Ink. Every chart has hover read-outs.
+- **Series colours.** The portfolio is System Blue; the S&P 500 is Price Ink, the market as fact; 60/40 is Comparison Grey with a dash. The same colours are used on every chart and in the crash bars.
+- **Asset-class colours** (`--c-us`, `--c-intl`, `--c-bonds`, `--c-real`, `--c-comm`, `--c-cash`): graphics only, in the allocation bar and its legend, always next to a text label and value. Each has a dark-mode value.
+- **Ticker picker** (`components/TickerPicker.tsx`): a combobox that lists every suggestion with a plain description on focus, filters as you type, accepts any symbol, and runs the forecast on selection. It replaces the native datalist, which filtered to the current value and looked empty.
+- **Chapters.** Long pages are split by `h2.chapter` headings (Title size) into a short narrative: what it owns and how it's doing, how the rules held up, looking ahead.
+
 ## Do's and Don'ts
 
 ### Do:

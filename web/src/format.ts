@@ -78,8 +78,9 @@ export function horizonPhrase(bars: number, interval: string): string {
   if (interval.endsWith("d")) return `${bars} trading day${bars === 1 ? "" : "s"}`;
   const mins = interval.endsWith("h") ? 60 * parseInt(interval) : parseInt(interval);
   const total = bars * mins;
-  const span = total >= 60 ? `${+(total / 60).toFixed(1)} h` : `${total} min`;
-  return `${bars} × ${mins}-min bars (${span} of trading)`;
+  const hrs = +(total / 60).toFixed(1);
+  const span = total >= 60 ? `${hrs} hour${hrs === 1 ? "" : "s"}` : `${total} minutes`;
+  return `${span} of trading (${bars} bars)`;
 }
 
 export const fmtMoney = (v: number, digits = 2) => {

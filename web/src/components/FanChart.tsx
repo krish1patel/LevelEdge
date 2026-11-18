@@ -213,22 +213,20 @@ export function FanChart({ data }: { data: ForecastResponse }) {
           )}
           {hoverInfo.kind === "fan" && hoverInfo.f && (
             <>
-              <div className="tt-time">By {fmtTime(hoverInfo.f.time)} · bar {hoverInfo.f.step} of {nF}</div>
-              <div className="tt-row"><span>90th pct</span><b>{fmtPrice(hoverInfo.f.q90)}</b></div>
-              <div className="tt-row"><span>75th</span><b>{fmtPrice(hoverInfo.f.q75)}</b></div>
-              <div className="tt-row"><span><i className="key" style={{ background: "var(--accent)" }} />Median</span><b>{fmtPrice(hoverInfo.f.q50)}</b></div>
-              <div className="tt-row"><span>25th</span><b>{fmtPrice(hoverInfo.f.q25)}</b></div>
-              <div className="tt-row"><span>10th</span><b>{fmtPrice(hoverInfo.f.q10)}</b></div>
+              <div className="tt-time">By {fmtTime(hoverInfo.f.time)}</div>
+              <div className="tt-row"><span><i className="key" style={{ background: "var(--accent)" }} />Middle forecast</span><b>{fmtPrice(hoverInfo.f.q50)}</b></div>
+              <div className="tt-row"><span>Half of outcomes</span><b>{fmtPrice(hoverInfo.f.q25)}–{fmtPrice(hoverInfo.f.q75)}</b></div>
+              <div className="tt-row"><span>8 in 10 outcomes</span><b>{fmtPrice(hoverInfo.f.q10)}–{fmtPrice(hoverInfo.f.q90)}</b></div>
             </>
           )}
         </div>
       )}
       <figcaption className="legend">
         <span><i style={{ background: "var(--price-line)" }} />Price</span>
-        <span><i style={{ background: "var(--accent)" }} />Median forecast</span>
-        <span><i className="band" style={{ background: "var(--fan-inner)" }} />50% range</span>
-        <span><i className="band" style={{ background: "var(--fan-outer)" }} />80% range</span>
-        <span><i style={{ background: "transparent", borderTop: "1px dashed var(--ink-3)" }} />Your levels, P(close above)</span>
+        <span><i style={{ background: "var(--accent)" }} />Middle forecast</span>
+        <span><i className="band" style={{ background: "var(--fan-inner)" }} />Half of outcomes</span>
+        <span><i className="band" style={{ background: "var(--fan-outer)" }} />8 in 10 outcomes</span>
+        <span><i style={{ background: "transparent", borderTop: "1px dashed var(--ink-3)" }} />Your prices, with the chance of closing above each</span>
       </figcaption>
     </figure>
   );
