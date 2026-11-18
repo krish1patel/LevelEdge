@@ -380,7 +380,7 @@ h1, h2, h3 { text-wrap: balance; }
   border-bottom: 1px dotted currentColor; border-radius: 0; text-align: inherit; line-height: inherit; }
 .term:hover { color: var(--ink); }
 .term:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 3px; }
-.term-pop { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; display: block; width: min(300px, 80vw);
+.term-pop { position: fixed; z-index: 60; display: block; width: min(300px, 80vw);
   background: var(--surface); border: 1px solid var(--hairline-strong); border-radius: 12px; box-shadow: var(--shadow);
   padding: 12px 14px; font-size: var(--t-cap); line-height: 1.45; color: var(--ink-2); font-weight: 400;
   letter-spacing: 0; text-align: left; white-space: normal; text-transform: none; }
@@ -479,3 +479,22 @@ h1, h2, h3 { text-wrap: balance; }
 .card-sub, .help, .footnote, .source, .score-row p { max-width: 33em; }
 .readout { max-width: 34em; }
 .page-intro p { max-width: 35em; }
+
+/* ---- market scan ------------------------------------------------------------------------- */
+.scan-status { font-size: var(--t-cap); color: var(--ink-3); margin: calc(-1 * var(--s2)) 0 var(--s3); }
+.notable { list-style: none; margin: var(--s3) 0 0; padding: 0; counter-reset: n; }
+.notable li { display: grid; grid-template-columns: 64px 1fr; column-gap: var(--s3); padding: 12px 0; border-top: 1px solid var(--hairline); }
+.notable li a { font-weight: 600; color: var(--accent); text-decoration: none; grid-row: span 2; align-self: start; min-height: 24px; }
+.notable li a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.notable .who { font-size: var(--t-cap); color: var(--ink-3); }
+.notable p { margin: 2px 0 0; color: var(--ink-2); font-size: var(--t-cap); line-height: 1.45; max-width: 36em; }
+.how-list { margin: var(--s3) 0 0; padding-left: 18px; display: grid; gap: var(--s2); font-size: var(--t-cap); color: var(--ink-2); line-height: 1.45; }
+.how-list strong { color: var(--ink); font-weight: 600; }
+.scan-filters { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.scan-filters .input { width: 220px; }
+.scan-table th .sort { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
+.scan-table th .sort:hover { color: var(--ink); }
+.scan-table th .sort:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 4px; }
+.scan-table .row-h a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.scan-table .row-h a:hover { text-decoration: underline; }
+.scan-table .pcell { justify-content: flex-end; }

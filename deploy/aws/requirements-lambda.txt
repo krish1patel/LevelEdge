@@ -20,3 +20,4 @@ httpx==0.28.1
 python-multipart==0.0.22
 pytz==2025.2
 tzdata==2025.3
+boto3==1.40.0

@@ -8,12 +8,13 @@ Scheduled workflows run only from the `main` branch. GitHub often starts them la
 
 | Workflow | Schedule (UTC) | Eastern time | What it does |
 |---|---|---|---|
-| `run_forwardtest.yml` | 14:00, 16:00, 18:00 Mon–Fri | 10 AM, 12 PM, 2 PM (EDT) | Forecasts QQQ, SPY, NVDA and TSLA at 8 strikes, logs to Supabase, and appends to the ledger with a timestamp |
+| `run_forwardtest.yml` | Every 20 minutes, 13:07–20:47 Mon–Fri | Through the trading day | Fills the 10:00, 12:00 or 14:00 ET forecast slot that is due (each at most once): forecasts QQQ, SPY, NVDA and TSLA at 8 strikes, logs to Supabase, and appends to the ledger with a timestamp |
 | `update_outcomes.yml` | Every hour | — | Fills realised prices into Supabase forward-test rows |
 | `paper_trade.yml` | 21:30 Mon–Fri | 4:30 PM EST / 5:30 PM EDT | Rebalances the paper account on the weekly rebalance day, then posts the weekly report |
 | `forward_log.yml` | 22:00 Mon–Fri | 5 PM EST / 6 PM EDT | Commits the day's S&P 500 outlook to the `forward-log` branch |
 | `ledger_reconcile.yml` | 22:30 Mon–Fri, plus 12:00 daily | 5:30 PM EST, plus a morning backstop | Scores matured forecasts and verifies the whole ledger |
 | `sync_to_hf.yml` | On every push to `main` | — | Syncs the repository to the HuggingFace Space |
+| AWS EventBridge Scheduler `leveledge-scan-daily` | 5:45 PM ET Mon–Fri (exact; not GitHub) | — | Starts the daily market scan on AWS; see [Market scan](market-scan.md) |
 
 ## Configuring secrets
 
@@ -54,6 +55,10 @@ The alert includes the verifier's report and the first broken record.
 ### The timestamp authority was unavailable
 
 The forecasts are still appended, unanchored, and the next run anchors them. Forecasts whose first covering anchor comes after their target don't count as on time, so they're excluded from the headline score.
+
+### The market scan didn't finish
+
+Check the dead-letter queue `leveledge-scan-dlq` for batches that failed three times, and the worker's logs in CloudWatch (`/aws/lambda/leveledge-scan`). Re-run a scan with `bash deploy/aws/scan.sh --run-now`; finished tickers are skipped.
 
 ### The forward log skipped a day
 

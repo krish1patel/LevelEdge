@@ -26,6 +26,7 @@ dependencies = [
 
 [project.optional-dependencies]
 web = ["fastapi", "uvicorn[standard]"]
+aws = ["boto3"]
 dev = ["pytest", "httpx"]
 
 [tool.setuptools.packages.find]

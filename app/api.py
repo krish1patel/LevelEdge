@@ -522,6 +522,65 @@ def api_ledger():
         return {"status": "error", "message": f"Couldn't check the ledger: {e}"}
 
 
+SCAN_TABLE = os.environ.get("SCAN_TABLE")
+SCAN_FILE = os.environ.get("SCAN_FILE")
+
+
+def _undecimal(x):
+    from decimal import Decimal
+    if isinstance(x, Decimal):
+        return float(x)
+    if isinstance(x, dict):
+        return {k: _undecimal(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_undecimal(v) for v in x]
+    return x
+
+
+def _scan() -> dict:
+    """The latest daily market scan: from DynamoDB in production, or a local JSON file (scripts/market_scan.py)."""
+    from leveledge import scan
+
+    if SCAN_FILE:
+        with open(SCAN_FILE) as f:
+            d = json.load(f)
+        day, rows, meta = d["scan_date"], d["rows"], {"total": d.get("total"), "started_at": d.get("started_at")}
+    elif SCAN_TABLE:
+        import boto3
+        from boto3.dynamodb.conditions import Key
+
+        table = boto3.resource("dynamodb").Table(SCAN_TABLE)
+        ptr = table.get_item(Key={"scan_date": "latest", "ticker": "#pointer"}).get("Item")
+        if not ptr:
+            return {"status": "empty", "message": "The first scan runs after the next weekday close."}
+        day = ptr["value"]
+        items, kw = [], {"KeyConditionExpression": Key("scan_date").eq(day)}
+        while True:
+            page = table.query(**kw)
+            items += page["Items"]
+            if "LastEvaluatedKey" not in page:
+                break
+            kw["ExclusiveStartKey"] = page["LastEvaluatedKey"]
+        items = _undecimal(items)
+        meta = next((i for i in items if i["ticker"] == "#meta"), {})
+        rows = [i["data"] for i in items if i["ticker"] != "#meta"]
+    else:
+        return {"status": "not_configured", "message": "Set SCAN_TABLE (AWS) or SCAN_FILE (a local scan) to show the market scan."}
+    rows = sorted(rows, key=lambda r: r["ticker"])
+    for r in rows:                                   # regenerate the notes from the stored numbers, so wording fixes apply to old scans
+        r["insights"] = scan.insights(r)
+    return {"status": "ok", "scan_date": day, "total": meta.get("total") or len(rows), "started_at": meta.get("started_at"),
+            "rows": rows, "notable": scan.notable(rows), "summary": scan.summary(rows), "horizon_days": scan.HORIZON_DAYS}
+
+
+@app.get("/api/scan")
+def api_scan():
+    try:
+        return _clean(_cached("scan", 300, _scan))
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": f"Couldn't load the market scan: {e}"}
+
+
 @app.get("/api/outlook")
 def api_outlook():
     try:

@@ -348,3 +348,18 @@ export type Ledger =
   | { status: "empty" | "unavailable" | "error"; message?: string; url?: string };
 
 export const getLedger = () => call<Ledger>("/api/ledger");
+
+export interface ScanRow {
+  ticker: string; name: string; group: string; as_of: string; target: string; price: number;
+  range80: [number, number]; median: number; swing: number; p_up: number; coverage80: number | null;
+  ret_1d: number | null; ret_1m: number | null; ret_12m: number | null; vol_pct: number | null;
+  vs_sma200: number | null; from_high: number | null; seconds?: number;
+  insights: { kind: string; weight: number; text: string }[];
+}
+export type Scan =
+  | { status: "ok"; scan_date: string; total: number; started_at: string | null; horizon_days: number; rows: ScanRow[];
+      notable: { ticker: string; name: string; kind: string; weight: number; text: string }[];
+      summary: { analyzed: number; in_uptrend: number; volatile: number; median_swing: number | null; biggest_swing: string | null } }
+  | { status: "empty" | "not_configured" | "error"; message: string };
+
+export const getScan = () => call<Scan>("/api/scan");

@@ -9,6 +9,7 @@ Runs the LevelEdge API on AWS Lambda and points the Vercel frontend at it.
 | `Dockerfile` | The arm64 Lambda image: the unchanged FastAPI app under uvicorn, behind the AWS Lambda Web Adapter, plus the research summaries |
 | `requirements-lambda.txt` | Only the packages the API imports. The root `requirements.txt` also carries Streamlit and other tools the API doesn't need. |
 | `deploy.sh` | Builds and pushes the image, creates or updates the function, its role and its public URL, applies the cost guards, smoke-tests, and writes `web/vercel.json` |
+| `scan.sh` | Creates or updates the daily market scan: DynamoDB table, SQS queue and dead-letter queue, worker function, queue mapping (at most 5 in parallel), and the 5:45 PM ET schedule. `--run-now` starts a scan. |
 | `pause.sh` | Stops the API from serving (reserved concurrency 0), or resumes it |
 
 ## Deploying

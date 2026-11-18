@@ -131,3 +131,16 @@ def test_file_is_plain_json_lines(tmp_path):
     led = _ledger(tmp_path)
     lines = open(led.path).read().splitlines()
     assert len(lines) == 4 and all(json.loads(x)["hash"] for x in lines)
+
+
+def test_forward_test_runs_each_slot_once(monkeypatch):
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts"))
+    import forwardtest as F
+    from leveledge.constants import US_EASTERN
+    at = lambda h, m: datetime(2026, 11, 18, h, m, tzinfo=US_EASTERN)   # noqa: E731
+    assert F.due_slot(at(9, 30)) is None and F.due_slot(at(15, 59)).hour == 14
+    made = at(12, 40).isoformat()
+    monkeypatch.setattr(L, "load", lambda url: [{"kind": "forecast", "body": {"made_at": made}}])
+    assert F.slot_done(at(13, 0), F.due_slot(at(13, 0)))            # the 12:00 slot ran at 12:40
+    assert not F.slot_done(at(14, 5), F.due_slot(at(14, 5)))        # the 14:00 slot hasn't
