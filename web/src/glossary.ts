@@ -1,0 +1,32 @@
+/** Plain-English definitions for every term the dashboard uses. One source, so a word means the same thing everywhere. */
+export const GLOSSARY = {
+  paper: ["Paper trading", "Trading with simulated money at real market prices. The record is real; no actual money is at risk."],
+  etf: ["ETF", "Exchange-traded fund: one ticker that holds a whole basket. SPY holds the 500 largest US companies; IEF holds US government bonds."],
+  sp500: ["S&P 500", "An index of the 500 largest US companies, and the usual meaning of \"the market\". SPY is a fund that tracks it."],
+  sixty_forty: ["60/40", "The classic balanced portfolio: 60% stocks (here SPY), 40% bonds (here IEF). The standard yardstick for a portfolio."],
+  trend: ["Trend rule", "Hold a market while its price is higher than a year ago (after what cash would have earned); step aside into cash when it isn't. It aims to sidestep long declines, not to predict them."],
+  rebalance: ["Rebalance", "Trading back to the target mix after prices move. This portfolio checks once a week, after Friday's close."],
+  drawdown: ["Worst fall", "The biggest drop from a high point to a later low. A −24% worst fall means $10,000 at the peak shrank to $7,600 before recovering."],
+  sharpe: ["Sharpe ratio", "Return earned above cash for each unit of ups and downs. Higher is better: about 0.5 is typical for stocks, 1.0 is excellent."],
+  volatility: ["Volatility", "How much the value swings in a typical year. 10% volatility means most years land within about 10% of the average."],
+  tbill: ["T-bills", "Short-term US government debt: what cash earns with essentially no risk (about 4% a year in late 2026)."],
+  backtest: ["Backtest", "Replaying fixed rules on past prices to see how they would have done, with trading costs. Useful evidence, not a promise."],
+  holdout: ["Held-out test", "Data kept hidden while a strategy is chosen, then used once to check it. Ideas that only fit the past fail here."],
+  interval95: ["95% interval", "The range the true value probably lies in, allowing for luck. If it spans zero, the difference could be luck."],
+  bp: ["Basis point", "One hundredth of a percent. 5 basis points (bp) is 0.05%."],
+  margin: ["Margin", "Borrowing from a broker to buy more. It magnifies gains and losses, and retail brokers charge about 11–12% a year interest."],
+  vix: ["VIX", "The market's \"fear gauge\": how much traders expect the S&P 500 to swing over the next month, read from option prices. About 15 is calm; above 30 is stressed."],
+  chance_above: ["Chance it closes above", "The model's probability that the price ends above a level at the target time. 70% should come true about 7 times in 10."],
+  range80: ["80% range", "The band the price should land in 8 times out of 10. If the forecast is honest, about 1 in 5 outcomes fall outside it."],
+  calibration: ["Calibration", "Whether forecasts mean what they say: of all the times the model said 70%, did it happen about 70% of the time?"],
+  brier: ["Brier score", "The standard grade for probability forecasts: the average squared miss. 0 is perfect, always saying 50% scores 0.25, lower is better."],
+  bar: ["Bar size", "Each bar is one slice of price history (open, high, low, close). 15-minute bars react to the latest hours; daily bars see years of history."],
+  kalshi: ["Kalshi", "A regulated US prediction market. Its contracts pay $1 if, say, the S&P 500 closes above a level, so the price is the crowd's probability."],
+  leveraged_etf: ["Leveraged ETF", "A fund that targets 2× or 3× the index's daily move. Gains and losses are magnified, and long slides can wipe most of it out."],
+  shadow: ["Shadow portfolio", "A candidate strategy followed on public prices without trading it, so it builds a real record before anyone commits money."],
+  ledger: ["Verifiable record", "Every live forecast is saved publicly before its outcome, chained so any later edit is detectable, and time-stamped by an outside authority."],
+  outlook_range: ["Likely range", "Where the S&P 500 should end up 8 times in 10 (or 19 in 20 for the wide range), from three volatility models averaged."],
+  dip: ["Buying the dip", "Buying a stock after a big fall, expecting a rebound."],
+} as const;
+
+export type TermKey = keyof typeof GLOSSARY;

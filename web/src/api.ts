@@ -275,7 +275,19 @@ export interface ModelStudy {
   sharpe_vs_rule: Record<string, DiffCI>;
 }
 
-export const getResearch = () => call<ResearchResponse>("/api/research");
+export interface Brief { cagr: number; sharpe: number; max_drawdown: number; vol: number }
+export interface ResearchExtra {
+  hedge?: { adopted: string[]; variants: Record<string, Record<"full" | "dev" | "holdout", Brief>> };
+  put_hedge?: { variants: Record<string, { full: Brief; premium: number | null }> };
+  regime?: { range_holdout: Record<string, { cover80: number; cover95: number; crps_skill_vs_hist: number } | null>;
+             danger_auc: Record<string, { dev: number; holdout: number }>; base_rate: number };
+  dip?: { fell_20_1m: { n: number; mean_ret: number; median_ret: number; p_profit: number; p10_ret: number; bench_p_profit: number; p_beat_bench: number };
+          any_member: { mean_ret: number; p_profit: number }; strategy: Record<string, { dips: Brief; spy: Brief }> };
+  leveraged?: Record<string, { cagr: number; max_dd: number; windows: Record<string, number> }>;
+  intraday?: { period: [string, string]; orb_1bp: Brief; intramom_1bp: Brief; qqq: Brief };
+}
+
+export const getResearch = () => call<ResearchResponse & ResearchExtra>("/api/research");
 
 // ---------------------------------------------------------------------------
 // market outlook

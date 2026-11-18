@@ -39,8 +39,8 @@ export function LevelsPanel({ rows, inputs, previous, flash, onChange, busy }: P
     <section className="card" aria-labelledby="levels-h">
       <div className="card-head">
         <div>
-          <h2 id="levels-h">Levels</h2>
-          <p className="card-sub">Chance the price closes above each level</p>
+          <h2 id="levels-h">Chance it closes above each price</h2>
+          <p className="card-sub">Enter any price, or a move like +1%. A 70% means it should happen about 7 times in 10.</p>
         </div>
       </div>
       {inputs.length === 0 ? (
@@ -51,8 +51,8 @@ export function LevelsPanel({ rows, inputs, previous, flash, onChange, busy }: P
         <table className="levels">
           <thead>
             <tr>
-              <th scope="col">Level</th>
-              <th scope="col" className="r">P(above)</th>
+              <th scope="col">Price</th>
+              <th scope="col" className="r">Chance</th>
               <th scope="col" className="r"><span className="visually-hidden">Change since last run</span></th>
               <th scope="col"><span className="visually-hidden">Remove</span></th>
             </tr>
@@ -99,7 +99,7 @@ export function LevelsPanel({ rows, inputs, previous, flash, onChange, busy }: P
       )}
       <form className="add-level" onSubmit={add}>
         <label className="visually-hidden" htmlFor="add-level">Add levels</label>
-        <input id="add-level" className="input num" placeholder="Add a level: 665 or +1%" value={draft}
+        <input id="add-level" className="input num" placeholder="Add a price: 745 or +1%" value={draft}
                aria-invalid={error ? "true" : undefined} aria-describedby={error ? "add-level-err" : undefined}
                onChange={(e) => { setDraft(e.target.value); setError(null); }} />
         <button className="btn btn-ghost" type="submit" disabled={!draft.trim()}>
@@ -107,7 +107,7 @@ export function LevelsPanel({ rows, inputs, previous, flash, onChange, busy }: P
         </button>
       </form>
       {error ? <p id="add-level-err" className="err" role="alert">{error}</p>
-        : <p className="help">Separate several with commas. Percent moves are measured from the last completed bar.</p>}
+        : <p className="help">Add several at once with commas. Percent moves are measured from the latest price.</p>}
     </section>
   );
 }
