@@ -5,7 +5,7 @@ An interactive Streamlit app for visualizing LevelEdge probability surfaces
 across intraday price levels and target times.
 
 Run:
-    streamlit run examples/intraday_price_path.py
+    streamlit run legacy/examples/intraday_price_path.py
 """
 
 from __future__ import annotations

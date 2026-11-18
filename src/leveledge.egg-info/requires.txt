@@ -1,9 +1,0 @@
-pandas
-scikit-learn
-yfinance
-numpy
-xgboost
-pandas-market-calendars
-python-dotenv
-supabase
-polygon-api-client

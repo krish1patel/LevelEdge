@@ -8,8 +8,8 @@ SOL-USD crypto backtest: predict the next 15-minute close from every quarter hou
 - 3-day backtest period (default)
 
 Usage:
-    python scripts/backtest_sol.py
-    python scripts/backtest_sol.py --days 5 --strikes 0.0
+    python legacy/backtests/backtest_sol.py
+    python legacy/backtests/backtest_sol.py --days 5 --strikes 0.0
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ warnings.filterwarnings("ignore", message="Precision is ill-defined")
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, PROJECT_ROOT)
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 

@@ -29,3 +29,20 @@ benchmarks/results/alpha_research_*/oos_forecasts.csv
 benchmarks/results/stock_factors/equity.csv
 benchmarks/results_intraday.log
 .ledger-wt/
+
+# OS, editor and build clutter
+.DS_Store
+*.code-workspace
+__pycache__/
+*.pyc
+*.egg-info/
+
+# local research outputs and logs (summaries are committed; bulky intermediates are not)
+benchmarks/results_*.log
+benchmarks/results/*/equity.csv
+!benchmarks/results/etf_trend/equity.csv
+benchmarks/results/**/*.partial.csv
+benchmarks/results/intraday/orb_*.csv
+benchmarks/results/regime/forecasts.csv.gz
+benchmarks/results/*.log
+web/*.tsbuildinfo

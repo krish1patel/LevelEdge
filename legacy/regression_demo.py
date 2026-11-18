@@ -2,7 +2,7 @@
 Streamlit demo: LevelEdge regression price-ratio predictor.
 
 Run with:
-    streamlit run regression_demo.py
+    streamlit run legacy/regression_demo.py
 """
 
 import streamlit as st
