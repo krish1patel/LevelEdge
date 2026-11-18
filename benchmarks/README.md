@@ -38,6 +38,14 @@ Every study follows the same rules, and its docstring states them before any res
 | [`cadence_research.py`](cadence_research.py) | Should triggers be checked daily instead of weekly? | **Keep weekly.** Daily checks add trades without improving results |
 | [`stock_factors.py`](stock_factors.py) | Do momentum, low-volatility or reversal factors beat equal-weight S&P 500 members (point-in-time)? | **None beats equal weight** |
 
+### Reading the news
+
+| Study | Question | Verdict |
+|---|---|---|
+| [`news_sentiment.py`](news_sentiment.py) | Does the SF Fed's Daily News Sentiment Index (24 newspapers, since 1980, lagged 8 days for publication) time the S&P 500 or protect the portfolio? | **Fails.** Level rule: Sharpe 0.71 vs 0.48 before 2020, 0.22 vs 0.65 after; crash-warning AUC 0.64 then 0.53; as a portfolio overlay it fails the pass rule. Trust score C. |
+
+Every study's strategy can also be graded by the [trust-score engine](../docs/trust-score.md).
+
 ### Risk, hedging and timing
 
 | Study | Question | Verdict |

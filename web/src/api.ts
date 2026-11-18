@@ -285,6 +285,17 @@ export interface ResearchExtra {
           any_member: { mean_ret: number; p_profit: number }; strategy: Record<string, { dips: Brief; spy: Brief }> };
   leveraged?: Record<string, { cagr: number; max_dd: number; windows: Record<string, number> }>;
   intraday?: { period: [string, string]; orb_1bp: Brief; intramom_1bp: Brief; qqq: Brief };
+  integrity?: { generated_at: string; executor: string; tasks: number; compute_seconds: number; run_id?: string;
+                weights: Record<string, number>; strategies: TrustReport[] };
+  news?: { source: string; period: [string, string]; lag_days: number; overlay_passes: boolean; base_rate: number;
+           crash_auc: Record<string, { dev: number; holdout: number }>; corr: Record<string, { r: number; ci95: [number, number] }>;
+           runs: Record<string, Record<"full" | "dev" | "holdout", Brief> & { passes?: boolean; in_market?: number }> };
+}
+export interface TrustReport {
+  id: string; name: string; benchmark: string; score: number; grade: string; verdict: string; variants: number; shuffles: number;
+  checks: Record<string, { score: number; status: "pass" | "warn" | "fail" | "n/a"; detail: string }>;
+  findings: string[]; period: [string, string];
+  metrics: Record<"full" | "dev" | "holdout", { cagr: number; sharpe: number; max_drawdown: number }>;
 }
 
 export const getResearch = () => call<ResearchResponse & ResearchExtra>("/api/research");

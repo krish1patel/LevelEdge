@@ -687,6 +687,15 @@ def api_research():
     if ag:
         out["leveraged"] = {k: {"cagr": v["cagr"], "max_dd": v["max_dd"], "windows": v.get("windows", {})} for k, v in ag.items()
                             if k.split("_")[0] in ("GSPCx1", "GSPCx2", "GSPCx3", "NDXx1", "NDXx2", "NDXx3")}
+    ig = _read_json(RESULTS / "integrity" / "summary.json")
+    if ig:
+        out["integrity"] = ig
+    ns = _read_json(RESULTS / "news_sentiment" / "summary.json")
+    if ns:
+        out["news"] = {"source": ns["source"], "period": ns["period"], "lag_days": ns["lag_days"], "overlay_passes": ns["overlay_passes"],
+                       "crash_auc": ns["crash_auc"], "corr": ns["corr_change_next_month"], "base_rate": ns["base_rate_5pct_drop"],
+                       "runs": {k: {p: brief(v[p]) for p in ("full", "dev", "holdout")} | {x: v[x] for x in ("passes", "in_market") if x in v}
+                                for k, v in ns["runs"].items()}}
     it = _read_json(RESULTS / "intraday" / "summary.json")
     if it:
         out["intraday"] = {"period": it["period"], "orb_1bp": brief(it["orb"]["1bp"]["full"]), "intramom_1bp": brief(it["intramom"]["1bp"]["full"]),

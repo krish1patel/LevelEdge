@@ -8,6 +8,7 @@ These guides explain how LevelEdge works and how to run it. Start with the archi
 | [Forecaster](forecaster.md) | Make forecasts, understand the v2 model, and read its accuracy benchmark |
 | [Portfolio](portfolio.md) | Understand the traded book, the paper-trading loop, the safety checks, and how to copy trades into a real account |
 | [Market scan](market-scan.md) | Understand the automated daily scan of 100 stocks and funds, its AWS pipeline, and how to run it |
+| [Trust score](trust-score.md) | Understand how strategies are graded for self-deception, and run the engine |
 | [Forecast ledger](forecast-ledger.md) | Verify the public forecast record and understand what it does and doesn't prove |
 | [Deployment](deployment.md) | Deploy the dashboard to Vercel and AWS Lambda, and keep costs inside the free tiers |
 | [Operations](operations.md) | Know what runs on a schedule, where alerts go, and what to do when something fails |

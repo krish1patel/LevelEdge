@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { AlertCircle, CircleCheck, CircleMinus, CircleX } from "lucide-react";
-import { getResearch, type Brief, type ResearchExtra, type ResearchResponse, type TradeStats } from "../api";
+import { getResearch, type Brief, type ResearchExtra, type ResearchResponse, type TradeStats, type TrustReport } from "../api";
 import { fmtNum, fmtRate } from "../format";
 import { XYChart } from "./XYChart";
 import { Term } from "./Term";
@@ -71,6 +71,7 @@ export function Research() {
       {!r && <div className="card"><div className="skeleton" style={{ height: 240 }} aria-label="Loading the research log" /></div>}
 
       {r && <Scoreboard go={go} />}
+      {r?.integrity && <TrustScores t={r.integrity} />}
 
       {r && (
         <div className="research">
@@ -155,6 +156,9 @@ export function Research() {
           {r.literature && <BandsCard l={r.literature} />}
           {r.stock_factors && <FactorsCard f={r.stock_factors} />}
 
+          <h2 className="research-group">Reading the news</h2>
+          {r.news && <NewsCard n={r.news} grade={r.integrity?.strategies.find((x) => x.id === "news_sentiment_spy")?.grade} />}
+
           <h2 className="research-group">Protecting against crashes</h2>
           {r.hedge && <HedgeCard h={r.hedge} />}
           {r.put_hedge && <PutCard p={r.put_hedge} />}
@@ -191,6 +195,9 @@ const SCORE: { group: string; rows: Row[] }[] = [
     { id: "lit", idea: "Published strategies from academic papers", verdict: "neutral", label: "Watching", plain: "One leads but isn't proven; it's tracked without trading it." },
     { id: "bd", idea: "Trading only when holdings drift", verdict: "adopted", label: "Adopted", plain: "Cut trades from 419 to 64 a year with almost no change in results." },
     { id: "sf", idea: "Stock-picking factors", verdict: "rejected", label: "No gain", plain: "No factor beat simply owning every S&P 500 stock equally." },
+  ] },
+  { group: "Reading the news", rows: [
+    { id: "ns", idea: "Timing the market with news sentiment", verdict: "rejected", label: "Failed", plain: "Strong before 2020 (Sharpe 0.71 vs 0.48 for holding), then 0.22 vs 0.65 after. As a crash warning, barely better than a coin flip." },
   ] },
   { group: "Protecting against crashes", rows: [
     { id: "hg", idea: "Selling on warning signs", verdict: "neutral", label: "1 of 6 passed", plain: "Only the 12-month trend filter cut losses without costing too much. It's tracked, not yet traded." },
@@ -498,6 +505,104 @@ function IntradayCard({ i }: { i: NonNullable<ResearchExtra["intraday"]> }) {
         rows={[{ label: "Opening-range breakout", cells: b(i.orb_1bp) }, { label: "Intraday momentum", cells: b(i.intramom_1bp) },
                { label: "Just holding the Nasdaq-100 (QQQ)", emph: true, cells: b(i.qqq) }]} />
       <p className="help">Small edges that look good before costs disappear once every trade pays a little to get in and out.</p>
+    </Experiment>
+  );
+}
+
+// ---- trust scores (research-integrity engine) ---------------------------------------------
+const CHECK_LABEL: Record<string, string> = {
+  holdout: "Still works on unseen years", benchmark: "Beats a simple alternative", luck: "Timing beats chance",
+  multiple: "Survives counting every try", stability: "Variants keep their order", lookahead: "Never sees the future",
+  costs: "Survives higher costs", concentration: "Not one lucky year",
+};
+const STATUS_ICON = { pass: CircleCheck, warn: CircleMinus, fail: CircleX, "n/a": CircleMinus } as const;
+
+function TrustScores({ t }: { t: NonNullable<ResearchExtra["integrity"]> }) {
+  const top = t.strategies[0];
+  const searched = t.strategies.find((s) => s.id === "best_of_80");
+  return (
+    <section className="card trust-scores" aria-labelledby="trust-h">
+      <h2 id="trust-h" className="takeaway">
+        Every strategy graded for self-deception: {top.name.toLowerCase()} scores {top.grade}
+        {searched ? `; the strategy found by searching 80 variants scores ${searched.grade}` : ""}
+      </h2>
+      <p className="card-sub">
+        Eight checks, each asking one way a backtest can fool its author. The grade combines them (0–100). It ran as {t.tasks} independent
+        tasks{t.executor === "aws" ? " spread across cloud workers" : " in parallel"}, about {Math.round(t.compute_seconds / 60)} minutes of computing in total.
+      </p>
+      <ol className="trust-rows">
+        {t.strategies.map((s) => <TrustRow key={s.id} s={s} />)}
+      </ol>
+      <details className="disclosure">
+        <summary>What each check asks, and how much it counts</summary>
+        <dl className="check-legend">
+          {Object.entries(t.weights).map(([k, w]) => (
+            <div key={k}><dt>{CHECK_LABEL[k]} <span className="move">{w} points</span></dt><dd>{CHECK_HELP[k]}</dd></div>
+          ))}
+        </dl>
+        <p className="help">A strategy that fails the look-ahead check is capped at 20 points: if a backtest saw the future, nothing else in it counts.</p>
+      </details>
+    </section>
+  );
+}
+
+const CHECK_HELP: Record<string, string> = {
+  holdout: "Compares its record after 2020, which played no part in designing it, with its record before and with the benchmark's after.",
+  benchmark: "Is its edge over a simple alternative bigger than luck? Measured with a 95% interval that resamples whole months.",
+  luck: "Shuffles its own holdings in time 200 times. Real timing skill should beat almost every shuffled copy.",
+  multiple: "The more versions you try, the better the best one looks by chance. This discounts for every version tried.",
+  stability: "If the versions that looked best before 2020 did worst after, the search was fitting noise.",
+  lookahead: "Recomputes its decisions with the data cut off at past dates. Any difference means it used information it couldn't have had.",
+  costs: "Charges four times the normal trading costs. A real edge shouldn't vanish.",
+  concentration: "Removes its single best year. An edge that disappears depended on one event.",
+};
+
+function TrustRow({ s }: { s: TrustReport }) {
+  const tone = s.grade <= "B" ? "good" : s.grade === "C" ? "warn" : "bad";
+  return (
+    <li className="trust-row">
+      <span className="grade" data-tone={tone} aria-label={`Grade ${s.grade}`}>{s.grade}</span>
+      <div className="trust-main">
+        <div className="trust-title">
+          <strong>{s.name}</strong>
+          <span className="trust-score num">{s.score.toFixed(0)}<span className="move"> / 100 · {s.verdict}</span></span>
+        </div>
+        <span className="pbar trust-bar" aria-hidden="true"><i style={{ width: `${s.score}%` }} /></span>
+        <p>{s.findings[0]}</p>
+        <details className="disclosure">
+          <summary>See all 8 checks</summary>
+          <ul className="check-list">
+            {Object.entries(s.checks).map(([k, c]) => {
+              const Icon = STATUS_ICON[c.status];
+              return (
+                <li key={k} data-status={c.status}>
+                  <Icon size={16} aria-hidden="true" />
+                  <div><strong>{CHECK_LABEL[k]}</strong> <span className="move">{c.status === "n/a" ? "not applicable" : c.status}</span><p>{c.detail}</p></div>
+                </li>
+              );
+            })}
+          </ul>
+          {s.findings.length > 1 && <><p className="help"><strong>How it might be fooling us</strong></p><ul className="help">{s.findings.map((f) => <li key={f}>{f}</li>)}</ul></>}
+        </details>
+      </div>
+    </li>
+  );
+}
+
+function NewsCard({ n, grade }: { n: NonNullable<ResearchExtra["news"]>; grade?: string }) {
+  const rows: [string, string][] = [["spy_buy_hold", "Just holding the S&P 500"], ["level", "Hold while sentiment is above its 1-year average"],
+    ["momentum", "Hold while sentiment is rising"], ["book", "The portfolio"], ["book_news_filter", "The portfolio, selling its core on bad news"],
+    ["book_trend_filter", "The portfolio with the trend filter, for comparison"]];
+  const lv = n.crash_auc.level_vs_avg;
+  return (
+    <Experiment id="ns" title="Timing the market with news sentiment" verdict="rejected" verdictText="Worked before 2020, failed after: rejected"
+      question="Does the tone of economic news, as scored by the San Francisco Fed across 24 major newspapers, tell you when to be in the stock market?"
+      method={`${n.source}, daily since 1980. A value counts only ${n.lag_days} days after the date it covers, because the data is published weekly. Weekly decisions, trades at the next open, 5 bp costs; ${n.period[0]} to ${n.period[1]}; rules fixed before running.`}>
+      <PerfTable cols={["Approach", "Return a year", "Worst fall", "Sharpe before 2020", "Sharpe since 2020"]}
+        rows={rows.filter(([k]) => n.runs[k]).map(([k, l]) => ({ label: l, emph: k === "level",
+          cells: [rate(n.runs[k].full.cagr), rate(n.runs[k].full.max_drawdown, 0), sh(n.runs[k].dev.sharpe), sh(n.runs[k].holdout.sharpe)] }))} />
+      <p className="help">The level rule beat holding the S&P 500 before 2020, then trailed it badly after. As a crash warning, news sentiment scored {lv.dev.toFixed(2)} before 2020
+        and {lv.holdout.toFixed(2)} since, where 0.5 is a coin flip. {grade ? ` The trust engine above grades it ${grade}.` : ""}</p>
     </Experiment>
   );
 }

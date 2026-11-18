@@ -82,6 +82,10 @@ def process(records: list[dict]) -> dict:
     failures = []
     for rec in records:
         body = json.loads(rec["body"])
+        if body.get("job") == "integrity":                       # a trust-score task (scripts/integrity.py submit)
+            if not integrity_task(table, body):
+                failures.append({"itemIdentifier": rec["messageId"]})
+            continue
         day, failed = body["scan_date"], []
         for t in body["tickers"]:
             if "Item" in table.get_item(Key={"scan_date": day, "ticker": t}):
@@ -104,6 +108,36 @@ def process(records: list[dict]) -> dict:
         if failed:
             failures.append({"itemIdentifier": rec["messageId"]})
     return {"batchItemFailures": failures}
+
+
+_CTX: dict = {}
+
+
+def integrity_task(table, body: dict) -> bool:
+    """Run one research-integrity task and store its result once (conditional put). True on success."""
+    from botocore.exceptions import ClientError
+    from leveledge import integrity as I
+
+    key = {"scan_date": f"trust#{body['run_id']}", "ticker": body["task"]["id"]}
+    if "Item" in table.get_item(Key=key):
+        return True
+    try:
+        uni = I.STRATEGIES[body["task"]["strategy"]]["universe"]
+        if uni not in _CTX:
+            _CTX[uni] = I.load_ctx(uni)                          # reused while this Lambda container stays warm
+        started = time.time()
+        res = I.run_task(body["task"], _CTX[uni])
+    except Exception as e:  # noqa: BLE001 - SQS retries the message
+        print(f"{body['task']['id']}: {e.__class__.__name__}: {e}")
+        return False
+    item = {**key, "data": json.dumps(res, default=float), "seconds": _decimalize(round(time.time() - started, 2)),
+            "expires": int((datetime.now(timezone.utc) + timedelta(days=KEEP_DAYS)).timestamp())}
+    try:
+        table.put_item(Item=item, ConditionExpression="attribute_not_exists(ticker)")
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+            raise
+    return True
 
 
 @app.get("/healthz")

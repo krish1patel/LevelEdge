@@ -498,3 +498,29 @@ h1, h2, h3 { text-wrap: balance; }
 .scan-table .row-h a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .scan-table .row-h a:hover { text-decoration: underline; }
 .scan-table .pcell { justify-content: flex-end; }
+
+/* ---- trust scores ---------------------------------------------------------------------- */
+.trust-scores { margin-bottom: var(--s4); }
+.trust-rows { list-style: none; margin: var(--s3) 0 0; padding: 0; }
+.trust-row { display: grid; grid-template-columns: 44px 1fr; gap: var(--s3); padding: var(--s3) 0; border-top: 1px solid var(--hairline); }
+.grade { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.25rem; font-weight: 700;
+  border: 2px solid currentColor; }
+.grade[data-tone="good"] { color: var(--good); }
+.grade[data-tone="warn"] { color: var(--warn); }
+.grade[data-tone="bad"] { color: var(--bad); }
+.trust-title { display: flex; justify-content: space-between; gap: var(--s3); align-items: baseline; flex-wrap: wrap; }
+.trust-title strong { font-size: var(--t-body); }
+.trust-score { font-weight: 600; font-size: var(--t-body); white-space: nowrap; }
+.trust-bar { display: block; width: 100%; margin: 8px 0; }
+.trust-main > p { margin: 0; font-size: var(--t-cap); color: var(--ink-2); line-height: 1.45; max-width: 46em; }
+.check-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2); }
+.check-list li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: var(--t-cap); }
+.check-list li svg { margin-top: 2px; }
+.check-list li[data-status="pass"] svg { color: var(--good); }
+.check-list li[data-status="warn"] svg { color: var(--warn); }
+.check-list li[data-status="fail"] svg { color: var(--bad); }
+.check-list li[data-status="n/a"] svg { color: var(--ink-3); }
+.check-list p { margin: 2px 0 0; color: var(--ink-2); line-height: 1.45; max-width: 46em; }
+.check-legend { margin: var(--s2) 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s3); }
+.check-legend dt { font-weight: 600; font-size: var(--t-cap); }
+.check-legend dd { margin: 2px 0 0; font-size: var(--t-cap); color: var(--ink-2); line-height: 1.45; }
