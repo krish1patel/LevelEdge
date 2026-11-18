@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, AlertTriangle, History, Loader2, Monitor, Moon, Play, Sun } from "lucide-react";
+import { AlertCircle, AlertTriangle, History, Loader2, Play } from "lucide-react";
 import { getForecast, type ForecastResponse } from "./api";
 import { closeTarget, fmtDayTime, fmtEventDate, fmtPrice, fmtSigned, horizonPhrase, isCryptoTicker, nowEtLocal, plusHours } from "./format";
 import { FanChart } from "./components/FanChart";
@@ -9,6 +9,7 @@ import { Diagnostics } from "./components/Diagnostics";
 import { TrackRecord } from "./components/TrackRecord";
 import { Portfolio } from "./components/Portfolio";
 import { Research } from "./components/Research";
+import { Scanner } from "./components/Scanner";
 import { TickerPicker, describeTicker } from "./components/TickerPicker";
 import { Term } from "./components/Term";
 
@@ -16,19 +17,19 @@ const INTERVALS = ["1m", "2m", "5m", "15m", "30m", "1h", "90m", "1d"];
 const INTERVAL_LABEL: Record<string, string> = { "1m": "1-minute", "2m": "2-minute", "5m": "5-minute", "15m": "15-minute", "30m": "30-minute", "1h": "1-hour", "90m": "90-minute", "1d": "Daily" };
 type Preset = "close" | "next" | "hour" | "custom";
 type Tab = "forecast" | "diagnostics" | "track";
-type Section = "portfolio" | "forecaster" | "research";
-const SECTIONS: [Section, string][] = [["portfolio", "Portfolio"], ["forecaster", "Forecaster"], ["research", "Research"]];
+type Section = "portfolio" | "scanner" | "forecaster" | "research";
+const SECTIONS: [Section, string][] = [["portfolio", "Portfolio"], ["scanner", "Market scan"], ["forecaster", "Forecaster"], ["research", "Research"]];
 
 /** Route from the URL: #research, forecaster tabs (#forecast, #diagnostics, #track), else the portfolio.
  *  Links that carry ?ticker= (the old forecaster URLs) still open the forecaster. */
 function routeFromUrl(): { section: Section; tab: Tab } {
   const h = window.location.hash.replace("#", "");
   if (h === "research") return { section: "research", tab: "forecast" };
+  if (h === "scan") return { section: "scanner", tab: "forecast" };
   if (h === "forecast" || h === "diagnostics" || h === "track") return { section: "forecaster", tab: h };
   if (!h && new URLSearchParams(window.location.search).has("ticker")) return { section: "forecaster", tab: "forecast" };
   return { section: "portfolio", tab: "forecast" };
 }
-type Theme = "system" | "light" | "dark";
 
 const store = {
   get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -82,11 +83,10 @@ export default function App() {
   const go = (sec: Section, t: Tab = tab) => {
     setSectionState(sec);
     setTabState(t);
-    const hash = sec === "portfolio" ? "" : sec === "research" ? "#research" : `#${t}`;
+    const hash = sec === "portfolio" ? "" : sec === "research" ? "#research" : sec === "scanner" ? "#scan" : `#${t}`;
     try { history.replaceState(null, "", `${window.location.pathname}${window.location.search}${hash}`); } catch { /* sandboxed */ }
   };
   const setTab = (t: Tab) => go("forecaster", t);
-  const [theme, setTheme] = useState<Theme>(() => (store.get("le.theme") as Theme) ?? "system");
   const abort = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -99,12 +99,8 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", theme);
-    store.set("le.theme", theme);
-  }, [theme]);
+  // the dashboard is always dark
+  useEffect(() => { document.documentElement.setAttribute("data-theme", "dark"); }, []);
 
   const run = useCallback(async (lv: string[] = levels, symOverride?: string) => {
     const sym = (symOverride ?? ticker).trim().toUpperCase();
@@ -139,6 +135,7 @@ export default function App() {
   useEffect(() => {
     if (section === "portfolio") document.title = "Paper book · LevelEdge";
     else if (section === "research") document.title = "Research · LevelEdge";
+    else if (section === "scanner") document.title = "Market scan · LevelEdge";
     else if (data) document.title = `${data.meta.ticker} ${fmtPrice(data.meta.spot)} · LevelEdge`;
     else document.title = "Forecaster · LevelEdge";
   }, [section, data]);
@@ -164,16 +161,12 @@ export default function App() {
           </div>
           <nav className="section-nav" aria-label="Sections">
             {SECTIONS.map(([k, l]) => (
-              <a key={k} href={k === "portfolio" ? window.location.pathname : k === "research" ? "#research" : "#forecast"}
+              <a key={k} href={k === "portfolio" ? window.location.pathname : k === "research" ? "#research" : k === "scanner" ? "#scan" : "#forecast"}
                  aria-current={section === k ? "page" : undefined}
                  onClick={(e) => { e.preventDefault(); go(k, k === "forecaster" ? tab : "forecast"); }}>{l}</a>
             ))}
           </nav>
           <div className="topbar-spacer" />
-          <button type="button" className="btn btn-ghost btn-icon" onClick={() => setTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system")}
-                  aria-label={`Theme: ${theme}. Change theme`} title={`Theme: ${theme}`}>
-            {theme === "system" ? <Monitor size={16} /> : theme === "light" ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
           {section === "forecaster" && <form className="controls" onSubmit={(e) => { e.preventDefault(); run(); }} aria-label="Forecast settings">
             <div className="field">
               <span>Stock or fund</span>
@@ -220,6 +213,7 @@ export default function App() {
       <main>
         {section === "portfolio" && <Portfolio />}
         {section === "research" && <Research />}
+        {section === "scanner" && <Scanner />}
         {section === "forecaster" && <>
         {error && (
           <div className="banner" data-tone="error" role="alert">

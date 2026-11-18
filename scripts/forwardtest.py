@@ -105,6 +105,37 @@ def run_ticker(ticker: str, target_dt: datetime, end_dt: datetime, sb, run_time:
 # Main
 # ---------------------------------------------------------------------------
 
+SLOTS = ((10, 0), (12, 0), (14, 0))
+LEDGER_URL = "https://raw.githubusercontent.com/krish1patel/LevelEdge/ledger/ledger.jsonl"
+
+
+def due_slot(now_et: datetime) -> datetime | None:
+    """The latest forecast slot that has started today (GitHub often starts scheduled jobs hours late,
+    so the workflow fires every 20 minutes and each run fills whichever slot is due)."""
+    if (now_et.hour, now_et.minute) < (9, 45):
+        return None
+    starts = [now_et.replace(hour=h, minute=m, second=0, microsecond=0) for h, m in SLOTS]
+    started = [t for t in starts if t <= now_et]
+    return started[-1] if started else None
+
+
+def slot_done(now_et: datetime, slot: datetime) -> bool:
+    """True if the public ledger already holds forecasts made in this slot today."""
+    from leveledge import ledger as L
+    try:
+        recs = L.load(LEDGER_URL)
+    except Exception:  # noqa: BLE001 - no ledger yet (first run) or offline: run the slot
+        return False
+    later = [now_et.replace(hour=h, minute=m, second=0, microsecond=0) for h, m in SLOTS]
+    end = min([t for t in later if t > slot], default=slot.replace(hour=23, minute=59))
+    for r in recs:
+        if r["kind"] == "forecast":
+            made = datetime.fromisoformat(r["body"]["made_at"])
+            if slot <= made < end:
+                return True
+    return False
+
+
 def main() -> None:
     import argparse
     import json
@@ -134,6 +165,16 @@ def main() -> None:
     if end_dt >= target_dt:
         print(f"Today's close ({target_dt:%H:%M} ET) has already passed. Exiting.")
         return
+
+    if args.ledger_out:
+        slot = due_slot(now_et)
+        if slot is None:
+            print(f"No forecast slot is due at {now_et:%H:%M} ET (slots: 10:00, 12:00, 14:00; none before 09:45). Exiting.")
+            return
+        if slot_done(now_et, slot):
+            print(f"The {slot:%H:%M} ET slot already has forecasts in the ledger. Exiting.")
+            return
+        print(f"Running the {slot:%H:%M} ET slot (GitHub started this job at {now_et:%H:%M} ET).")
 
     print(f"\n{'='*60}")
     print(f"Forward Test — {now_et.strftime('%Y-%m-%d %H:%M ET')}")

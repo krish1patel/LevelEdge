@@ -16,6 +16,7 @@ LevelEdge answers one question well: *what is the probability that a price close
 |---|---|---|
 | **Forecaster** | Returns P(close above *K*) for any number of levels, plus the full forecast distribution and its out-of-sample record. | [`src/leveledge`](src/leveledge/README.md), [guide](docs/forecaster.md) |
 | **Portfolio** | Trades 70% 60/40 (SPY/IEF) plus a 30% trend-following sleeve over 11 ETFs, weekly, in an Alpaca paper account, with pre-trade safety checks. No margin and whole shares only, so a real account can copy every trade. | [guide](docs/portfolio.md) |
+| **Market scan** | Runs the forecaster on 100 major US stocks and funds after every weekday close, in parallel on AWS (EventBridge Scheduler → SQS → Lambda workers → DynamoDB), and turns the results into plain-English notes. | [guide](docs/market-scan.md) |
 | **Forecast ledger** | Commits every live forecast to a public, hash-chained log before its outcome exists, timestamps it with an outside authority, and scores it by appending. Anyone can verify the record. | [guide](docs/forecast-ledger.md) |
 | **Research** | Logs about 20 pre-declared studies with development and 2020+ holdout periods: Kalshi edge, trend following, hedging, regime models, leverage, dip buying, and more. | [`benchmarks`](benchmarks/README.md) |
 | **Dashboard** | Shows all of the above: a React frontend on Vercel and a FastAPI backend on AWS Lambda. | [`web`](web/README.md), [`app`](app/README.md) |
@@ -43,6 +44,8 @@ The full log, including smaller studies, is in [benchmarks/README.md](benchmarks
   Alpaca (paper) ◀──▶ │  paper trade (weekly) ─▶ safety checks ─▶ orders, report      │
   freetsa.org   ◀──── │  ledger reconcile, forward log, HuggingFace sync              │
                       └───────────────────────────────────────────────────────────────┘
+
+  EventBridge Scheduler (5:45 PM ET) ─▶ dispatcher ─▶ SQS ─▶ Lambda workers ×5 ─▶ DynamoDB ─▶ /api/scan
 
   Browser ─▶ Vercel (React + Vite) ─▶ /api/* ─▶ AWS Lambda (FastAPI + leveledge) ─▶ data sources
 ```

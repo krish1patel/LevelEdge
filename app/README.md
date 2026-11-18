@@ -21,6 +21,7 @@ Interactive API docs are at <http://127.0.0.1:7860/docs>.
 | `GET /api/portfolio` | The book's targets and reasoning, its backtest, and the live paper account | 30 min (targets), 5 min (account) |
 | `GET /api/outlook` | The S&P 500 outlook, its historical coverage, and the scored forward log | 30 min |
 | `GET /api/ledger` | The public forecast ledger, verified from scratch, with scores by interval and calibration | 10 min |
+| `GET /api/scan` | The latest daily market scan: every ticker's one-week forecast, context and notes, plus the ranked notable list | 5 min |
 | `GET /api/research` | Every study's results, from `benchmarks/results/*/summary.json` | — |
 | `GET /api/health` | `ok`, supported intervals, suggested tickers and the server time | — |
 
@@ -34,6 +35,10 @@ curl -s -X POST http://127.0.0.1:7860/api/forecast \
 
 `target` is an ISO datetime, read as US/Eastern when it has no offset. `levels` accepts prices or percent moves. `as_of` (optional) simulates a forecast made at a past time.
 
+## Running the scan worker
+
+`app/worker.py` is the market-scan worker. It runs on Lambda from the same image (see [docs/market-scan.md](../docs/market-scan.md)), with no public URL.
+
 ## Configuring
 
 The API reads these environment variables, or `.env` locally:
@@ -42,6 +47,7 @@ The API reads these environment variables, or `.env` locally:
 |---|---|
 | `SUPABASE_URL`, `SUPABASE_KEY` | Enable `/api/track-record` |
 | `ALPACA_API_KEY_ID`, `ALPACA_API_SECRET_KEY` | Add the live paper account to `/api/portfolio` |
+| `SCAN_TABLE` / `SCAN_FILE` | Read the market scan from DynamoDB, or from a local JSON file |
 | `LEDGER_URL` | The ledger to verify (default: the public `ledger` branch) |
 | `FORWARD_LOG_URL` | The forward log to score (default: the public `forward-log` branch) |
 | `LEVELEDGE_DISABLE_LOGGING=1` | Stop forecasts being written to Supabase |

@@ -3,9 +3,10 @@ name: Forward Test
 
 on:
   schedule:
-    - cron: '0 14 * * 1-5'   # 10:00 AM EDT (UTC-4)
-    - cron: '0 16 * * 1-5'   # 12:00 PM EDT (UTC-4)
-    - cron: '0 18 * * 1-5'   #  2:00 PM EDT (UTC-4)
+    # GitHub starts scheduled jobs anywhere from minutes to 8 hours late, so this fires every 20 minutes
+    # through the US trading day (off the busy top of the hour). forwardtest.py runs the 10:00, 12:00 or
+    # 14:00 ET slot that is due and exits if the ledger already has it, so each slot runs at most once.
+    - cron: '7,27,47 13-20 * * 1-5'
   workflow_dispatch:          # allow manual trigger from GitHub UI
 
 concurrency:                  # never run two forward tests at once; never cancel one mid-run

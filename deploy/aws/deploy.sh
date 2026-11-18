@@ -48,10 +48,14 @@ fi
 
 # ---- 3. environment (secrets come from .env and are never printed) ------------------------
 ENVFILE="$(mktemp)"; chmod 600 "$ENVFILE"; trap 'rm -f "$ENVFILE"' EXIT
+# keep the market scan wired up if deploy/aws/scan.sh has created its table
+aws dynamodb describe-table --region "$REGION" --table-name leveledge-scan >/dev/null 2>&1 && export SCAN_TABLE=leveledge-scan || true
 python3 - "$ENVFILE" <<'PY'
 import json, os, sys
 keys = ["SUPABASE_URL", "SUPABASE_KEY", "ALPACA_API_KEY_ID", "ALPACA_API_SECRET_KEY", "ALPACA_API_KEY", "ALPACA_SECRET_KEY", "POLYGON_API_KEY"]
 env = {"LEVELEDGE_DISABLE_LOGGING": "1"}
+if os.environ.get("SCAN_TABLE"):
+    env["SCAN_TABLE"] = os.environ["SCAN_TABLE"]
 if os.path.exists(".env"):
     for line in open(".env"):
         k, _, v = line.strip().partition("=")
@@ -76,6 +80,12 @@ fi
 aws lambda wait function-updated --region "$REGION" --function-name "$NAME" 2>/dev/null || aws lambda wait function-active --region "$REGION" --function-name "$NAME"
 aws lambda put-function-concurrency --region "$REGION" --function-name "$NAME" --reserved-concurrent-executions "$CONCURRENCY" >/dev/null ||
   echo "Note: couldn't reserve concurrency (new accounts have a low account limit); the function still works."
+
+# the market-scan worker runs the same image (deploy/aws/scan.sh creates it)
+if aws lambda get-function --region "$REGION" --function-name leveledge-scan >/dev/null 2>&1; then
+  aws lambda update-function-code --region "$REGION" --function-name leveledge-scan --image-uri "$REPO:$TAG" >/dev/null
+  echo "Updated the market-scan worker to the same image"
+fi
 
 # ---- 5. public URL ----------------------------------------------------------------------------
 URL="$(aws lambda get-function-url-config --region "$REGION" --function-name "$NAME" --query FunctionUrl --output text 2>/dev/null ||

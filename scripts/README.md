@@ -20,7 +20,8 @@ python scripts/mirror_ticket.py --positions positions.csv  # orders for your own
 
 | Script | Run by | What it does |
 |---|---|---|
-| `forwardtest.py` | `run_forwardtest.yml`, 3 times a day | Forecasts QQQ, SPY, NVDA and TSLA at 8 strikes and logs to Supabase. `--ledger-out FILE` also writes ledger records. |
+| `market_scan.py` | You | Runs the daily market scan locally and writes it as JSON (`SCAN_FILE=scan.json` shows it on the dashboard) |
+| `forwardtest.py` | `run_forwardtest.yml`, every 20 minutes (each slot at most once) | Forecasts QQQ, SPY, NVDA and TSLA at 8 strikes and logs to Supabase. `--ledger-out FILE` also writes ledger records. |
 | `update_outcomes.py` | `update_outcomes.yml`, hourly | Fills realised prices into Supabase forward-test rows |
 | `ledger.py` | `run_forwardtest.yml`, `ledger_reconcile.yml` | Operates the verifiable ledger: `init`, `append`, `reconcile`, `anchor`, `verify` |
 | `ledger_push.sh` | The same workflows | Runs a `ledger.py` command on the public `ledger` branch and pushes, retrying on the new head if another job pushed first |

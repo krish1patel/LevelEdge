@@ -71,6 +71,15 @@ The deployment stays inside AWS's always-free Lambda tier at this traffic.
 
 AWS updates billing data a few times a day, so a budget email can arrive hours after the threshold.
 
+### Setting up the market scan
+
+```bash
+bash deploy/aws/scan.sh            # create or update the scan pipeline
+bash deploy/aws/scan.sh --run-now  # ... and start a scan now
+```
+
+See [Market scan](market-scan.md). `deploy.sh` keeps the scan wired up and updates the worker's image on every deploy.
+
 ### Pausing the API
 
 To stop all API spending at once:
