@@ -139,6 +139,18 @@ python benchmarks/compare.py         # real held-out sessions, ~8 min on 6 proce
 
 ## Deployment
 
+**Public dashboard: https://leveledge.vercel.app.** The React frontend is on Vercel, and the FastAPI app runs on AWS Lambda (arm64 container, behind a Function URL). `web/vercel.json` forwards `/api/*` to Lambda, so the browser talks to one origin.
+
+```bash
+aws login                                  # once per session (region us-east-1)
+bash deploy/aws/deploy.sh                  # build, push to ECR, create/update the function, smoke-test, write web/vercel.json
+cd web && vercel deploy --prod             # publish the frontend
+```
+
+`deploy/aws/Dockerfile` installs only what the API imports (`deploy/aws/requirements-lambda.txt`) and the research summaries, and uses the AWS Lambda Web Adapter so the unchanged app runs under uvicorn. Cost guards: it stays inside Lambda's always-free tier at this traffic, runs at most 5 copies at once, keeps 2 images in ECR (about 650 MB, cents a month), and keeps 7 days of logs. A $10/month AWS budget (`leveledge-10usd`, covering the whole account) emails when actual spend passes $10 or the month's forecast does. To stop all API spending at once: `bash deploy/aws/pause.sh` (undo with `bash deploy/aws/pause.sh resume`). Secrets for the Track record (Supabase) and the live paper account (Alpaca) are copied from `.env` into the function's encrypted settings.
+
+The HuggingFace Space below is the older deployment, kept in sync from `main`.
+
 Every push to `main` syncs to the HuggingFace Space (`.github/workflows/sync_to_hf.yml`). The multi-stage `Dockerfile` builds the frontend with Node, then serves the API and the static frontend with uvicorn on port 7860.
 
 Space secrets:
