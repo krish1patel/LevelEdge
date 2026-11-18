@@ -1,0 +1,22 @@
+# Only what app/api.py and src/leveledge import (the full requirements.txt also carries Streamlit, NiceGUI, etc.)
+fastapi==0.134.0
+uvicorn==0.41.0
+starlette==0.52.1
+pydantic==2.12.5
+pydantic_core==2.41.5
+numpy==2.4.2
+pandas==2.3.3
+scipy==1.17.0
+scikit-learn==1.8.0
+xgboost==3.2.0
+yfinance==1.1.0
+curl_cffi==0.13.0
+pandas_market_calendars==5.3.0
+exchange_calendars==4.13.1
+python-dotenv==1.2.1
+supabase==2.28.0
+requests==2.32.5
+httpx==0.28.1
+python-multipart==0.0.22
+pytz==2025.2
+tzdata==2025.3
