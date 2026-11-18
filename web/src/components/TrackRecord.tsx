@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getBenchmark, getTrackRecord, type Benchmark, type TrackRecord as TR } from "../api";
 import { fmtNum, fmtPct } from "../format";
 import { XYChart } from "./XYChart";
+import { LedgerCard } from "./LedgerCard";
 
 const MODEL_NAMES: Record<string, string> = {
   leveledge_v2_stacked: "LevelEdge v2",
@@ -32,6 +33,8 @@ export function TrackRecord() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <LedgerCard />
+
       {tr?.status === "ok" && <div className="segmented" role="group" aria-label="Track record window" style={{ alignSelf: "flex-start" }}>
         {RANGES.map((d) => (
           <button key={d} type="button" aria-pressed={days === d} onClick={() => setDays(d)}>Last {d} days</button>
@@ -58,6 +61,7 @@ export function TrackRecord() {
         )}
         {tr && tr.status === "ok" && (
           <>
+            <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
@@ -78,6 +82,7 @@ export function TrackRecord() {
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="grid-2" style={{ marginTop: 24 }}>
               <div>
                 <h3 style={{ fontSize: "var(--t-body)", fontWeight: 600, margin: "0 0 8px" }}>Calibration</h3>
@@ -139,6 +144,7 @@ function BenchmarkTable({ b }: { b: Extract<Benchmark, { status: "ok" }> }) {
   const diff = b["brier_diff_v2_minus_v1"] as { point: number; ci95: [number, number] } | undefined;
   return (
     <>
+      <div className="table-scroll">
       <table className="table">
         <thead>
           <tr><th scope="col">Model</th><th scope="col" className="r">Brier</th><th scope="col" className="r">Log loss</th><th scope="col" className="r">AUC</th><th scope="col" className="r">Calibration error</th><th scope="col" className="r">Brier skill vs v1</th></tr>
@@ -159,6 +165,7 @@ function BenchmarkTable({ b }: { b: Extract<Benchmark, { status: "ok" }> }) {
           })}
         </tbody>
       </table>
+      </div>
       <p className="footnote">
         {b.forecasts.toLocaleString()} forecasts, {b.days[0]} to {b.days[1]}.
         {diff && ` Brier difference v2 − v1: ${diff.point.toFixed(4)} (95% CI ${diff.ci95[0].toFixed(4)} to ${diff.ci95[1].toFixed(4)}, resampling whole ticker-days).`}

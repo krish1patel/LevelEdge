@@ -1,0 +1,64 @@
+# .github/workflows/ledger_reconcile.yml
+# After the close, score every matured forecast in the verifiable ledger (the `ledger`
+# branch) by appending score records, timestamp the new head, then verify the whole public
+# ledger from scratch, timestamp tokens included. Scoring is idempotent, so the backstop
+# run and retries never double-score. Any verification failure posts an alert.
+name: Ledger Reconcile
+
+on:
+  schedule:
+    - cron: '30 22 * * 1-5'   # 5:30 PM EST / 6:30 PM EDT, after the close
+    - cron: '0 12 * * *'      # daily backstop for late or missed runs
+  workflow_dispatch:
+
+concurrency:
+  group: ledger-reconcile
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install --no-deps .
+      - name: Score matured forecasts
+        run: |
+          if git ls-remote --exit-code --heads origin ledger >/dev/null; then
+            bash scripts/ledger_push.sh "Ledger: scores through $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')" reconcile --anchor
+          else
+            echo "No ledger yet: the first forward test creates it."
+          fi
+      - name: Verify the public ledger from scratch
+        run: |
+          if git ls-remote --exit-code --heads origin ledger >/dev/null; then
+            git fetch -q origin ledger
+            git show origin/ledger:ledger.jsonl > ledger.jsonl
+            python src/leveledge/ledger.py verify ledger.jsonl --check-tsa | tee verify.txt
+          fi
+      - name: Alert on failure
+        if: failure()
+        run: |
+          {
+            echo "## Forecast ledger check failed"
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            if [ -s verify.txt ]; then echo '```'; tail -n 30 verify.txt; echo '```'; fi
+            echo
+            echo "Nothing is appended to a ledger that fails verification. Investigate before the next forward test."
+          } > alert.md
+          bash scripts/post_report.sh alert.md
