@@ -10,9 +10,9 @@ QQQ same-day backtest: predict 4 PM ET market close from various intraday times.
 - Prints calibration and accuracy summary at the end
 
 Usage:
-    python scripts/backtest_qqq.py
-    python scripts/backtest_qqq.py --days 10 --intervals 15m 1h --strikes -3 -2 -1 1 2 3
-    python scripts/backtest_qqq.py --history-days 365  # training window size
+    python legacy/backtests/backtest_qqq.py
+    python legacy/backtests/backtest_qqq.py --days 10 --intervals 15m 1h --strikes -3 -2 -1 1 2 3
+    python legacy/backtests/backtest_qqq.py --history-days 365  # training window size
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", message="Precision is ill-defined")
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, PROJECT_ROOT)
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 

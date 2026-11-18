@@ -66,7 +66,7 @@ m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 | `model.py` | `LevelForecaster`: `VolScaler` (diurnal profile + mean-reverting variance, fitted by likelihood) → z-scores → `EmpiricalBaseline` (kernel survival function + Student-t tail) → XGBoost boosted from the baseline margin with a monotone constraint on the level → non-negative, intercept-free stacker → **held-out-fold gate** (classifier weight 0 unless it beats the baseline on the last fold) |
 | `predictor.py` | `forecast()` with an LRU cache; `Predictor` = backward-compatible one-level API used by the scripts |
 | `portfolio.py` | ETF data, momentum signals, vol-targeted sizing, daily backtest with next-open fills and costs, metrics, block-bootstrap Sharpe CIs, deflated Sharpe |
-| `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_v1`), weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()` |
+| `live.py` | The traded book (`STRATEGY_ID = core6040_trend30_cash_v3`), weekly rebalance day on the NYSE calendar, partial-daily-bar guard, `current_targets()` |
 | `broker.py` | Alpaca client locked to paper; `plan_orders()` never borrows and skips drift under the band |
 | `kalshi.py` / `edge.py` | Kalshi public market data (live and archived candles); after-fee edge and joint event-level Kelly sizing |
 | `regime.py` | GJR-GARCH-t with filtered historical simulation, HAR, two-state HMM, statistical jump model, turbulence, absorption ratio, CRPS (numpy/scipy only) |
@@ -96,7 +96,7 @@ Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benc
 
 ## Frontend
 
-`web/src/`: `App.tsx` (shell with Portfolio / Forecaster / Research sections; hash routes `#research`, `#forecast`, `#diagnostics`, `#track`, default portfolio; `?ticker=` links open the forecaster), `components/Portfolio.tsx`, `components/Research.tsx`, `components/FanChart.tsx` (signature chart, x-axis in trading bars), `LevelsPanel`, `TrustPanel`, `Diagnostics`, `TrackRecord`, `XYChart`. Hand-built SVG with d3-scale/d3-shape. Tokens live in `styles.css`. Design context: `PRODUCT.md`, `DESIGN.md`, `.impeccable/surfaces/`.
+`web/src/`: `App.tsx` (shell with Portfolio / Forecaster / Research sections; hash routes `#research`, `#forecast`, `#diagnostics`, `#track`, default portfolio; `?ticker=` links open the forecaster), `components/Portfolio.tsx`, `Outlook.tsx`, `Research.tsx`, `FanChart.tsx` (signature chart, x-axis in trading bars), `LevelsPanel`, `TrustPanel`, `Diagnostics`, `TrackRecord`, `LedgerCard`, `XYChart`. Hand-built SVG with d3-scale/d3-shape. Tokens live in `styles.css`. Design context: `PRODUCT.md`, `DESIGN.md`, `.impeccable/surfaces/`.
 
 ## Deployment
 
@@ -104,6 +104,12 @@ Public dashboard: https://leveledge.vercel.app (Vercel project `leveledge`, acco
 
 `Dockerfile` (multi-stage: Node builds `web/dist`, Python serves it). `.github/workflows/sync_to_hf.yml` pushes `main` to the HuggingFace Space, so **every push to main deploys**. Add `SUPABASE_URL` and `SUPABASE_KEY` as Space secrets for the track record.
 
+## Repository layout and docs
+
+Every folder has a README; the guides are in `docs/` (architecture, forecaster, portfolio, forecast-ledger, deployment, operations) and the research log is `benchmarks/README.md`. Keep them current: a new study gets a row in `benchmarks/README.md`, a new script a row in `scripts/README.md`, a new workflow a row in `.github/workflows/README.md` and `docs/operations.md`. Docs follow Google developer-docs style (task headings, second person, present tense, runnable code).
+
+The root `README.md` has no YAML header: `scripts/sync_space.sh` prepends `deploy/huggingface/space_header.yml` when syncing to the HuggingFace Space.
+
 ## Legacy
 
-`examples/streamlit_batch_predictor.py` (old UI) and `examples/` scripts still run on the compatible `Predictor` API. `benchmarks/legacy_v1.py` is a frozen copy of v1, used only for benchmarking.
+`legacy/` holds the v1-era Streamlit apps, CLI and testing scripts (`legacy/examples/`), the QQQ/ETH/SOL backtests (`legacy/backtests/`) and a one-off Supabase fix (`legacy/maintenance/`). Nothing in production imports it; most of it still runs on the compatible `Predictor` API. `benchmarks/legacy_v1.py` is a frozen copy of v1, used only by `benchmarks/compare.py`, and stays in `benchmarks/`.

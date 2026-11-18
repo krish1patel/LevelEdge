@@ -9,9 +9,9 @@ ETH-USD crypto backtest: predict the next full hour's close from the current hou
 - Uses Polygon.io for 2-year training window if POLYGON_API_KEY is set
 
 Usage:
-    python scripts/backtest_eth.py
-    python scripts/backtest_eth.py --days 3 --strikes 0.0
-    python scripts/backtest_eth.py --start-date 2026-02-01 --end-date 2026-03-20 --strikes 0.0
+    python legacy/backtests/backtest_eth.py
+    python legacy/backtests/backtest_eth.py --days 3 --strikes 0.0
+    python legacy/backtests/backtest_eth.py --start-date 2026-02-01 --end-date 2026-03-20 --strikes 0.0
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", message="Precision is ill-defined")
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, PROJECT_ROOT)
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 

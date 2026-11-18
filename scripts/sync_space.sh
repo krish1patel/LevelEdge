@@ -29,6 +29,11 @@ if [ -n "$excluded" ]; then
   echo "$excluded" | sed 's/^/  /'
   echo "$excluded" | tr '\n' '\0' | xargs -0 git rm --cached --quiet --
 fi
+# HuggingFace reads the Space's settings from YAML at the top of README.md; GitHub would show
+# that block as a table, so it lives in deploy/huggingface/space_header.yml and is added here
+header="$(git rev-parse --show-toplevel)/deploy/huggingface/space_header.yml"
+readme_blob="$({ cat "$header"; printf '\n'; git show HEAD:README.md; } | git hash-object -w --stdin)"
+git update-index --cacheinfo "100644,$readme_blob,README.md"
 tree="$(git write-tree)"
 unset GIT_INDEX_FILE
 
@@ -39,6 +44,6 @@ fi
 
 export GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-LevelEdge sync}" GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-sync@leveledge.invalid}"
 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-commit="$(git commit-tree "$tree" "${parent_args[@]}" -m "Sync from GitHub $(git rev-parse --short HEAD)")"
+commit="$(git commit-tree "$tree" ${parent_args[@]+"${parent_args[@]}"} -m "Sync from GitHub $(git rev-parse --short HEAD)")"
 git push space "$commit:refs/heads/$BRANCH"
 echo "Pushed snapshot $commit of $(git rev-parse --short HEAD)."
