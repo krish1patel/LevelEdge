@@ -147,7 +147,7 @@ bash deploy/aws/deploy.sh                  # build, push to ECR, create/update t
 cd web && vercel deploy --prod             # publish the frontend
 ```
 
-`deploy/aws/Dockerfile` installs only what the API imports (`deploy/aws/requirements-lambda.txt`) and the research summaries, and uses the AWS Lambda Web Adapter so the unchanged app runs under uvicorn. Cost guards: it stays inside Lambda's always-free tier at this traffic, runs at most 5 copies at once, keeps 2 images in ECR (about 650 MB, cents a month), and keeps 7 days of logs. `BUDGET_EMAIL=... bash deploy/aws/deploy.sh` adds a $5/month budget alert. Secrets for the Track record (Supabase) and the live paper account (Alpaca) are copied from `.env` into the function's encrypted settings.
+`deploy/aws/Dockerfile` installs only what the API imports (`deploy/aws/requirements-lambda.txt`) and the research summaries, and uses the AWS Lambda Web Adapter so the unchanged app runs under uvicorn. Cost guards: it stays inside Lambda's always-free tier at this traffic, runs at most 5 copies at once, keeps 2 images in ECR (about 650 MB, cents a month), and keeps 7 days of logs. A $10/month AWS budget (`leveledge-10usd`, covering the whole account) emails when actual spend passes $10 or the month's forecast does. To stop all API spending at once: `bash deploy/aws/pause.sh` (undo with `bash deploy/aws/pause.sh resume`). Secrets for the Track record (Supabase) and the live paper account (Alpaca) are copied from `.env` into the function's encrypted settings.
 
 The HuggingFace Space below is the older deployment, kept in sync from `main`.
 

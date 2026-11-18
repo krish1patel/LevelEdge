@@ -100,7 +100,7 @@ Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benc
 
 ## Deployment
 
-Public dashboard: https://leveledge.vercel.app (Vercel project `leveledge`, account shlok-p07) with the API on AWS Lambda `leveledge-api` (us-east-1, arm64 image in ECR, Function URL; `web/vercel.json` rewrites `/api/*` to it). Redeploy: `bash deploy/aws/deploy.sh` then `cd web && vercel deploy --prod`. Keep the cost guards (reserved concurrency 5, ECR keeps 2 images, 7-day logs) and keep `deploy/aws/requirements-lambda.txt` to what the API imports. The user is on free student credits: never add always-on resources (EC2, NAT gateways, RDS, provisioned App Runner) without asking.
+Public dashboard: https://leveledge.vercel.app (Vercel project `leveledge`, account shlok-p07) with the API on AWS Lambda `leveledge-api` (us-east-1, arm64 image in ECR, Function URL; `web/vercel.json` rewrites `/api/*` to it). Redeploy: `bash deploy/aws/deploy.sh` then `cd web && vercel deploy --prod`. Keep the cost guards (reserved concurrency 5, ECR keeps 2 images, 7-day logs) and keep `deploy/aws/requirements-lambda.txt` to what the API imports. A $10/month budget `leveledge-10usd` emails the user; `bash deploy/aws/pause.sh` stops the API (reserved concurrency 0). The user is on free student credits: never add always-on resources (EC2, NAT gateways, RDS, provisioned App Runner) without asking.
 
 `Dockerfile` (multi-stage: Node builds `web/dist`, Python serves it). `.github/workflows/sync_to_hf.yml` pushes `main` to the HuggingFace Space, so **every push to main deploys**. Add `SUPABASE_URL` and `SUPABASE_KEY` as Space secrets for the track record.
 
