@@ -40,7 +40,8 @@ Set `LEVELEDGE_DISABLE_LOGGING=1` to stop `Predictor.predict_xgb()` writing to S
 cd web && npm run dev                               # hot-reload UI at :5173, proxies /api to :7860
 .venv/bin/python -m pytest -q tests                 # offline tests (synthetic data, no network)
 .venv/bin/python benchmarks/compare.py              # v1-vs-v2 out-of-sample benchmark (~8 min, network)
-python scripts/forwardtest.py                       # live forward test (needs Supabase)
+python scripts/forwardtest.py                       # live forward test (needs Supabase); --ledger-out F also writes ledger records
+python src/leveledge/ledger.py verify <path|URL> --check-tsa   # verify the public forecast ledger (stdlib only)
 python scripts/paper_trade.py --force               # paper rebalance plan (dry run; add --execute to submit)
 python scripts/mirror_ticket.py --positions <Fidelity positions CSV>   # whole-share orders to copy the book in Fidelity
 .venv/bin/python benchmarks/paper_portfolio.py      # backtest of the traded book -> results/paper_portfolio (dashboard data)
@@ -71,6 +72,7 @@ m.quantiles(); m.curve(); m.fan(); m.level_backtest(605); m.interval_coverage()
 | `regime.py` | GJR-GARCH-t with filtered historical simulation, HAR, two-state HMM, statistical jump model, turbulence, absorption ratio, CRPS (numpy/scipy only) |
 | `safety.py` | Pre-trade checks run by `scripts/paper_trade.py` before any order (account, data freshness, plausible moves, price cross-check, order sizes, gross, no borrowing, duplicate runs) |
 | `mirror.py` | Fidelity positions CSV parser and the whole-share, no-margin ticket for copying the book in a real account |
+| `ledger.py` | Verifiable forecast ledger (stdlib only): hash-chained records, RFC 3161 anchors on the head, idempotent `reconcile()` that appends scores, `verify()` that recomputes everything. Operated by `scripts/ledger.py` and `scripts/ledger_push.sh` on the public `ledger` branch |
 | `outlook.py` | Live S&P 500 outlook for `/api/outlook`: average of VIX, HAR and GJR distributions; 1-day to 3-month fan, odds, the book's range via its beta |
 
 Validation: expanding walk-forward, last 60% of rows in 6 folds, purge `h` bars plus embargo `h` bars. Metrics: log loss, Brier, AUC, reliability, 80%-range coverage, per-level Brier skill vs climatology.
@@ -86,6 +88,7 @@ Model decisions are evidence-backed by `benchmarks/compare.py` (results in `benc
 - Times are US/Eastern; bars are indexed by start time; stocks use regular-session bars only.
 - Paper trading only: never remove the `LEVELEDGE_ALLOW_LIVE_TRADING` guard or let `plan_orders` spend more than cash plus sale proceeds.
 - The user mirrors every paper trade in a real Fidelity account: keep `MAX_GROSS = 1.0`, `WHOLE_SHARES = True` and the `no_borrowing` check, and price any backtest that borrows at a retail margin rate, not T-bill + 2%.
+- The `ledger` branch is append-only: never force-push, rewrite or delete it, and never change `canonical()`, `record_hash()` or the record fields (that breaks every existing hash). Validate forecasts with `check_forecast()` before appending; a bad record can never be removed. Scores are appended by `reconcile()`, never edited.
 - Never bypass or loosen `leveledge.safety.pretrade_checks` to get a run through; a halted run is the system working. The forward log (`forward-log` branch) is append-only: never rewrite or delete its history.
 - The traded book's rules are pre-declared; changing them needs `paper_portfolio.py` and the holdout protocol re-run, and a new `STRATEGY_ID`.
 - Stock forecasts are not compared with markets before 09:45 ET (the model has no bar from the session yet).

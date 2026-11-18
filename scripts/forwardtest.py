@@ -56,7 +56,20 @@ def log_prediction(sb, p: Predictor, prediction: float, run_time: datetime) -> N
 # Core: run predictions for one ticker
 # ---------------------------------------------------------------------------
 
-def run_ticker(ticker: str, target_dt: datetime, end_dt: datetime, sb, run_time: datetime) -> None:
+def ledger_body(p: Predictor, ticker: str, interval: str, target_dt: datetime, run_time: datetime,
+                spot: float, levels: list[float], probs: list[float]) -> dict:
+    """One forecast record for the verifiable ledger (leveledge.ledger): the same numbers
+    logged to Supabase, frozen before the target time."""
+    from leveledge.ledger import to_ppm
+    from leveledge.predictor import MODEL_TYPE
+    return {"type": "level", "ticker": ticker, "interval": interval, "made_at": run_time.isoformat(),
+            "target": target_dt.isoformat(), "last_bar": p._bars.index[-1].isoformat(), "spot": round(spot, 4),
+            "levels": levels, "p_above_ppm": [to_ppm(x) for x in probs], "model": MODEL_TYPE,
+            "code": os.environ.get("GITHUB_SHA", "local")[:12]}
+
+
+def run_ticker(ticker: str, target_dt: datetime, end_dt: datetime, sb, run_time: datetime,
+               ledger_bodies: list | None = None) -> None:
     """One model fit per interval; every strike is a query against that fit."""
     total = errors = 0
     for interval in INTERVALS:
@@ -70,16 +83,21 @@ def run_ticker(ticker: str, target_dt: datetime, end_dt: datetime, sb, run_time:
         levels = [round(spot * (1 + pct / 100.0), 2) for pct in STRIKE_PCT]
         if interval == INTERVALS[0]:
             print(f"  [{ticker}] Price: ${spot:.2f} | Levels: {levels}")
+        got, p = [], None
         for price in levels:
             try:
                 p = Predictor(ticker, target_dt, interval, price)
                 p.train_xgb()            # cache hit: reuses the fit above
                 prediction = p.predict_xgb()
                 log_prediction(sb, p, prediction, run_time)
+                got.append((price, prediction))
                 total += 1
             except Exception as e:
                 print(f"    [{ticker}] {interval} ${price:.2f}: {e}")
                 errors += 1
+        if ledger_bodies is not None and got and p is not None:
+            ledger_bodies.append(ledger_body(p, ticker, interval, target_dt, run_time, spot,
+                                             [lv for lv, _ in got], [pr for _, pr in got]))
     print(f"  [{ticker}] Done — {total} predictions logged, {errors} errors")
 
 
@@ -88,7 +106,13 @@ def run_ticker(ticker: str, target_dt: datetime, end_dt: datetime, sb, run_time:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    import argparse
+    import json
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ledger-out", default=None, help="also write forecast records for the verifiable ledger")
+    args = ap.parse_args()
     load_dotenv()
+    ledger_bodies: list | None = [] if args.ledger_out else None
 
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
 
@@ -120,9 +144,13 @@ def main() -> None:
 
     for ticker in TICKERS:
         print(f"Running {ticker}...")
-        run_ticker(ticker, target_dt, end_dt, sb, run_time)
+        run_ticker(ticker, target_dt, end_dt, sb, run_time, ledger_bodies)
         print()
 
+    if args.ledger_out:
+        with open(args.ledger_out, "w") as f:
+            json.dump(ledger_bodies, f)
+        print(f"{len(ledger_bodies)} forecast records written to {args.ledger_out} for the ledger.")
     print("All predictions complete.")
 
 

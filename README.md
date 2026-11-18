@@ -171,6 +171,27 @@ Forward log: `.github/workflows/forward_log.yml` runs `scripts/log_forward.py` a
 
 `.github/workflows/run_forwardtest.yml` runs `scripts/forwardtest.py` at 10:00, 12:00 and 14:00 ET on weekdays. It skips NYSE holidays and targets the early close on half-days. It logs QQQ, SPY, NVDA and TSLA at ±1–3% strikes to Supabase, with `model_type = leveledge_v2_stacked` (v1 rows are `xgboost_classifier`). `update_outcomes.yml` fills in the realised closes every hour. The dashboard's Track record tab scores both versions side by side.
 
+## Verifiable forecast ledger
+
+The Supabase table is an ordinary database: rows can be edited, and nothing in it proves a forecast existed before its outcome. The ledger makes the live record checkable by anyone.
+
+- **Commit before the outcome.** After each forward-test run, the same forecasts are appended to `ledger.jsonl` on the public `ledger` branch: one record per ticker and bar interval, holding the eight levels and their probabilities. A forecast whose target has already passed is refused.
+- **Hash chain.** Each record's hash covers its contents and the previous record's hash. Editing, deleting, inserting or reordering any record changes every hash after it.
+- **Outside timestamp.** In the same push, freetsa.org signs the new head hash (RFC 3161). A hash chain alone can't prove *when*, since its owner could rebuild it from scratch with backdated forecasts. A signed token can't be backdated. A forecast counts only if a timestamp covering it was signed before its target.
+- **Scores are appended, never edited.** `ledger_reconcile.yml` runs after the close and appends one score record per matured forecast: the session close, which levels it closed above, and the Brier score. Re-running it adds nothing, so a retried job never double-scores. It then re-verifies the whole public ledger, token signatures included, and posts an alert if anything fails.
+- **Anyone can verify.** `src/leveledge/ledger.py` uses only the Python standard library:
+
+  ```bash
+  python src/leveledge/ledger.py verify https://raw.githubusercontent.com/krish1patel/LevelEdge/ledger/ledger.jsonl --check-tsa
+  python scripts/ledger.py verify --check-closes     # also re-check every recorded close against Yahoo
+  ```
+
+  The verifier recomputes every hash and every score from the committed probabilities, and checks each anchor against the chain. With `--check-tsa` it also checks each token's signature with OpenSSL. The Track record tab runs the same check on every load.
+
+Design notes: probabilities are stored in parts per million, so the hashed text never depends on how a language prints a float. Concurrent jobs append with optimistic concurrency (`scripts/ledger_push.sh`): an attempt rejected because another job pushed first is rebuilt on the new head and retried, and history is never rewritten.
+
+Limits: the ledger proves the record wasn't edited after the fact. It doesn't prove the forecasts are any good (that's what the scores are for), and the closes come from Yahoo Finance, which the verifier can re-check but doesn't control. The file grows by roughly 100 forecasts per trading day; splitting it into monthly files is the next step once it gets large.
+
 ## Limits
 
 - yfinance keeps about 60 days of 2m–90m bars (7 days of 1m) and 730 days of 1h. Longer intraday history needs another source (see the roadmap).

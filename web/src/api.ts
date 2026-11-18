@@ -323,3 +323,16 @@ export type ForwardRecord =
     };
 
 export const getOutlook = () => call<Outlook>("/api/outlook");
+
+export type Ledger =
+  | {
+      status: "ok"; url: string; view_url: string; verify_cmd: string;
+      ok: boolean; problems: string[]; records: number; forecasts: number; scored: number; scored_on_time: number;
+      pending: number; anchors: number; head: string; head_seq: number; brier_on_time: number | null;
+      first: string | null; last_anchor: string | null; tsa: string | null;
+      by_interval: Record<string, { n: number; brier: number }>;
+      reliability: { forecast: number; observed: number; n: number }[]; levels_scored: number;
+    }
+  | { status: "empty" | "unavailable" | "error"; message?: string; url?: string };
+
+export const getLedger = () => call<Ledger>("/api/ledger");

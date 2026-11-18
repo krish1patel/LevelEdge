@@ -220,6 +220,10 @@ button, input, select { font: inherit; color: inherit; letter-spacing: inherit; 
 .add-level { display: flex; gap: var(--s2); margin-top: var(--s3); }
 .add-level .input { flex: 1; }
 .help { font-size: var(--t-cap); color: var(--ink-3); margin: var(--s2) 0 0; max-width: 37em; }
+.badge[data-tone="good"] svg { color: var(--good); }
+.badge[data-tone="bad"] { border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+.badge[data-tone="bad"] svg { color: var(--bad); }
+.footnote code { font-size: var(--t-cap); overflow-wrap: anywhere; background: var(--surface-2); border: 1px solid var(--hairline); padding: 1px 6px; border-radius: 6px; }
 .err { font-size: var(--t-cap); color: var(--bad); margin: var(--s2) 0 0; }
 
 /* ---------- trust ---------- */

@@ -475,6 +475,53 @@ def _outlook() -> dict:
     return out
 
 
+LEDGER_URL = os.environ.get("LEDGER_URL", "https://raw.githubusercontent.com/krish1patel/LevelEdge/ledger/ledger.jsonl")
+
+
+def _ledger() -> dict:
+    """Verify the public forecast ledger from scratch and summarise what it proves."""
+    from leveledge import ledger as LG
+
+    try:
+        recs = LG.load(LEDGER_URL)
+    except Exception as e:  # noqa: BLE001
+        return {"status": "unavailable", "message": f"The ledger is not readable yet ({e.__class__.__name__}).", "url": LEDGER_URL}
+    if not recs:
+        return {"status": "empty", "url": LEDGER_URL}
+    rep = LG.verify(recs)
+    fc = {r["hash"]: r for r in recs if r["kind"] == "forecast"}
+    on_time = [r["body"] for r in recs if r["kind"] == "score" and r["body"]["anchored_before_target"]]
+    by_interval: dict[str, list] = {}
+    pairs = []
+    for s in on_time:
+        f = fc[s["forecast"]]["body"]
+        by_interval.setdefault(f["interval"], []).append(s["brier_ppm"] / LG.PPM)
+        pairs += [(p / LG.PPM, o) for p, o in zip(f["p_above_ppm"], s["above"])]
+    bins = []
+    for lo in np.arange(0, 1, 0.1):
+        pts = [(p, o) for p, o in pairs if lo <= p < lo + 0.1 or (lo >= 0.9 and p == 1.0)]
+        if pts:
+            bins.append({"forecast": float(np.mean([p for p, _ in pts])), "observed": float(np.mean([o for _, o in pts])), "n": len(pts)})
+    anchors = [r for r in recs if r["kind"] == "anchor"]
+    forecasts = [r["body"] for r in fc.values()]
+    return {"status": "ok", "url": LEDGER_URL, "view_url": _github_view(LEDGER_URL),
+            "verify_cmd": f"python src/leveledge/ledger.py verify {LEDGER_URL} --check-tsa",
+            **{k: v for k, v in rep.items()},
+            "first": forecasts[0]["made_at"][:10] if forecasts else None,
+            "last_anchor": anchors[-1]["body"]["gen_time"] if anchors else None,
+            "tsa": anchors[-1]["body"]["tsa"] if anchors else None,
+            "by_interval": {k: {"n": len(v), "brier": float(np.mean(v))} for k, v in sorted(by_interval.items())},
+            "reliability": bins, "levels_scored": len(pairs)}
+
+
+@app.get("/api/ledger")
+def api_ledger():
+    try:
+        return _clean(_cached("ledger", 600, _ledger))
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": f"Couldn't check the ledger: {e}"}
+
+
 @app.get("/api/outlook")
 def api_outlook():
     try:
