@@ -1,0 +1,342 @@
+{
+ "source": "FRBSF Daily News Sentiment Index (Buckman, Shapiro, Sudhof & Wilson 2020)",
+ "sentiment_range": [
+  "1980-01-01",
+  "2026-11-15"
+ ],
+ "lag_days": 8,
+ "period": [
+  "2007-02-09",
+  "2026-11-09"
+ ],
+ "runs": {
+  "spy_buy_hold": {
+   "full": {
+    "start": "2007-02-09",
+    "end": "2026-11-09",
+    "years": 19.72,
+    "cagr": 0.1071,
+    "vol": 0.1959,
+    "sharpe": 0.539,
+    "sortino": 0.661,
+    "max_drawdown": -0.5519,
+    "calmar": 0.194,
+    "worst_month": -0.1652,
+    "pct_positive_months": 0.655,
+    "total_return": 6.4398
+   },
+   "dev": {
+    "start": "2007-02-09",
+    "end": "2019-12-31",
+    "years": 12.88,
+    "cagr": 0.086,
+    "vol": 0.1936,
+    "sharpe": 0.479,
+    "sortino": 0.585,
+    "max_drawdown": -0.5519,
+    "calmar": 0.156,
+    "worst_month": -0.1652,
+    "pct_positive_months": 0.671,
+    "total_return": 1.8927
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.1482,
+    "vol": 0.2003,
+    "sharpe": 0.648,
+    "sortino": 0.803,
+    "max_drawdown": -0.3372,
+    "calmar": 0.439,
+    "worst_month": -0.1249,
+    "pct_positive_months": 0.627,
+    "total_return": 1.5719
+   }
+  },
+  "level": {
+   "full": {
+    "start": "2007-02-09",
+    "end": "2026-11-09",
+    "years": 19.72,
+    "cagr": 0.0693,
+    "vol": 0.1128,
+    "sharpe": 0.514,
+    "sortino": 0.459,
+    "max_drawdown": -0.3556,
+    "calmar": 0.195,
+    "worst_month": -0.1863,
+    "pct_positive_months": 0.727,
+    "total_return": 2.7448
+   },
+   "dev": {
+    "start": "2007-02-09",
+    "end": "2019-12-31",
+    "years": 12.88,
+    "cagr": 0.0796,
+    "vol": 0.1036,
+    "sharpe": 0.709,
+    "sortino": 0.682,
+    "max_drawdown": -0.1664,
+    "calmar": 0.478,
+    "worst_month": -0.0872,
+    "pct_positive_months": 0.742,
+    "total_return": 1.6805
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0501,
+    "vol": 0.1284,
+    "sharpe": 0.224,
+    "sortino": 0.188,
+    "max_drawdown": -0.3018,
+    "calmar": 0.166,
+    "worst_month": -0.1863,
+    "pct_positive_months": 0.699,
+    "total_return": 0.3971
+   },
+   "passes": false,
+   "in_market": 0.5057471264367817,
+   "sharpe_vs_spy": {
+    "dev": {
+     "diff": 0.23,
+     "ci95": [
+      -0.307,
+      0.765
+     ]
+    },
+    "holdout": {
+     "diff": -0.424,
+     "ci95": [
+      -0.918,
+      0.216
+     ]
+    }
+   }
+  },
+  "momentum": {
+   "full": {
+    "start": "2007-02-09",
+    "end": "2026-11-09",
+    "years": 19.72,
+    "cagr": 0.0529,
+    "vol": 0.1253,
+    "sharpe": 0.351,
+    "sortino": 0.325,
+    "max_drawdown": -0.3932,
+    "calmar": 0.134,
+    "worst_month": -0.1278,
+    "pct_positive_months": 0.651,
+    "total_return": 1.7609
+   },
+   "dev": {
+    "start": "2007-02-09",
+    "end": "2019-12-31",
+    "years": 12.88,
+    "cagr": 0.0422,
+    "vol": 0.1301,
+    "sharpe": 0.318,
+    "sortino": 0.291,
+    "max_drawdown": -0.3932,
+    "calmar": 0.107,
+    "worst_month": -0.1278,
+    "pct_positive_months": 0.639,
+    "total_return": 0.7035
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0732,
+    "vol": 0.1156,
+    "sharpe": 0.422,
+    "sortino": 0.4,
+    "max_drawdown": -0.2281,
+    "calmar": 0.321,
+    "worst_month": -0.0689,
+    "pct_positive_months": 0.675,
+    "total_return": 0.6208
+   },
+   "passes": false,
+   "in_market": 0.5047892720306514,
+   "sharpe_vs_spy": {
+    "dev": {
+     "diff": -0.161,
+     "ci95": [
+      -0.555,
+      0.27
+     ]
+    },
+    "holdout": {
+     "diff": -0.226,
+     "ci95": [
+      -0.913,
+      0.464
+     ]
+    }
+   }
+  },
+  "book": {
+   "full": {
+    "start": "2007-02-09",
+    "end": "2026-11-09",
+    "years": 19.72,
+    "cagr": 0.0734,
+    "vol": 0.0952,
+    "sharpe": 0.63,
+    "sortino": 0.809,
+    "max_drawdown": -0.2366,
+    "calmar": 0.31,
+    "worst_month": -0.0764,
+    "pct_positive_months": 0.655,
+    "total_return": 3.0405
+   },
+   "dev": {
+    "start": "2007-02-09",
+    "end": "2019-12-31",
+    "years": 12.88,
+    "cagr": 0.0711,
+    "vol": 0.0886,
+    "sharpe": 0.725,
+    "sortino": 0.947,
+    "max_drawdown": -0.2366,
+    "calmar": 0.301,
+    "worst_month": -0.0764,
+    "pct_positive_months": 0.671,
+    "total_return": 1.4227
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0777,
+    "vol": 0.1066,
+    "sharpe": 0.488,
+    "sortino": 0.621,
+    "max_drawdown": -0.1809,
+    "calmar": 0.429,
+    "worst_month": -0.059,
+    "pct_positive_months": 0.627,
+    "total_return": 0.6678
+   }
+  },
+  "book_news_filter": {
+   "full": {
+    "start": "2007-02-09",
+    "end": "2026-11-09",
+    "years": 19.72,
+    "cagr": 0.0516,
+    "vol": 0.0633,
+    "sharpe": 0.584,
+    "sortino": 0.673,
+    "max_drawdown": -0.1522,
+    "calmar": 0.339,
+    "worst_month": -0.0896,
+    "pct_positive_months": 0.643,
+    "total_return": 1.6978
+   },
+   "dev": {
+    "start": "2007-02-09",
+    "end": "2019-12-31",
+    "years": 12.88,
+    "cagr": 0.0554,
+    "vol": 0.0561,
+    "sharpe": 0.838,
+    "sortino": 1.045,
+    "max_drawdown": -0.1049,
+    "calmar": 0.528,
+    "worst_month": -0.0476,
+    "pct_positive_months": 0.639,
+    "total_return": 1.0025
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0446,
+    "vol": 0.0749,
+    "sharpe": 0.239,
+    "sortino": 0.259,
+    "max_drawdown": -0.1522,
+    "calmar": 0.293,
+    "worst_month": -0.0896,
+    "pct_positive_months": 0.651,
+    "total_return": 0.3472
+   }
+  },
+  "book_trend_filter": {
+   "full": {
+    "start": "2007-02-09",
+    "end": "2026-11-09",
+    "years": 19.72,
+    "cagr": 0.0629,
+    "vol": 0.0785,
+    "sharpe": 0.62,
+    "sortino": 0.741,
+    "max_drawdown": -0.1598,
+    "calmar": 0.393,
+    "worst_month": -0.0864,
+    "pct_positive_months": 0.643,
+    "total_return": 2.3265
+   },
+   "dev": {
+    "start": "2007-02-09",
+    "end": "2019-12-31",
+    "years": 12.88,
+    "cagr": 0.0631,
+    "vol": 0.0722,
+    "sharpe": 0.767,
+    "sortino": 0.987,
+    "max_drawdown": -0.0828,
+    "calmar": 0.762,
+    "worst_month": -0.0522,
+    "pct_positive_months": 0.658,
+    "total_return": 1.1992
+   },
+   "holdout": {
+    "start": "2020-01-02",
+    "end": "2026-11-09",
+    "years": 6.84,
+    "cagr": 0.0624,
+    "vol": 0.0892,
+    "sharpe": 0.404,
+    "sortino": 0.448,
+    "max_drawdown": -0.1598,
+    "calmar": 0.391,
+    "worst_month": -0.0864,
+    "pct_positive_months": 0.614,
+    "total_return": 0.5126
+   }
+  }
+ },
+ "overlay_passes": false,
+ "crash_auc": {
+  "level_vs_avg": {
+   "dev": 0.6431472081218275,
+   "holdout": 0.5336986061190497
+  },
+  "change_21d": {
+   "dev": 0.48874825621948387,
+   "holdout": 0.5106732707986325
+  }
+ },
+ "corr_change_next_month": {
+  "dev": {
+   "r": -0.11126971041583532,
+   "ci95": [
+    -0.25148373606828306,
+    -0.019949716075955148
+   ]
+  },
+  "holdout": {
+   "r": -0.043657366681193986,
+   "ci95": [
+    -0.34850410884033595,
+    0.14556521858092772
+   ]
+  }
+ },
+ "base_rate_5pct_drop": 0.21208027788498648
+}

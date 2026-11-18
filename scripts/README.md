@@ -20,6 +20,7 @@ python scripts/mirror_ticket.py --positions positions.csv  # orders for your own
 
 | Script | Run by | What it does |
 |---|---|---|
+| `integrity.py` | You | Runs the trust-score engine locally (`run`, `rescore`) or on AWS (`submit`, `collect`) |
 | `market_scan.py` | You | Runs the daily market scan locally and writes it as JSON (`SCAN_FILE=scan.json` shows it on the dashboard) |
 | `forwardtest.py` | `run_forwardtest.yml`, every 20 minutes (each slot at most once) | Forecasts QQQ, SPY, NVDA and TSLA at 8 strikes and logs to Supabase. `--ledger-out FILE` also writes ledger records. |
 | `update_outcomes.py` | `update_outcomes.yml`, hourly | Fills realised prices into Supabase forward-test rows |

@@ -17,6 +17,7 @@ LevelEdge answers one question well: *what is the probability that a price close
 | **Forecaster** | Returns P(close above *K*) for any number of levels, plus the full forecast distribution and its out-of-sample record. | [`src/leveledge`](src/leveledge/README.md), [guide](docs/forecaster.md) |
 | **Portfolio** | Trades 70% 60/40 (SPY/IEF) plus a 30% trend-following sleeve over 11 ETFs, weekly, in an Alpaca paper account, with pre-trade safety checks. No margin and whole shares only, so a real account can copy every trade. | [guide](docs/portfolio.md) |
 | **Market scan** | Runs the forecaster on 100 major US stocks and funds after every weekday close, in parallel on AWS (EventBridge Scheduler → SQS → Lambda workers → DynamoDB), and turns the results into plain-English notes. | [guide](docs/market-scan.md) |
+| **Trust score** | Grades every strategy 0–100 on eight checks for self-deception (holdout collapse, luck, overfitting, look-ahead, cost fragility, one lucky year) and lists how it might be fooling you. Runs locally or fanned out on AWS. | [guide](docs/trust-score.md) |
 | **Forecast ledger** | Commits every live forecast to a public, hash-chained log before its outcome exists, timestamps it with an outside authority, and scores it by appending. Anyone can verify the record. | [guide](docs/forecast-ledger.md) |
 | **Research** | Logs about 20 pre-declared studies with development and 2020+ holdout periods: Kalshi edge, trend following, hedging, regime models, leverage, dip buying, and more. | [`benchmarks`](benchmarks/README.md) |
 | **Dashboard** | Shows all of the above: a React frontend on Vercel and a FastAPI backend on AWS Lambda. | [`web`](web/README.md), [`app`](app/README.md) |
@@ -32,6 +33,7 @@ Each claim links to the script that produced it.
 | Does the portfolio beat 60/40? | **Not on return; yes on crashes.** 7.3%/yr with a −24% worst fall against 8.0% and −33% (2007–2026). [`paper_portfolio.py`](benchmarks/paper_portfolio.py) |
 | Can you time market falls? | **No.** Hidden Markov, jump models, the VIX and turbulence measures all failed out of sample. How *big* moves get is forecastable. [`regime_research.py`](benchmarks/regime_research.py) |
 | Does leverage help in a retail account? | **Not on margin.** At Fidelity's ~11.6% rate, 1.5x earned less and fell further than 1x. [`aggressive_research.py`](benchmarks/aggressive_research.py) |
+| Can news sentiment time the market? | **No.** The SF Fed's daily news sentiment beat holding the S&P 500 before 2020 (Sharpe 0.71 vs 0.48) and trailed it after (0.22 vs 0.65); trust score C. [`news_sentiment.py`](benchmarks/news_sentiment.py) |
 | Does buying the dip work? | **No.** A stock that fell 20% in a month beat the average stock bought the same day only 49% of the time. [`dip_research.py`](benchmarks/dip_research.py) |
 
 The full log, including smaller studies, is in [benchmarks/README.md](benchmarks/README.md).

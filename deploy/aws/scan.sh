@@ -61,7 +61,7 @@ aws iam put-role-policy --role-name "$ROLE" --policy-name scan-access --policy-d
 # ---- 4. Worker function (same image, runs app/worker.py) -----------------------------------------
 aws logs create-log-group --region "$REGION" --log-group-name "/aws/lambda/$NAME" 2>/dev/null || true
 aws logs put-retention-policy --region "$REGION" --log-group-name "/aws/lambda/$NAME" --retention-in-days 7
-ENV="{\"Variables\":{\"SCAN_TABLE\":\"$NAME\",\"SCAN_QUEUE_URL\":\"$Q_URL\",\"AWS_LWA_READINESS_CHECK_PATH\":\"/healthz\",\"LEVELEDGE_DISABLE_LOGGING\":\"1\"}}"
+ENV="{\"Variables\":{\"SCAN_TABLE\":\"$NAME\",\"SCAN_QUEUE_URL\":\"$Q_URL\",\"AWS_LWA_READINESS_CHECK_PATH\":\"/healthz\",\"LEVELEDGE_DISABLE_LOGGING\":\"1\",\"LEVELEDGE_CACHE\":\"/tmp/cache\"}}"
 CMD='{"Command":["uvicorn","app.worker:app","--host","0.0.0.0","--port","8080"]}'
 if aws lambda get-function --region "$REGION" --function-name "$NAME" >/dev/null 2>&1; then
   aws lambda update-function-code --region "$REGION" --function-name "$NAME" --image-uri "$IMAGE" >/dev/null

@@ -1,0 +1,689 @@
+{
+ "generated_at": "2026-11-18T04:32:31.348627+00:00",
+ "weights": {
+  "holdout": 30,
+  "benchmark": 15,
+  "luck": 15,
+  "multiple": 10,
+  "stability": 15,
+  "lookahead": 5,
+  "costs": 5,
+  "concentration": 5
+ },
+ "executor": "local",
+ "run_id": null,
+ "tasks": 135,
+ "compute_seconds": 229,
+ "partial": false,
+ "strategies": [
+  {
+   "id": "book",
+   "name": "The traded portfolio (70% 60/40 + 30% trend)",
+   "benchmark": "sixty_forty",
+   "score": 75.8,
+   "grade": "B",
+   "verdict": "Credible, with caveats",
+   "checks": {
+    "holdout": {
+     "score": 0.673,
+     "status": "pass",
+     "detail": "Sharpe 0.72 before 2020, 0.49 after (benchmark after 2020: 0.53). It kept 67% of its pre-2020 quality and reached 92% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.6,
+     "status": "warn",
+     "detail": "Sharpe difference against a 60/40 mix: +0.01 (95% interval -0.08 to +0.11)."
+    },
+    "luck": {
+     "score": 0.7,
+     "status": "warn",
+     "detail": "Its timing beat 91% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.994,
+     "status": "pass",
+     "detail": "Counting 4 variants tried, the chance its pre-2020 Sharpe is more than luck: 99%."
+    },
+    "stability": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Rank correlation of 4 variants before and after 2020: +1.00 (1 = same order, \u22121 = reversed)."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.926,
+     "status": "pass",
+     "detail": "At four times the trading costs it keeps 93% of its Sharpe (0.58)."
+    },
+    "concentration": {
+     "score": 0.3,
+     "status": "warn",
+     "detail": "Without its best year (2008) its Sharpe advantage disappears (-0.04)."
+    }
+   },
+   "findings": [
+    "Its edge over a 60/40 mix is within luck: the 95% interval runs from -0.08 to +0.11.",
+    "Its timing beat only 91% of shuffled copies of itself, so much of the result could come from what it owned, not when.",
+    "Its whole advantage comes from one year (2008)."
+   ],
+   "period": [
+    "2007-02-09",
+    "2026-11-09"
+   ],
+   "variants": 4,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.0734,
+     "sharpe": 0.63,
+     "max_drawdown": -0.2366
+    },
+    "dev": {
+     "cagr": 0.0711,
+     "sharpe": 0.725,
+     "max_drawdown": -0.2366
+    },
+    "holdout": {
+     "cagr": 0.0777,
+     "sharpe": 0.488,
+     "max_drawdown": -0.1809
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.08,
+     "sharpe": 0.615,
+     "max_drawdown": -0.326
+    },
+    "dev": {
+     "cagr": 0.0752,
+     "sharpe": 0.668,
+     "max_drawdown": -0.326
+    },
+    "holdout": {
+     "cagr": 0.0891,
+     "sharpe": 0.532,
+     "max_drawdown": -0.2129
+    }
+   }
+  },
+  {
+   "id": "daa_book",
+   "name": "Portfolio with a published sleeve (Keller & Keuning DAA)",
+   "benchmark": "sixty_forty",
+   "score": 75.7,
+   "grade": "B",
+   "verdict": "Credible, with caveats",
+   "checks": {
+    "holdout": {
+     "score": 0.653,
+     "status": "pass",
+     "detail": "Sharpe 0.85 before 2020, 0.56 after (benchmark after 2020: 0.53). It kept 65% of its pre-2020 quality and reached 104% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.6,
+     "status": "warn",
+     "detail": "Sharpe difference against a 60/40 mix: +0.09 (95% interval -0.03 to +0.18)."
+    },
+    "luck": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Its timing beat 100% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.999,
+     "status": "pass",
+     "detail": "Counting 1 variant tried, the chance its pre-2020 Sharpe is more than luck: 100%."
+    },
+    "stability": {
+     "score": 0.5,
+     "status": "n/a",
+     "detail": "Published parameters with no variants to compare; scored neutral."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.924,
+     "status": "pass",
+     "detail": "At four times the trading costs it keeps 92% of its Sharpe (0.68)."
+    },
+    "concentration": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Without its best year (2008) its Sharpe advantage stays positive (+0.04)."
+    }
+   },
+   "findings": [
+    "Its edge over a 60/40 mix is within luck: the 95% interval runs from -0.03 to +0.18."
+   ],
+   "period": [
+    "2008-04-30",
+    "2026-11-09"
+   ],
+   "variants": 1,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.0849,
+     "sharpe": 0.732,
+     "max_drawdown": -0.2572
+    },
+    "dev": {
+     "cagr": 0.0848,
+     "sharpe": 0.851,
+     "max_drawdown": -0.2572
+    },
+    "holdout": {
+     "cagr": 0.0852,
+     "sharpe": 0.556,
+     "max_drawdown": -0.1817
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.083,
+     "sharpe": 0.647,
+     "max_drawdown": -0.3187
+    },
+    "dev": {
+     "cagr": 0.0794,
+     "sharpe": 0.727,
+     "max_drawdown": -0.3187
+    },
+    "holdout": {
+     "cagr": 0.0891,
+     "sharpe": 0.532,
+     "max_drawdown": -0.2129
+    }
+   }
+  },
+  {
+   "id": "spy_sma200",
+   "name": "S&P 500 with a 200-day-average sell rule",
+   "benchmark": "spy",
+   "score": 66.9,
+   "grade": "B",
+   "verdict": "Credible, with caveats",
+   "checks": {
+    "holdout": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Sharpe 0.47 before 2020, 0.78 after (benchmark after 2020: 0.65). It kept 166% of its pre-2020 quality and reached 120% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.6,
+     "status": "warn",
+     "detail": "Sharpe difference against simply holding the S&P 500: +0.04 (95% interval -0.30 to +0.38)."
+    },
+    "luck": {
+     "score": 0.4,
+     "status": "warn",
+     "detail": "Its timing beat 86% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.928,
+     "status": "warn",
+     "detail": "Counting 4 variants tried, the chance its pre-2020 Sharpe is more than luck: 93%."
+    },
+    "stability": {
+     "score": 0.1,
+     "status": "fail",
+     "detail": "Rank correlation of 4 variants before and after 2020: -0.80 (1 = same order, \u22121 = reversed)."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.931,
+     "status": "pass",
+     "detail": "At four times the trading costs it keeps 93% of its Sharpe (0.54)."
+    },
+    "concentration": {
+     "score": 0.3,
+     "status": "warn",
+     "detail": "Without its best year (2008) its Sharpe advantage disappears (-0.14)."
+    }
+   },
+   "findings": [
+    "Its edge over simply holding the S&P 500 is within luck: the 95% interval runs from -0.30 to +0.38.",
+    "Its timing beat only 86% of shuffled copies of itself, so much of the result could come from what it owned, not when.",
+    "After counting the 4 variants tried, there's only a 93% chance the best one beat chance (95% is the usual bar).",
+    "Variants that looked best before 2020 tended to do worst after (rank correlation -0.80): a sign of fitting noise.",
+    "Its whole advantage comes from one year (2008)."
+   ],
+   "period": [
+    "2006-11-17",
+    "2026-11-09"
+   ],
+   "variants": 4,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.0808,
+     "sharpe": 0.579,
+     "max_drawdown": -0.2208
+    },
+    "dev": {
+     "cagr": 0.0581,
+     "sharpe": 0.468,
+     "max_drawdown": -0.2208
+    },
+    "holdout": {
+     "cagr": 0.1256,
+     "sharpe": 0.777,
+     "max_drawdown": -0.1582
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.108,
+     "sharpe": 0.543,
+     "max_drawdown": -0.5519
+    },
+    "dev": {
+     "cagr": 0.0876,
+     "sharpe": 0.486,
+     "max_drawdown": -0.5519
+    },
+    "holdout": {
+     "cagr": 0.1482,
+     "sharpe": 0.648,
+     "max_drawdown": -0.3372
+    }
+   }
+  },
+  {
+   "id": "book_trend_filter",
+   "name": "Portfolio with the 12-month trend filter on its core",
+   "benchmark": "sixty_forty",
+   "score": 65.1,
+   "grade": "B",
+   "verdict": "Credible, with caveats",
+   "checks": {
+    "holdout": {
+     "score": 0.526,
+     "status": "warn",
+     "detail": "Sharpe 0.77 before 2020, 0.40 after (benchmark after 2020: 0.53). It kept 53% of its pre-2020 quality and reached 76% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.6,
+     "status": "warn",
+     "detail": "Sharpe difference against a 60/40 mix: +0.01 (95% interval -0.29 to +0.34)."
+    },
+    "luck": {
+     "score": 0.4,
+     "status": "warn",
+     "detail": "Its timing beat 89% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.996,
+     "status": "pass",
+     "detail": "Counting 4 variants tried, the chance its pre-2020 Sharpe is more than luck: 100%."
+    },
+    "stability": {
+     "score": 0.9,
+     "status": "pass",
+     "detail": "Rank correlation of 4 variants before and after 2020: +0.80 (1 = same order, \u22121 = reversed)."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.864,
+     "status": "pass",
+     "detail": "At four times the trading costs it keeps 86% of its Sharpe (0.54)."
+    },
+    "concentration": {
+     "score": 0.3,
+     "status": "warn",
+     "detail": "Without its best year (2008) its Sharpe advantage disappears (-0.19)."
+    }
+   },
+   "findings": [
+    "It looked better before 2020 (Sharpe 0.77) than after (0.40): the early record may describe a market that no longer exists, or rules fitted to it.",
+    "Its edge over a 60/40 mix is within luck: the 95% interval runs from -0.29 to +0.34.",
+    "Its timing beat only 89% of shuffled copies of itself, so much of the result could come from what it owned, not when.",
+    "Its whole advantage comes from one year (2008)."
+   ],
+   "period": [
+    "2007-02-09",
+    "2026-11-09"
+   ],
+   "variants": 4,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.0629,
+     "sharpe": 0.62,
+     "max_drawdown": -0.1598
+    },
+    "dev": {
+     "cagr": 0.0631,
+     "sharpe": 0.767,
+     "max_drawdown": -0.0828
+    },
+    "holdout": {
+     "cagr": 0.0624,
+     "sharpe": 0.404,
+     "max_drawdown": -0.1598
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.08,
+     "sharpe": 0.615,
+     "max_drawdown": -0.326
+    },
+    "dev": {
+     "cagr": 0.0752,
+     "sharpe": 0.668,
+     "max_drawdown": -0.326
+    },
+    "holdout": {
+     "cagr": 0.0891,
+     "sharpe": 0.532,
+     "max_drawdown": -0.2129
+    }
+   }
+  },
+  {
+   "id": "news_sentiment_spy",
+   "name": "S&P 500 timed by news sentiment",
+   "benchmark": "spy",
+   "score": 56.6,
+   "grade": "C",
+   "verdict": "Mixed evidence",
+   "checks": {
+    "holdout": {
+     "score": 0.313,
+     "status": "fail",
+     "detail": "Sharpe 0.71 before 2020, 0.22 after (benchmark after 2020: 0.65). It kept 31% of its pre-2020 quality and reached 35% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.3,
+     "status": "warn",
+     "detail": "Sharpe difference against simply holding the S&P 500: -0.02 (95% interval -0.41 to +0.40)."
+    },
+    "luck": {
+     "score": 0.4,
+     "status": "warn",
+     "detail": "Its timing beat 86% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.981,
+     "status": "pass",
+     "detail": "Counting 4 variants tried, the chance its pre-2020 Sharpe is more than luck: 98%."
+    },
+    "stability": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Rank correlation of 4 variants before and after 2020: +1.00 (1 = same order, \u22121 = reversed)."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.887,
+     "status": "pass",
+     "detail": "At four times the trading costs it keeps 89% of its Sharpe (0.46)."
+    },
+    "concentration": {
+     "score": 0.5,
+     "status": "n/a",
+     "detail": "It doesn't beat its benchmark, so there's no edge to concentrate; scored neutral."
+    }
+   },
+   "findings": [
+    "It looked much better before 2020 (Sharpe 0.71) than after (0.22): the early record may describe a market that no longer exists, or rules fitted to it.",
+    "Its edge over simply holding the S&P 500 is within luck: the 95% interval runs from -0.41 to +0.40.",
+    "Its timing beat only 86% of shuffled copies of itself, so much of the result could come from what it owned, not when."
+   ],
+   "period": [
+    "2006-11-24",
+    "2026-11-09"
+   ],
+   "variants": 4,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.07,
+     "sharpe": 0.519,
+     "max_drawdown": -0.3556
+    },
+    "dev": {
+     "cagr": 0.0806,
+     "sharpe": 0.715,
+     "max_drawdown": -0.1664
+    },
+    "holdout": {
+     "cagr": 0.0501,
+     "sharpe": 0.224,
+     "max_drawdown": -0.3018
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.1079,
+     "sharpe": 0.542,
+     "max_drawdown": -0.5519
+    },
+    "dev": {
+     "cagr": 0.0874,
+     "sharpe": 0.485,
+     "max_drawdown": -0.5519
+    },
+    "holdout": {
+     "cagr": 0.1482,
+     "sharpe": 0.648,
+     "max_drawdown": -0.3372
+    }
+   }
+  },
+  {
+   "id": "trend_sleeve",
+   "name": "Trend rule across 11 markets, alone",
+   "benchmark": "sixty_forty",
+   "score": 52.1,
+   "grade": "C",
+   "verdict": "Mixed evidence",
+   "checks": {
+    "holdout": {
+     "score": 0.352,
+     "status": "warn",
+     "detail": "Sharpe 0.60 before 2020, 0.21 after (benchmark after 2020: 0.53). It kept 35% of its pre-2020 quality and reached 39% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.3,
+     "status": "warn",
+     "detail": "Sharpe difference against a 60/40 mix: -0.17 (95% interval -0.53 to +0.20)."
+    },
+    "luck": {
+     "score": 0.1,
+     "status": "fail",
+     "detail": "Its timing beat 68% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.981,
+     "status": "pass",
+     "detail": "Counting 4 variants tried, the chance its pre-2020 Sharpe is more than luck: 98%."
+    },
+    "stability": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Rank correlation of 4 variants before and after 2020: +1.00 (1 = same order, \u22121 = reversed)."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.642,
+     "status": "warn",
+     "detail": "At four times the trading costs it keeps 64% of its Sharpe (0.29)."
+    },
+    "concentration": {
+     "score": 0.5,
+     "status": "n/a",
+     "detail": "It doesn't beat its benchmark, so there's no edge to concentrate; scored neutral."
+    }
+   },
+   "findings": [
+    "It looked much better before 2020 (Sharpe 0.60) than after (0.21): the early record may describe a market that no longer exists, or rules fitted to it.",
+    "Its edge over a 60/40 mix is within luck: the 95% interval runs from -0.53 to +0.20.",
+    "Its timing beat only 68% of shuffled copies of itself, so much of the result could come from what it owned, not when.",
+    "Higher trading costs erode it: at 4\u00d7 costs only 64% of its Sharpe is left."
+   ],
+   "period": [
+    "2007-02-09",
+    "2026-11-09"
+   ],
+   "variants": 4,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.0506,
+     "sharpe": 0.446,
+     "max_drawdown": -0.1518
+    },
+    "dev": {
+     "cagr": 0.0538,
+     "sharpe": 0.596,
+     "max_drawdown": -0.1518
+    },
+    "holdout": {
+     "cagr": 0.0448,
+     "sharpe": 0.21,
+     "max_drawdown": -0.1392
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.08,
+     "sharpe": 0.615,
+     "max_drawdown": -0.326
+    },
+    "dev": {
+     "cagr": 0.0752,
+     "sharpe": 0.668,
+     "max_drawdown": -0.326
+    },
+    "holdout": {
+     "cagr": 0.0891,
+     "sharpe": 0.532,
+     "max_drawdown": -0.2129
+    }
+   }
+  },
+  {
+   "id": "best_of_80",
+   "name": "Best of 80 trend variants, picked on 2007-2019",
+   "benchmark": "sixty_forty",
+   "score": 44.9,
+   "grade": "D",
+   "verdict": "Weak evidence",
+   "checks": {
+    "holdout": {
+     "score": 0.085,
+     "status": "fail",
+     "detail": "Sharpe 1.02 before 2020, 0.09 after (benchmark after 2020: 0.53). It kept 9% of its pre-2020 quality and reached 16% of the benchmark's."
+    },
+    "benchmark": {
+     "score": 0.6,
+     "status": "warn",
+     "detail": "Sharpe difference against a 60/40 mix: +0.02 (95% interval -0.36 to +0.40)."
+    },
+    "luck": {
+     "score": 0.7,
+     "status": "warn",
+     "detail": "Its timing beat 94% of 200 copies with the same holdings shuffled in time."
+    },
+    "multiple": {
+     "score": 0.979,
+     "status": "pass",
+     "detail": "Counting 80 variants tried, the chance its pre-2020 Sharpe is more than luck: 98%."
+    },
+    "stability": {
+     "score": 0.14,
+     "status": "fail",
+     "detail": "Rank correlation of 80 variants before and after 2020: -0.72 (1 = same order, \u22121 = reversed)."
+    },
+    "lookahead": {
+     "score": 1.0,
+     "status": "pass",
+     "detail": "Decisions recomputed on data cut at 4 past dates matched exactly."
+    },
+    "costs": {
+     "score": 0.883,
+     "status": "pass",
+     "detail": "At four times the trading costs it keeps 88% of its Sharpe (0.57)."
+    },
+    "concentration": {
+     "score": 0.3,
+     "status": "warn",
+     "detail": "Without its best year (2008) its Sharpe advantage disappears (-0.23)."
+    }
+   },
+   "findings": [
+    "It looked much better before 2020 (Sharpe 1.02) than after (0.09): the early record may describe a market that no longer exists, or rules fitted to it.",
+    "Its edge over a 60/40 mix is within luck: the 95% interval runs from -0.36 to +0.40.",
+    "Its timing beat only 94% of shuffled copies of itself, so much of the result could come from what it owned, not when.",
+    "Variants that looked best before 2020 tended to do worst after (rank correlation -0.72): a sign of fitting noise.",
+    "Its whole advantage comes from one year (2008)."
+   ],
+   "period": [
+    "2007-02-28",
+    "2026-11-09"
+   ],
+   "variants": 80,
+   "shuffles": 200,
+   "metrics": {
+    "full": {
+     "cagr": 0.0604,
+     "sharpe": 0.649,
+     "max_drawdown": -0.1916
+    },
+    "dev": {
+     "cagr": 0.0754,
+     "sharpe": 1.024,
+     "max_drawdown": -0.0823
+    },
+    "holdout": {
+     "cagr": 0.0328,
+     "sharpe": 0.087,
+     "max_drawdown": -0.1916
+    }
+   },
+   "bench_metrics": {
+    "full": {
+     "cagr": 0.0811,
+     "sharpe": 0.625,
+     "max_drawdown": -0.326
+    },
+    "dev": {
+     "cagr": 0.0769,
+     "sharpe": 0.684,
+     "max_drawdown": -0.326
+    },
+    "holdout": {
+     "cagr": 0.0891,
+     "sharpe": 0.532,
+     "max_drawdown": -0.2129
+    }
+   }
+  }
+ ]
+}
