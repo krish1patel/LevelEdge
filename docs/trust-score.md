@@ -49,8 +49,8 @@ Grades: A 80+, B 65+, C 50+, D 35+, F below 35.
 ## Validating the engine
 
 - **A peeking strategy fails.** `tests/test_integrity.py` builds a strategy that reads next week's price. The look-ahead check catches it, and the score is capped at 20.
-- **The known overfit is caught.** On the 80-variant search the engine found a rank correlation of −0.72 between periods without being told, matching the original study's −0.73, and graded it D.
-- **The two executors agree.** The local and AWS runs use fixed seeds, so the same tasks give the same scores.
+- **The known overfit is caught.** On the 80-variant search the engine found a rank correlation of −0.70 between periods (data through Nov 17, 2026) without being told, against the original study's −0.73, and graded it D.
+- **The two executors agree.** The local and AWS runs use fixed seeds. On the same data (prices through Nov 17, 2026) they produced identical scores for all seven strategies. Scores move when new prices arrive, so compare runs on the same data.
 
 ## Adding a strategy
 
